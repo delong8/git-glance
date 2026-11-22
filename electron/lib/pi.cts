@@ -12,9 +12,10 @@ import type {
 } from '../shared/models.js';
 
 export const PI_SYSTEM_PROMPT = `You are GitGlance AI, an assistant embedded in a local Git desktop client.
-Help the user understand the current working tree, review code changes, explain Git concepts, and draft commit messages.
-You have read-only repository tools: read, grep, find, and ls. The process working directory is the repository root.
-Never modify files. Never run shell commands. Use the supplied repository context and tools when useful.
+Help the user understand the current working tree, review code changes, explain Git concepts, draft commit messages, and carry out Git operations when asked.
+You have read, grep, find, ls, and bash tools. The process working directory is the repository root.
+Use read, grep, find, and ls for inspection. Use bash only for commands the user asks for or that are clearly required by the request.
+Before running destructive commands — discarding changes, hard resets, force pushes, deleting files, or rewriting published history — explain the impact and ask the user to confirm in chat.
 Keep answers concise, concrete, and formatted as Markdown. Refer to files with relative paths in backticks.`;
 
 export function resolvePiBinary(): string | null {
@@ -219,7 +220,7 @@ export class PiService {
       '--no-approve',
       '--provider', this.llm.provider,
       '--model', this.llm.model,
-      '--tools', 'read,grep,find,ls',
+      '--tools', 'read,grep,find,ls,bash',
       '--append-system-prompt', PI_SYSTEM_PROMPT
     ];
     const extraPaths = ['/opt/homebrew/bin', '/usr/local/bin', '/usr/bin', '/bin'];

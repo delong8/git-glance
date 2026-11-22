@@ -2,6 +2,35 @@
 
 A local Git desktop client built around the UI in [index.html](./index.html). It runs in Electron, executes the installed Git CLI, talks to the Pi coding agent for AI chat, and previews images, PDFs, Word/Excel/PowerPoint documents, and text files without uploading them anywhere.
 
+![GitGlance workspace with a repository open](./docs/screenshots/workspace.png)
+
+## Documentation
+
+The [usage guide](./docs/USAGE.md) is the end-user walkthrough: opening and switching repositories, reading the summary, browsing the working tree, previewing files, staging and committing, history, syncing with remotes, AI chat, settings, and troubleshooting.
+
+Quick links:
+
+- [Quick start](./docs/USAGE.md#quick-start)
+- [Opening repositories](./docs/USAGE.md#opening-repositories)
+- [Browsing files and changes](./docs/USAGE.md#browsing-files-and-changes)
+- [Previewing files](./docs/USAGE.md#previewing-files)
+- [Committing changes](./docs/USAGE.md#committing-changes)
+- [History](./docs/USAGE.md#history)
+- [AI chat with Pi](./docs/USAGE.md#ai-chat-with-pi)
+- [Settings](./docs/USAGE.md#settings)
+- [Keyboard shortcuts](./docs/USAGE.md#keyboard-shortcuts)
+- [Troubleshooting](./docs/USAGE.md#troubleshooting)
+
+### Screenshots
+
+| File tree and preview | History |
+| --- | --- |
+| ![File tree with a syntax-highlighted preview](./docs/screenshots/files-preview.png) | ![Commit graph with branches and a merge commit](./docs/screenshots/history.png) |
+
+| Working tree diff | Settings |
+| --- | --- |
+| ![Working tree diff for a modified source file](./docs/screenshots/file-diff.png) | ![Settings: appearance, language, and LLM provider](./docs/screenshots/settings-appearance.png) |
+
 ## Features
 
 - **Multi-repository sidebar** with filtering, per-project branch and change counts, and an onboarding screen when no repository is open yet.
@@ -16,7 +45,7 @@ A local Git desktop client built around the UI in [index.html](./index.html). It
   - Deleted files: preview from the HEAD revision.
   - Binary files: a clear fallback instead of garbled content.
 - **History tab** with a commit graph, refs, authors, stats, timestamps, and copyable hashes.
-- **AI Chat tab** backed by the Pi agent, with streaming responses, tool activity, stop/new-chat controls, per-repository conversations, and a changed-files sidebar that shares the preview pane.
+- **AI Chat tab** backed by the Pi agent, with streaming responses, tool activity (including Git and shell commands), stop/new-chat controls, per-repository conversations, and a changed-files sidebar that shares the preview pane.
 - **Git settings** for identity, default branch, editor, pull strategy, GPG signing, pruning, and app-level auto-fetch behavior.
 - **Appearance** with light, dark, and system-following themes, applied live and remembered between launches.
 - **Language** with English and Simplified Chinese, applied live to the UI and native menus; repository content, code, and commit messages stay as-is.
@@ -27,7 +56,7 @@ A local Git desktop client built around the UI in [index.html](./index.html). It
 - **Node.js 22+** and npm (tested with Node 26) to run from source or build the installer. The packaged app does not require Node.js.
 - **macOS** to build the `.app`/DMG with electron-builder.
 - **Git** installed and configured with your credentials. GitGlance uses the `git` on `PATH`; it does not bundle Git.
-- **Pi agent CLI** (`pi`) available on `PATH`, or set `PI_BIN` to its executable. Configure the model endpoint in **Settings → LLM provider**; GitGlance starts Pi with `--mode rpc` and read-only tools.
+- **Pi agent CLI** (`pi`) available on `PATH`, or set `PI_BIN` to its executable. Configure the model endpoint in **Settings → LLM provider**; GitGlance starts Pi with `--mode rpc` and enables the `read`, `grep`, `find`, `ls`, and `bash` tools.
 - **LibreOffice** is optional. Install it only if you want Word/Excel/PowerPoint previews. GitGlance looks for `soffice` in common locations or uses `LIBREOFFICE_BIN`.
 
 The application source is strict TypeScript: the renderer is compiled by Vite, and the Electron main/preload/services are compiled with `tsc` into `dist-electron/`. Build and test scripts remain `.mjs` tooling.
@@ -116,7 +145,7 @@ The Chat tab keeps one Pi RPC process per repository. Each prompt includes:
 - staged and unstaged diffs (clipped to about 22 KB each);
 - the file selected in the changed-files sidebar, if any.
 
-Pi is launched with `read`, `grep`, `find`, and `ls` only. It cannot modify the working tree or run shell commands. Chat state is kept in the renderer per repository, and **New chat** resets the underlying Pi session. **Stop** aborts the current response.
+Pi is launched with the `read`, `grep`, `find`, `ls`, and `bash` tools. It can run Git and other shell commands when you ask it to, including creating commits; the system prompt tells it to explain the impact and ask before destructive operations. Shell commands run with the same OS privileges as GitGlance, so review what the agent proposes and treat repository content as untrusted input. Chat state is kept in the renderer per repository, and **New chat** resets the underlying Pi session. **Stop** aborts the current response.
 
 GitGlance configures the model itself. **Settings → LLM provider** stores a provider ID, API protocol (`openai-completions`, `openai-responses`, `anthropic-messages`, `google-generative-ai`, or `google-vertex`), base URL, API key, and model ID in the app config. Before starting Pi, GitGlance writes those values into its own `pi-agent` directory (`models.json` and `settings.json`) and launches Pi with `PI_CODING_AGENT_DIR` pointed at it. The generated settings also set `defaultProjectTrust` to `never`, so neither the user-level `~/.pi` nor a repository-local `.pi` directory is read. Prompts and file excerpts may be sent to the configured model endpoint; Git operations and previews stay local.
 
@@ -191,6 +220,9 @@ build/
 scripts/
   dev.mjs             Vite + Electron development launcher
   smoke.mjs           Isolated end-to-end smoke test against the built app
+docs/
+  USAGE.md            End-user usage guide with screenshots
+  screenshots/        Documentation screenshots
 release/              generated .app and DMG artifacts (gitignored)
 ```
 
@@ -230,5 +262,6 @@ Useful development variables:
 - The default local installer is unsigned and not notarized. Distributing it to other Macs requires a Developer ID certificate and notarization.
 - The default DMG is arm64-only; Intel and universal builds need an explicit electron-builder architecture.
 - AI chat requires a working Pi installation and an LLM provider configured in Settings. The rest of the app works without Pi.
+- The AI agent can run shell commands with your user privileges. GitGlance does not sandbox those commands; review destructive or credentialed operations before proceeding.
 
 The self-contained design mockup at [design/mockup.html](./design/mockup.html) mirrors the shipped UI's light/dark/system appearance and English/简体中文 language settings.

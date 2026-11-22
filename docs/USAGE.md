@@ -108,11 +108,8 @@ The summary is the dashboard for the active repository:
   **Local** chip.
 - **Dominant language** detected from tracked files.
 - **Branch, upstream, ahead/behind state**, and the last fetch time.
-- **Latest commit** with author avatar, subject, short hash, and relative time.
 - **Fetch**, **Pull**, and **Push** actions. They are disabled when there is no
   remote, no upstream, or nothing to push.
-- **Working tree** and **Upstream** strips with changed-file totals, +/− line
-  counts, staged/unstaged counts, a recent-activity sparkline, and sync state.
 
 The tabs below are **Chat**, **File tree**, and **History**. Chat is the default
 tab; the File tree badge shows the number of changed files.

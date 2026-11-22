@@ -281,10 +281,6 @@ function crumbsFor(repoPath: string | null | undefined): string {
   ).join('<span class="path-sep">/</span>');
 }
 
-function relativeTimeFromCommit(commit: GitCommit | null | undefined): string {
-  return commit?.when || timeAgo(commit?.timestamp ? new Date(commit.timestamp * 1000).toISOString() : null);
-}
-
 /* ============================================================
    State
    ============================================================ */
@@ -675,21 +671,6 @@ function dominantLanguage(repo: RepoState | null): { name: string; color: string
   return language || { name: 'Git', color: '#7c9cff' };
 }
 
-function activityFor(repo: RepoState | null): number[] {
-  const buckets = Array<number>(12).fill(0);
-  if (!repo?.history?.length) return buckets;
-  const now = new Date();
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-  for (const commit of repo.history) {
-    if (!commit.timestamp) continue;
-    const date = new Date(commit.timestamp * 1000);
-    const dayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
-    const daysAgo = Math.floor((todayStart - dayStart) / 86_400_000);
-    if (daysAgo >= 0 && daysAgo < 12) buckets[11 - daysAgo] += 1;
-  }
-  return buckets;
-}
-
 function mergeSummaryFromSnapshot(snapshot: RepoSnapshot): void {
   const existing = getRepoSummary(snapshot.path);
   if (!existing) return;
@@ -1057,21 +1038,7 @@ function renderSidebarMeta() {
 function renderSummary() {
   if (!state.repo) return;
   const repo = state.repo;
-  const stats = {
-    total: repo.files.length,
-    staged: repo.files.filter((file) => file.staged).length,
-    unstaged: repo.files.filter((file) => !file.staged).length,
-    adds: repo.files.reduce((sum, file) => sum + (file.add || 0), 0),
-    dels: repo.files.reduce((sum, file) => sum + (file.del || 0), 0)
-  };
-  const head = repo.history[0] || null;
   const language = dominantLanguage(repo);
-  const activity = activityFor(repo);
-  const maxActivity = Math.max(...activity, 1);
-  const spark = activity.some(Boolean)
-    ? activity.map((value) => `<i style="height:${Math.max(16, Math.round((value / maxActivity) * 100))}%"></i>`).join('')
-    : '';
-  const stagePct = stats.total ? Math.round((stats.staged / stats.total) * 100) : 0;
   const sync = [];
   if (repo.upstream) {
     if (repo.ahead) sync.push(`<span class="ahead">${icon('arrow-up')}${repo.ahead} ahead</span>`);
@@ -1080,18 +1047,10 @@ function renderSummary() {
   } else {
     sync.push(`<span class="behind">${icon('alert')}no upstream</span>`);
   }
-  const upstreamSync = repo.upstream
-    ? `${repo.ahead ? `<span class="ua">${icon('arrow-up')}${repo.ahead} ahead</span>` : ''}
-       ${repo.behind ? `<span class="ub">${icon('arrow-down')}${repo.behind} behind</span>` : ''}
-       ${!repo.ahead && !repo.behind ? `<span class="uc">${icon('check')}up to date</span>` : ''}`
-    : `<span class="ub">${icon('alert')}No upstream configured</span>`;
   const busy = state.busyAction;
   const canFetch = repo.remotes?.length > 0 && !busy;
   const canPull = !!repo.upstream && !busy;
   const canPush = !!repo.upstream && repo.ahead > 0 && !busy;
-  const headMeta = head
-    ? `${esc(head.author)}<span class="sep">·</span><span class="hash">${esc((head.sha || '').slice(0, 7))}</span><span class="sep">·</span>${esc(relativeTimeFromCommit(head))}`
-    : 'No commits yet';
 
   const summaryRoot = $('#summaryRoot');
   if (!summaryRoot) return;
@@ -1106,24 +1065,11 @@ function renderSummary() {
           <h1>${esc(repo.name)}</h1>
           <span class="chip">${icon(repo.remotes?.length ? 'cloud' : 'laptop')}${repo.remotes?.length ? 'Remote' : 'Local'}</span>
           <span class="lang"><span class="lang-dot" style="--lang-color:${language.color}"></span>${esc(language.name)}</span>
-        </div>
-        <div class="branch-line">
+          <span class="title-sep" aria-hidden="true"></span>
           <span class="branch-pill">${icon('branch')}${esc(repo.branch)}</span>
           <span class="sync-pair">${sync.join('')}</span>
           ${repo.upstream ? `<span class="remote">${icon('cloud')}${esc(repo.upstream)}</span>` : `<span class="remote">${icon('cloud')}no upstream</span>`}
-          <span class="meta-sep"></span>
           <span class="fetch-time">fetched ${esc(timeAgo(repo.lastFetch))}</span>
-        </div>
-      </div>
-
-      <div class="summary-commit" title="${head ? esc(head.message) : 'No commits yet'}">
-        <div class="sc-label">${icon('git-commit')}Latest commit</div>
-        <div class="sc-body">
-          ${avatarHTML(head ? head.author : state.currentUser.name)}
-          <div class="sc-copy">
-            <div class="sc-msg">${head ? esc(head.message) : 'No commits yet'}</div>
-            <div class="sc-meta">${headMeta}</div>
-          </div>
         </div>
       </div>
 
@@ -1132,24 +1078,6 @@ function renderSummary() {
         <button class="btn ghost" data-action="fetch"${canFetch ? '' : ' disabled'} title="${repo.remotes?.length ? 'Fetch all remotes' : 'No remote configured'}">${icon('refresh', busy === 'fetch' ? 'spin' : '')}Fetch</button>
         <button class="btn ghost" data-action="pull"${canPull ? '' : ' disabled'} title="${repo.upstream ? 'Pull from upstream' : 'No upstream configured'}">${icon('download')}Pull${repo.behind ? `<span class="count">${repo.behind}</span>` : ''}</button>
         <button class="btn primary" data-action="push"${canPush ? '' : ' disabled'} title="${repo.upstream ? 'Push to upstream' : 'No upstream configured'}">${icon('upload')}Push${repo.ahead ? `<span class="count">${repo.ahead}</span>` : ''}</button>
-      </div>
-    </div>
-
-    <div class="summary-strip">
-      <div class="strip-section">
-        <div class="tile-label">${icon('file-code')}Working tree</div>
-        ${stats.total ? `
-          <div class="strip-main"><span class="stat-big">${stats.total}</span><span class="stat-unit">${stats.total === 1 ? 'file changed' : 'files changed'}</span></div>
-          <span class="stat-diff"><span class="add">+${stats.adds}</span><span class="del">−${stats.dels}</span></span>
-          <span class="stage-bar inline"><i style="width:${stagePct}%"></i></span>
-          <span class="strip-foot">${stats.staged} staged · ${stats.unstaged} unstaged</span>
-        ` : `<span class="clean-note">${icon('check')}Working tree clean</span>`}
-      </div>
-      <div class="strip-section">
-        <div class="tile-label">${icon('cloud')}Upstream</div>
-        <div class="upstream-sync">${upstreamSync}</div>
-        <span class="strip-foot">${repo.upstream ? `${esc(repo.upstream)} · fetched ${esc(timeAgo(repo.lastFetch))}` : 'Add a remote to push and pull'}</span>
-        <span class="spark">${spark}</span>
       </div>
     </div>`;
 }

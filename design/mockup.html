@@ -694,64 +694,12 @@ kbd {
 .summary { position: relative; z-index: 1; flex: none; padding: 20px 26px 0; }
 .summary-top {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(290px, 330px) auto;
-  grid-template-areas: "id commit actions";
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: "id actions";
   column-gap: 24px;
   align-items: start;
 }
 .summary-id { grid-area: id; min-width: 0; }
-
-/* Latest commit panel, centered between identity and actions */
-.summary-commit {
-  grid-area: commit;
-  justify-self: stretch;
-  align-self: center;
-  min-width: 0;
-  max-width: 330px;
-  padding: 9px 12px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: linear-gradient(180deg, var(--card-top), var(--card-bottom));
-  box-shadow: var(--card-inset);
-}
-.sc-label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 9px;
-  font-weight: 650;
-  letter-spacing: 0.13em;
-  text-transform: uppercase;
-  color: var(--text-4);
-  white-space: nowrap;
-}
-.sc-label .ico { width: 11px; height: 11px; color: var(--text-4); }
-.sc-body { display: flex; align-items: center; gap: 9px; margin-top: 6px; min-width: 0; }
-.sc-body .avatar { width: 26px; height: 26px; border-radius: 7px; font-size: 9px; }
-.sc-copy { flex: 1; min-width: 0; }
-.sc-msg {
-  font-size: 11.5px;
-  font-weight: 520;
-  color: var(--text);
-  letter-spacing: -0.004em;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.sc-meta {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  margin-top: 2px;
-  font-size: 9px;
-  color: var(--text-4);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.sc-meta .hash { font-family: var(--mono); font-size: 8.5px; color: var(--text-3); }
-.sc-meta .sep { opacity: 0.55; }
-.sc-clean { color: var(--text-3); font-size: 10px; }
 
 .path-line {
   display: flex;
@@ -773,9 +721,10 @@ kbd {
 .path-line:hover .copy-btn { opacity: 1; }
 .copy-btn:hover { background: var(--fill-strong); color: var(--text-2); }
 
-.title-row { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.title-row { display: flex; align-items: center; gap: 10px; min-width: 0; flex-wrap: nowrap; }
 .title-row h1 {
   margin: 0;
+  min-width: 0;
   font-size: 26px;
   line-height: 1.12;
   font-weight: 620;
@@ -804,7 +753,6 @@ kbd {
 .lang { flex: none; display: inline-flex; align-items: center; gap: 6px; font-size: 10.5px; color: var(--text-3); }
 .lang-dot { width: 6px; height: 6px; border-radius: 50%; box-shadow: 0 0 6px var(--lang-color, transparent); background: var(--lang-color, var(--accent)); }
 
-.branch-line { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; margin-top: 13px; font-size: 11px; color: var(--text-3); }
 .branch-pill {
   display: inline-flex;
   align-items: center;
@@ -828,7 +776,7 @@ kbd {
 .sync-pair .synced { color: var(--green); }
 .remote { display: inline-flex; align-items: center; gap: 5px; font-family: var(--mono); font-size: 10.5px; color: var(--text-4); }
 .remote .ico { width: 11px; height: 11px; }
-.meta-sep { width: 2px; height: 2px; border-radius: 50%; background: var(--text-4); opacity: 0.8; }
+.title-sep { flex: none; width: 1px; height: 16px; margin: 0 2px; background: var(--border); }
 .fetch-time { color: var(--text-4); font-size: 10px; }
 
 .summary-actions { grid-area: actions; justify-self: end; display: flex; align-items: center; gap: 7px; padding-top: 15px; flex: none; }
@@ -943,53 +891,7 @@ kbd {
 .stat-diff { margin-left: auto; display: flex; gap: 7px; font-family: var(--mono); font-size: 9.5px; }
 .add { color: var(--green-text); }
 .del { color: var(--red-text); }
-.stage-bar { margin-top: 8px; height: 3px; border-radius: 99px; background: var(--fill-stronger); overflow: hidden; display: flex; }
-.stage-bar i { height: 100%; border-radius: 99px; background: linear-gradient(90deg, #7c9cff, #a5bbff); transition: width 0.25s ease; }
 .tile-foot { margin-top: 7px; font-size: 10px; color: var(--text-4); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.clean-note { display: inline-flex; align-items: center; gap: 4px; color: var(--green-text); }
-.clean-note .ico { width: 10px; height: 10px; stroke-width: 2.4; }
-.upstream-sync { display: flex; align-items: center; gap: 11px; flex-wrap: wrap; min-height: 22px; }
-.upstream-sync span { display: inline-flex; align-items: center; gap: 4px; font-family: var(--mono); font-size: 10.5px; }
-.upstream-sync .ico { width: 11px; height: 11px; }
-.upstream-sync .ua { color: var(--green-text); }
-.upstream-sync .ub { color: var(--amber); }
-.upstream-sync .uc { color: var(--green-text); }
-.spark { margin-left: auto; display: flex; align-items: flex-end; gap: 2px; height: 14px; }
-.spark i { width: 2.5px; min-height: 2px; border-radius: 1px; background: var(--accent); opacity: 0.3; }
-.spark i:nth-last-child(-n+2) { opacity: 0.9; }
-
-/* Compact working-tree / upstream status strip */
-.summary-strip {
-  display: flex;
-  align-items: stretch;
-  margin-top: 12px;
-  border: 1px solid var(--border);
-  border-radius: 11px;
-  overflow: hidden;
-  background: linear-gradient(180deg, var(--card-top), var(--card-bottom));
-  box-shadow: var(--card-inset);
-}
-.strip-section {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 9px 15px;
-  white-space: nowrap;
-}
-.strip-section + .strip-section { border-left: 1px solid var(--border); }
-.strip-section .tile-label { flex: none; font-size: 9px; letter-spacing: 0.12em; }
-.strip-main { display: flex; align-items: baseline; gap: 4px; flex: none; }
-.strip-main .stat-big { font-size: 16px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.2; }
-.strip-main .stat-unit { font-size: 9.5px; color: var(--text-4); }
-.strip-section .stat-diff { margin-left: 0; flex: none; font-size: 9px; gap: 6px; }
-.stage-bar.inline { width: 56px; flex: none; margin-top: 0; }
-.strip-foot { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-size: 9.5px; color: var(--text-4); }
-.strip-section .upstream-sync { flex: none; min-height: 0; gap: 9px; }
-.strip-section .upstream-sync span { font-size: 10px; }
-.strip-section .spark { flex: none; margin-left: 0; }
-.strip-section .clean-note { flex: none; font-size: 10px; }
 
 /* ============================================================
    Tabs
@@ -2310,25 +2212,15 @@ select.input option { background: var(--bg-option); color: var(--text); }
 /* ============================================================
    Responsive
    ============================================================ */
+@media (max-width: 1400px) {
+  .title-row .fetch-time { display: none; }
+}
 @media (max-width: 1360px) {
   .summary-top {
-    grid-template-columns: minmax(0, 1fr) 250px auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     column-gap: 18px;
   }
-  .summary-commit {
-    max-width: none;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 7px 10px;
-    align-self: center;
-  }
-  .sc-label { display: flex; flex: none; gap: 0; font-size: 0; letter-spacing: 0; }
-  .sc-label .ico { width: 12px; height: 12px; }
-  .sc-body { flex: 1; margin-top: 0; gap: 8px; }
-  .sc-body .avatar { width: 24px; height: 24px; border-radius: 6px; font-size: 8.5px; }
-  .sc-msg { font-size: 10.5px; }
-  .sc-meta { font-size: 8.5px; }
+  .title-row .lang { display: none; }
 }
 @media (max-width: 1280px) {
   .sidebar { width: 278px; }
@@ -2337,32 +2229,22 @@ select.input option { background: var(--bg-option); color: var(--text); }
   .summary-tiles { grid-template-columns: 1.12fr 1fr 1fr; }
   .tile { padding: 12px 13px 11px; }
   .tile-commit .avatar { width: 26px; height: 26px; }
-  .spark { display: none; }
   .summary-actions { gap: 6px; }
   .chat-column { width: 45%; }
 }
 @media (max-width: 1200px) {
   .diff-meta .meta-context { display: none; }
-  .summary-strip .stage-bar.inline { display: none; }
   .summary-top {
     grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-areas: "id actions" "commit commit";
-    row-gap: 12px;
+    grid-template-areas: "id actions";
     column-gap: 20px;
   }
-  .summary-commit {
-    align-self: stretch;
-    gap: 10px;
-    padding: 8px 12px;
-  }
-  .summary-commit .sc-label { display: flex; flex: none; gap: 6px; font-size: 9px; letter-spacing: 0.13em; }
-  .summary-commit .sc-label .ico { width: 11px; height: 11px; }
-  .sc-body { flex: 1; }
 }
 @media (max-width: 1120px) {
   .sidebar { width: 262px; }
   .user-chip .user-name { display: none; }
   .summary-actions { gap: 5px; }
+  .title-row .remote { display: none; }
   .summary-tiles { grid-template-columns: 1.1fr 1fr 1fr; }
   .tile { padding: 12px 12px 11px; }
   .tabs-tools .search { width: 190px; }
@@ -2373,13 +2255,15 @@ select.input option { background: var(--bg-option); color: var(--text); }
 @media (max-width: 1040px) {
   .summary-tiles { grid-template-columns: 1fr 1fr; }
   .tile:nth-child(3) { display: none; }
-  .summary-strip { flex-direction: column; }
-  .strip-section + .strip-section { border-left: 0; border-top: 1px solid var(--border); }
   .chat-column { width: 50%; min-width: 310px; }
   .chat-detail .diff-kind { display: none; }
 }
 @media (max-width: 980px) {
-  .summary-top { flex-direction: column; gap: 13px; }
+  .summary-top {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "id" "actions";
+    row-gap: 13px;
+  }
   .summary-actions { padding-top: 0; }
 }
 @media (max-width: 900px) {
@@ -4317,13 +4201,10 @@ const ZH = {
   "Projects": "项目",
   "Settings": "设置",
   "Git identity, defaults & signing": "Git 身份、默认值与签名",
-  "Latest commit": "最新提交",
   "Fetch": "获取",
   "Pull": "拉取",
   "Push": "推送",
   "Working tree": "工作区",
-  "files changed": "个文件已更改",
-  "Upstream": "上游",
   "Chat": "对话",
   "File tree": "文件树",
   "History": "历史",
@@ -4364,7 +4245,6 @@ const ZH = {
   "No commits yet": "暂无提交",
   "Working tree clean": "工作区干净",
   "No upstream configured": "未配置上游",
-  "Add a remote to push and pull": "添加远程仓库以推送和拉取",
   "up to date": "已同步",
   "thinking…": "思考中…",
   "No files": "暂无文件",
@@ -4607,7 +4487,6 @@ const I18N_SKIP_SELECTOR = [
   ".branch-pill",
   ".proj-branch",
   ".lang",
-  ".sc-msg",
   ".proj-ab",
   ".file-diff",
   ".diff-file",
@@ -4969,8 +4848,6 @@ function updateUserUI() {
 
 function renderSummary() {
   const p = getProject();
-  const stats = projectFileStats(p);
-  const head = p.history[0];
   const parts = p.path.split("/");
   const crumbs = parts.map((part, i) => `<span class="crumb${i === parts.length - 1 ? " last" : ""}">${esc(part)}</span>`).join('<span class="path-sep">/</span>');
   const visIcon = p.visibility === "Public" ? "globe" : p.visibility === "Local" ? "laptop" : "lock";
@@ -4979,21 +4856,6 @@ function renderSummary() {
   if (p.ahead) sync.push(`<span class="ahead">${icon("arrow-up")}${p.ahead} ahead</span>`);
   if (p.behind) sync.push(`<span class="behind">${icon("arrow-down")}${p.behind} behind</span>`);
   if (!p.ahead && !p.behind) sync.push(`<span class="synced">${icon("check")}up to date</span>`);
-
-  const maxActivity = Math.max(...p.activity, 1);
-  const spark = p.activity.map((v) => `<i style="height:${Math.max(16, Math.round((v / maxActivity) * 100))}%"></i>`).join("");
-  const stagePct = stats.total ? Math.round((stats.staged / stats.total) * 100) : 0;
-
-  const headMeta = head
-    ? `${esc(head.author)}<span class="sep">·</span><span class="hash">${esc(head.sha)}</span><span class="sep">·</span>${esc(head.when)}`
-    : "No commits yet";
-
-  const upstreamSync = `
-    ${p.ahead ? `<span class="ua">${icon("arrow-up")}${p.ahead} ahead</span>` : ""}
-    ${p.behind ? `<span class="ub">${icon("arrow-down")}${p.behind} behind</span>` : ""}
-    ${!p.ahead && !p.behind ? `<span class="uc">${icon("check")}up to date</span>` : ""}`;
-
-  const highest = head ? esc(head.message) : "No commits yet";
 
   $("#summaryRoot").innerHTML = `
     <div class="summary-top">
@@ -5006,24 +4868,11 @@ function renderSummary() {
           <h1>${esc(p.name)}</h1>
           <span class="chip">${icon(visIcon)}${esc(p.visibility)}</span>
           <span class="lang"><span class="lang-dot" style="--lang-color:${p.langColor}"></span>${esc(p.lang)}</span>
-        </div>
-        <div class="branch-line">
+          <span class="title-sep" aria-hidden="true"></span>
           <span class="branch-pill">${icon("branch")}${esc(p.branch)}</span>
           <span class="sync-pair">${sync.join("")}</span>
           <span class="remote">${icon("cloud")}${esc(p.upstream)}</span>
-          <span class="meta-sep"></span>
           <span class="fetch-time">fetched ${esc(p.lastFetch)}</span>
-        </div>
-      </div>
-
-      <div class="summary-commit" title="${highest}">
-        <div class="sc-label">${icon("git-commit")}Latest commit</div>
-        <div class="sc-body">
-          ${avatarHTML(head ? head.author : state.currentUser.name)}
-          <div class="sc-copy">
-            <div class="sc-msg">${highest}</div>
-            <div class="sc-meta">${headMeta}</div>
-          </div>
         </div>
       </div>
 
@@ -5031,24 +4880,6 @@ function renderSummary() {
         <button class="btn ghost" data-action="fetch">${icon("refresh")}Fetch</button>
         <button class="btn ghost" data-action="pull">${icon("download")}Pull${p.behind ? `<span class="count">${p.behind}</span>` : ""}</button>
         <button class="btn primary" data-action="push"${p.ahead ? "" : " disabled"}>${icon("upload")}Push${p.ahead ? `<span class="count">${p.ahead}</span>` : ""}</button>
-      </div>
-    </div>
-
-    <div class="summary-strip">
-      <div class="strip-section">
-        <div class="tile-label">${icon("file-code")}Working tree</div>
-        ${stats.total ? `
-          <div class="strip-main"><span class="stat-big">${stats.total}</span><span class="stat-unit">${stats.total === 1 ? "file changed" : "files changed"}</span></div>
-          <span class="stat-diff"><span class="add">+${stats.adds}</span><span class="del">−${stats.dels}</span></span>
-          <span class="stage-bar inline"><i style="width:${stagePct}%"></i></span>
-          <span class="strip-foot">${stats.staged} staged · ${stats.unstaged} unstaged</span>
-        ` : `<span class="clean-note">${icon("check")}Working tree clean</span>`}
-      </div>
-      <div class="strip-section">
-        <div class="tile-label">${icon("cloud")}Upstream</div>
-        <div class="upstream-sync">${upstreamSync}</div>
-        <span class="strip-foot">${esc(p.upstream)} · fetched ${esc(p.lastFetch)}</span>
-        <span class="spark">${spark}</span>
       </div>
     </div>`;
 }

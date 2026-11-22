@@ -64,7 +64,6 @@ body.no-repo .summary {
   justify-content: center;
   padding: 32px;
 }
-body.no-repo .summary-strip,
 body.no-repo .summary-top { display: none; }
 .onboarding-card {
   width: min(570px, 100%);

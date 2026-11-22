@@ -1,0 +1,123 @@
+import type {
+  AppSettings,
+  GitStatusFile,
+  GitTreeNode,
+  Language,
+  PiStatus,
+  RepoSnapshot,
+  RepoSummary,
+  ThemeMode
+} from '../electron/shared/models';
+
+export type { PreviewData, ThemeMode, Language } from '../electron/shared/models';
+
+export type Tab = 'chat' | 'files' | 'history';
+export type PaneMode = 'preview' | 'diff';
+export type DetailScope = 'main' | 'chat';
+export type BusyAction = 'refresh' | 'fetch' | 'pull' | 'push';
+
+export interface RepoEntry extends GitTreeNode {
+  change: GitStatusFile | null;
+}
+
+export interface RepoState extends RepoSnapshot {
+  _version: number;
+  _entries: RepoEntry[] | null;
+  _entryMap: Map<string, RepoEntry> | null;
+  _basenameMap: Map<string, string[]> | null;
+}
+
+export interface DetailState {
+  token: number;
+  cleanup: (() => void) | null;
+  key: string | null;
+}
+
+export interface ChatMessage {
+  id: number;
+  role: 'user' | 'assistant';
+  text: string;
+  time: string;
+  streaming?: boolean;
+  aborted?: boolean;
+  error?: string | null;
+  tool?: string | null;
+  _rendered?: string | null;
+}
+
+export interface ChatState {
+  messages: ChatMessage[];
+  streaming: boolean;
+  stopping: boolean;
+  streamText: string;
+  draft: string;
+  error: string | null;
+  tool: string | null;
+}
+
+export interface RepoFolderNode {
+  type: 'folder';
+  name: string;
+  path: string;
+  children: RepoTreeNode[];
+  files: number;
+  changed: number;
+  staged: number;
+}
+
+export interface RepoFileNode {
+  type: 'file' | 'link';
+  name: string;
+  path: string;
+  entry: RepoEntry;
+  change: GitStatusFile | null;
+  target: string | null;
+}
+
+export type RepoTreeNode = RepoFolderNode | RepoFileNode;
+
+export interface GraphRow {
+  nodeLane: number;
+  converging: number[];
+  straight: number[];
+  newLanes: number[];
+  nodeContinues: boolean;
+  fresh: boolean;
+}
+
+export interface AppState {
+  repos: RepoSummary[];
+  activeRepo: string | null;
+  repo: RepoState | null;
+  repoError: string | null;
+  activeTab: Tab;
+  paneMode: PaneMode;
+  chatPaneMode: PaneMode;
+  selectedFile: string | null;
+  chatSelectedFile: string | null;
+  fileQuery: string;
+  historyQuery: string;
+  projectQuery: string;
+  treeExpanded: Set<string>;
+  settings: AppSettings;
+  currentUser: { name: string; email: string };
+  pi: PiStatus;
+  home: string;
+  platform: string;
+  chats: Map<string, ChatState>;
+  commitDrafts: Map<string, string>;
+  detail: Record<DetailScope, DetailState>;
+  loadingRepo: boolean;
+  loadToken: number;
+  loadSeq: number;
+  busyAction: BusyAction | null;
+  staging: boolean;
+  committing: boolean;
+  savingSettings: boolean;
+  autoFetchTimer: number | null;
+  chatRenderQueued: boolean;
+  lastFocusRefresh: number;
+  themeMode: ThemeMode;
+  language: Language;
+  appVersion: string;
+}

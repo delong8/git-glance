@@ -1,0 +1,92 @@
+{
+  "name": "gitglance",
+  "productName": "GitGlance",
+  "version": "1.0.0",
+  "description": "A local Git client with Pi AI chat and rich file previews",
+  "author": "GitGlance",
+  "private": true,
+  "main": "dist-electron/main.cjs",
+  "scripts": {
+    "dev": "npm run build:electron && node scripts/dev.mjs",
+    "build": "npm run build:electron && npm run typecheck:renderer && npm run build:renderer",
+    "build:electron": "tsc -p tsconfig.electron.json",
+    "build:renderer": "vite build",
+    "typecheck": "npm run typecheck:electron && npm run typecheck:renderer",
+    "typecheck:electron": "tsc -p tsconfig.electron.json --noEmit",
+    "typecheck:renderer": "tsc -p tsconfig.json",
+    "start": "npm run build && electron .",
+    "start:electron": "electron .",
+    "smoke": "npm run build && node scripts/smoke.mjs",
+    "pack:mac": "npm run build && electron-builder --dir --arm64",
+    "dist:mac": "npm run build && electron-builder --mac --arm64",
+    "dist:mac:unsigned": "npm run build && CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac --arm64"
+  },
+  "dependencies": {
+    "chardet": "^2.2.0",
+    "iconv-lite": "^0.7.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2",
+    "dompurify": "^3.4.18",
+    "electron": "^45.4.1",
+    "electron-builder": "^26.18.0",
+    "highlight.js": "^11.12.0",
+    "marked": "^18.2.1",
+    "pdfjs-dist": "^6.5.438",
+    "playwright-core": "^1.65.1",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.8"
+  },
+  "build": {
+    "appId": "com.gitglance.app",
+    "productName": "GitGlance",
+    "copyright": "Copyright © 2026 GitGlance",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*",
+      "package.json",
+      "node_modules/chardet/**/*",
+      "node_modules/iconv-lite/**/*",
+      "node_modules/safer-buffer/**/*"
+    ],
+    "asar": true,
+    "npmRebuild": false,
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "icon": "build/icon.icns",
+      "hardenedRuntime": true,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
+      "target": [
+        "dmg"
+      ],
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
+    },
+    "dmg": {
+      "title": "${productName} ${version}",
+      "icon": "build/icon.icns",
+      "iconSize": 96,
+      "window": {
+        "width": 560,
+        "height": 380
+      },
+      "contents": [
+        {
+          "x": 150,
+          "y": 190,
+          "type": "file"
+        },
+        {
+          "x": 410,
+          "y": 190,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
+    }
+  }
+}

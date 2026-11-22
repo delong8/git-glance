@@ -1,0 +1,11 @@
+node_modules/
+dist/
+dist-electron/
+release/
+.zcode/
+.DS_Store
+*.tsbuildinfo
+*.log
+npm-debug.log*
+test-results/
+playwright-report/

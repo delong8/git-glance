@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="176" y1="110" x2="858" y2="914" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#b6c5ff"/>
+      <stop offset="0.52" stop-color="#8d8cff"/>
+      <stop offset="1" stop-color="#7460f0"/>
+    </linearGradient>
+    <linearGradient id="gloss" x1="512" y1="100" x2="512" y2="924" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ffffff" stop-opacity="0.24"/>
+      <stop offset="0.44" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="1" stop-color="#1c125c" stop-opacity="0.14"/>
+    </linearGradient>
+    <filter id="shadow" x="42" y="52" width="940" height="960" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="26" stdDeviation="30" flood-color="#241971" flood-opacity="0.4"/>
+    </filter>
+    <clipPath id="tile">
+      <rect x="100" y="100" width="824" height="824" rx="186"/>
+    </clipPath>
+  </defs>
+  <g filter="url(#shadow)">
+    <rect x="100" y="100" width="824" height="824" rx="186" fill="url(#bg)"/>
+  </g>
+  <g clip-path="url(#tile)">
+    <rect x="100" y="100" width="824" height="824" fill="url(#gloss)"/>
+    <ellipse cx="314" cy="218" rx="380" ry="252" fill="#ffffff" fill-opacity="0.1"/>
+  </g>
+  <rect x="108" y="108" width="808" height="808" rx="178" stroke="#ffffff" stroke-opacity="0.28" stroke-width="8"/>
+  <g stroke="#ffffff" stroke-width="64" stroke-linecap="round">
+    <path d="M390 752V270"/>
+    <path d="M390 500C390 404 455 352 582 352"/>
+  </g>
+  <g fill="#ffffff">
+    <circle cx="390" cy="268" r="76"/>
+    <circle cx="390" cy="754" r="76"/>
+    <circle cx="586" cy="352" r="76"/>
+  </g>
+</svg>

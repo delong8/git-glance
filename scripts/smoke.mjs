@@ -87,6 +87,10 @@ try {
   const cleanHistory = await window.locator('#historyList .commit-row').count();
   if (cleanHistory < 1) throw new Error('History list did not render the initial commit.');
 
+  await window.waitForSelector('#chatPanel.is-active .chat-welcome', { timeout: 10_000 });
+
+  await window.locator('#tabFiles').click();
+  await window.waitForSelector('#filesPanel.is-active', { timeout: 10_000 });
   await window.locator('[data-file="README.md"]').click();
   await window.waitForSelector('#diffPane .text-code', { timeout: 15_000 });
   const previewText = await window.locator('#diffPane .text-code').innerText();
@@ -105,7 +109,8 @@ try {
   console.log(`  project list: ${projectCount} entry`);
   console.log(`  preview: ${previewText.split('\n')[0]}`);
   console.log(`  history: ${cleanHistory} commit`);
-  console.log('  tabs: Files, Chat, History');
+  console.log('  default tab: Chat');
+  console.log('  tabs: Chat, Files, History');
 } finally {
   if (app) await app.close().catch(() => {});
   await fs.rm(repoDir, { recursive: true, force: true }).catch(() => {});

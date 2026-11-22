@@ -2481,12 +2481,12 @@ select.input option { background: var(--bg-option); color: var(--text); }
       <section class="summary" id="summaryRoot"></section>
 
       <div class="tabs-bar" role="tablist" aria-label="Repository views">
-        <button class="tab" id="tabChat" data-tab="chat" role="tab" aria-selected="false" aria-controls="chatPanel">
+        <button class="tab is-active" id="tabChat" data-tab="chat" role="tab" aria-selected="true" aria-controls="chatPanel">
           <svg class="ico" aria-hidden="true"><use href="#i-sparkles"/></svg>
           Chat
           <span class="tab-ai-dot" aria-hidden="true"></span>
         </button>
-        <button class="tab is-active" id="tabFiles" data-tab="files" role="tab" aria-selected="true" aria-controls="filesPanel">
+        <button class="tab" id="tabFiles" data-tab="files" role="tab" aria-selected="false" aria-controls="filesPanel">
           <svg class="ico" aria-hidden="true"><use href="#i-folder"/></svg>
           File tree
           <span class="tab-badge" id="filesBadge">0</span>
@@ -2508,7 +2508,7 @@ select.input option { background: var(--bg-option); color: var(--text); }
       </div>
 
       <div class="tab-content">
-        <div class="panel chat-panel" id="chatPanel" role="tabpanel" aria-labelledby="tabChat">
+        <div class="panel chat-panel is-active" id="chatPanel" role="tabpanel" aria-labelledby="tabChat">
           <div class="chat-column">
             <header class="chat-head">
               <span class="ai-orb"><svg class="ico" aria-hidden="true"><use href="#i-sparkles"/></svg></span>
@@ -2546,7 +2546,7 @@ select.input option { background: var(--bg-option); color: var(--text); }
           </div>
         </div>
 
-        <div class="panel is-active" id="filesPanel" role="tabpanel" aria-labelledby="tabFiles">
+        <div class="panel" id="filesPanel" role="tabpanel" aria-labelledby="tabFiles">
           <div class="files-split" id="filesSplit">
             <div class="changes-pane" id="changesPane"></div>
             <div class="diff-pane" id="diffPane" data-detail-scope="main"></div>

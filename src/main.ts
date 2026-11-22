@@ -293,7 +293,7 @@ const state: AppState = {
   activeRepo: null,
   repo: null,
   repoError: null,
-  activeTab: 'files',
+  activeTab: 'chat',
   paneMode: 'preview',
   chatPaneMode: 'preview',
   selectedFile: null,

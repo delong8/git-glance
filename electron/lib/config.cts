@@ -55,6 +55,16 @@ export function isLlmApiType(value: unknown): value is LlmApiType {
   return LLM_API_TYPES.includes(value as LlmApiType);
 }
 
+export const ZOOM_MIN = 0.5;
+export const ZOOM_MAX = 5;
+
+/** Coerce a zoom factor into 0.5–5.0 (one decimal); null means 1.0. */
+export function normalizeZoom(value: unknown): number | null {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return null;
+  const clamped = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, value));
+  return Math.round(clamped * 10) / 10;
+}
+
 function text(value: unknown): string {
   return typeof value === 'string' ? value.trim() : '';
 }
@@ -93,7 +103,8 @@ export class ConfigStore {
         autoFetch: '15',
         fetchAll: false,
         theme: 'dark',
-        language: 'en'
+        language: 'en',
+        zoom: null
       },
       llm: { ...DEFAULT_LLM_SETTINGS }
     };
@@ -121,7 +132,8 @@ export class ConfigStore {
             autoFetch: isAutoFetchInterval(ui.autoFetch) ? ui.autoFetch : '15',
             fetchAll: ui.fetchAll === true,
             theme: isThemeMode(ui.theme) ? ui.theme : 'dark',
-            language: isLanguage(ui.language) ? ui.language : 'en'
+            language: isLanguage(ui.language) ? ui.language : 'en',
+            zoom: normalizeZoom(ui.zoom)
           },
           llm: normalizeLlmSettings(parsed.llm)
         };

@@ -289,14 +289,14 @@ operations and previews stay local.
 ## Settings
 
 Open Settings with the sidebar entry, the identity chip, or <kbd>⌘,</kbd>.
-Theme and language changes apply immediately; **Save changes** writes Git
-settings to your global config and persists app preferences.
+Theme, language, and zoom changes apply immediately; **Save changes** writes
+Git settings to your global config and persists app preferences.
 
 ![Settings: appearance, language, and LLM provider](./screenshots/settings-appearance.png)
 
 | Section | What it controls | Stored in |
 | --- | --- | --- |
-| **Appearance** | Light, dark, or follow-system theme | App preferences |
+| **Appearance** | Light, dark, or follow-system theme; interface zoom (50%–500%) | App preferences |
 | **Language** | English or Simplified Chinese for the interface and native menus | App preferences |
 | **LLM provider** | Provider ID, model ID, API protocol, base URL, API key | App preferences |
 | **Identity** | `user.name` and `user.email` for commits | `~/.gitconfig` |
@@ -322,6 +322,10 @@ Set `GIT_CONFIG_GLOBAL` to use a different global config file.
 The theme control offers **Light**, **Dark**, and **Follow system**. The choice
 is applied before the first paint on the next launch, so there is no flash of
 the wrong theme.
+
+The **Zoom** slider scales the whole window from **50%** to **500%**. The
+default is **100%**; changes apply as soon as the slider is released and are
+saved to app preferences.
 
 ![Light theme](./screenshots/light-theme.png)
 
@@ -358,7 +362,7 @@ the machine.
 | Data | Location |
 | --- | --- |
 | Git identity, pull strategy, signing, pruning | Global Git config (`~/.gitconfig` by default) |
-| Repository list, theme, language, auto-fetch, LLM provider | `~/Library/Application Support/GitGlance/config.json` on macOS (mode `0600`) |
+| Repository list, theme, language, zoom, auto-fetch, LLM provider | `~/Library/Application Support/GitGlance/config.json` on macOS (mode `0600`) |
 | Generated Pi configuration | `<user data>/pi-agent/{models.json,settings.json}` |
 | Office conversion cache | `<user data>/preview-cache` |
 | Chat history | Renderer memory, per repository, for the current session |

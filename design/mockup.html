@@ -23,6 +23,12 @@
   language = language === "zh-CN" ? "zh-CN" : "en";
   root.lang = language;
   root.dataset.language = language;
+
+  var zoom = null;
+  try { zoom = Number(window.localStorage.getItem("gitglance.zoom")); } catch (error) { zoom = null; }
+  if (Number.isFinite(zoom) && zoom >= 0.5 && zoom <= 5) {
+    root.style.setProperty("--zoom", String(zoom));
+  }
 })();
 </script>
 <style>
@@ -340,6 +346,18 @@ kbd {
   overflow: hidden;
   background: radial-gradient(1200px 700px at 12% -20%, var(--app-glow), transparent 60%), var(--bg);
 }
+
+/* Zoom preview: shrink the layout viewport like Electron's page zoom */
+.zoom-root {
+  position: relative;
+  width: calc(100vw / var(--zoom, 1));
+  height: calc(100dvh / var(--zoom, 1));
+  transform: scale(var(--zoom, 1));
+  transform-origin: top left;
+}
+.zoom-root .app { height: 100%; }
+.zoom-root .backdrop,
+.zoom-root .toast-stack { position: absolute; }
 
 /* Titlebar */
 .titlebar {
@@ -2160,6 +2178,33 @@ kbd {
 .input.mono-input { font-family: var(--mono); font-size: 10.5px; }
 .field-hint { font-size: 9px; color: var(--text-4); line-height: 1.4; }
 .field-hint code { font-family: var(--mono); font-size: 8.5px; color: var(--text-3); background: var(--fill-hover); padding: 1px 4px; border-radius: 3px; }
+.field-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.field-row .field-label { font-size: 10.5px; font-weight: 550; color: var(--text-3); }
+.field-value { font-family: var(--mono); font-size: 10.5px; color: var(--text-2); font-variant-numeric: tabular-nums; }
+.range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  margin: 6px 0 2px;
+  border-radius: 99px;
+  outline: none;
+  cursor: pointer;
+  background: linear-gradient(90deg, var(--accent) var(--range-progress, 11.111%), var(--fill-stronger) var(--range-progress, 11.111%));
+}
+.range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--text-strong);
+  border: 1px solid var(--accent-line);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+  cursor: grab;
+}
+.range:active::-webkit-slider-thumb { cursor: grabbing; transform: scale(1.06); }
+.range:focus-visible { box-shadow: 0 0 0 3px var(--accent-ring); }
+.range-scale { display: flex; justify-content: space-between; margin-top: -1px; font-family: var(--mono); font-size: 8.5px; color: var(--text-4); }
 .segmented { display: inline-flex; width: fit-content; padding: 3px; gap: 2px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-input); }
 .segmented button { height: 27px; padding: 0 10px; border-radius: 5px; font-size: 11px; font-weight: 500; color: var(--text-3); white-space: nowrap; transition: all 0.13s ease; }
 .segmented button:hover { color: var(--text-2); }
@@ -2427,6 +2472,7 @@ select.input option { background: var(--bg-option); color: var(--text); }
   </defs>
 </svg>
 
+<div class="zoom-root" id="zoomRoot">
 <div class="app">
   <!-- ============================== Titlebar ============================== -->
   <header class="titlebar">
@@ -2628,6 +2674,15 @@ select.input option { background: var(--bg-option); color: var(--text); }
           </div>
           <span class="field-hint" id="setThemeHint">Applied immediately and saved to app preferences.</span>
         </div>
+        <div class="field">
+          <div class="field-row">
+            <label class="field-label" for="setZoom">Zoom</label>
+            <span class="field-value" id="setZoomValue">100%</span>
+          </div>
+          <input class="range" id="setZoom" type="range" min="0.5" max="5" step="0.1" value="1" aria-label="Zoom" aria-describedby="setZoomHint">
+          <span class="field-hint" id="setZoomHint">Applied immediately and saved to app preferences.</span>
+          <span class="range-scale" aria-hidden="true"><span>50%</span><span>500%</span></span>
+        </div>
       </section>
 
       <section class="setting-section">
@@ -2804,6 +2859,7 @@ select.input option { background: var(--bg-option); color: var(--text); }
 </div>
 
 <div class="toast-stack" id="toastStack" aria-live="polite"></div>
+</div><!-- /zoom-root -->
 
 <script>
 /* ============================================================
@@ -4110,6 +4166,7 @@ const state = {
     prune: true,
     fetchAll: false,
     autoStage: true,
+    zoom: null,
     theme: "dark",
     language: "en",
     llm: {
@@ -4186,6 +4243,66 @@ function chooseTheme(value) {
 
 applyTheme(cachedThemeMode(), { remember: false });
 state.settings.theme = state.themeMode;
+
+/* ============================================================
+   Zoom
+   ============================================================ */
+const ZOOM_STORAGE_KEY = "gitglance.zoom";
+const ZOOM_MIN = 0.5;
+const ZOOM_MAX = 5;
+
+function normalizeZoom(value) {
+  const factor = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(factor)) return null;
+  const clamped = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, factor));
+  return Math.round(clamped * 10) / 10;
+}
+function cachedZoom() {
+  try {
+    const raw = window.localStorage.getItem(ZOOM_STORAGE_KEY);
+    return raw === null ? null : normalizeZoom(Number(raw));
+  } catch (error) {
+    return null;
+  }
+}
+function zoomPercent(zoom) {
+  return `${Math.round((zoom ?? 1) * 100)}%`;
+}
+function updateZoomControls(zoom) {
+  const factor = zoom ?? 1;
+  const input = $("#setZoom");
+  if (input) {
+    input.value = String(factor);
+    input.style.setProperty("--range-progress", `${((factor - ZOOM_MIN) / (ZOOM_MAX - ZOOM_MIN)) * 100}%`);
+  }
+  const label = $("#setZoomValue");
+  if (label) label.textContent = zoomPercent(factor);
+}
+function applyZoom(zoom, { remember = true } = {}) {
+  const factor = zoom ?? 1;
+  document.documentElement.style.setProperty("--zoom", String(factor));
+  const zoomRoot = $("#zoomRoot");
+  if (zoomRoot) {
+    zoomRoot.style.transform = `scale(${factor})`;
+    zoomRoot.style.width = `calc(100vw / ${factor})`;
+    zoomRoot.style.height = `calc(100dvh / ${factor})`;
+  }
+  state.settings.zoom = zoom;
+  if (remember) {
+    try {
+      if (zoom === null) window.localStorage.removeItem(ZOOM_STORAGE_KEY);
+      else window.localStorage.setItem(ZOOM_STORAGE_KEY, String(zoom));
+    } catch (error) {
+      /* localStorage may be unavailable; the preview still zooms */
+    }
+  }
+  updateZoomControls(zoom);
+}
+function chooseZoom(value) {
+  applyZoom(normalizeZoom(value));
+}
+
+applyZoom(cachedZoom(), { remember: false });
 systemLightQuery.addEventListener("change", () => {
   if (state.themeMode === "system") applyTheme("system", { remember: false });
 });
@@ -4291,6 +4408,7 @@ const ZH = {
   "Appearance": "外观",
   "Choose a theme, or let GitGlance follow your system appearance.": "选择主题，或让 GitGlance 跟随系统外观。",
   "Theme": "主题",
+  "Zoom": "缩放",
   "Light": "浅色",
   "Dark": "深色",
   "Follow system": "跟随系统",
@@ -6176,6 +6294,7 @@ function populateSettingsForm() {
   $("#setEditor").value = s.editor;
   $$("#pullStrategy button").forEach((btn) => btn.classList.toggle("is-active", btn.dataset.value === s.pullStrategy));
   updateThemeControls(normalizeThemeMode(s.theme || state.themeMode));
+  updateZoomControls(s.zoom);
   updateLanguageControls(normalizeLanguage(s.language || state.language));
   $("#setAutoFetch").value = s.autoFetch;
   $("#setSign").checked = s.sign;
@@ -6218,6 +6337,7 @@ function saveSettings() {
     prune: $("#setPrune").checked,
     fetchAll: $("#setFetchAll").checked,
     autoStage: $("#setAutoStage").checked,
+    zoom: normalizeZoom($("#setZoom").value),
     theme: normalizeThemeMode(activeTheme ? activeTheme.dataset.value : state.settings.theme),
     language: normalizeLanguage(activeLanguage ? activeLanguage.dataset.value : state.settings.language),
     llm: {
@@ -6453,8 +6573,16 @@ function init() {
   $$("#languageMode button").forEach((btn) => {
     btn.addEventListener("click", () => chooseLanguage(btn.dataset.value));
   });
+  const zoomInput = $("#setZoom");
+  zoomInput.addEventListener("input", () => {
+    const factor = normalizeZoom(zoomInput.value);
+    zoomInput.style.setProperty("--range-progress", `${((factor - ZOOM_MIN) / (ZOOM_MAX - ZOOM_MIN)) * 100}%`);
+    $("#setZoomValue").textContent = zoomPercent(factor);
+  });
+  zoomInput.addEventListener("change", () => chooseZoom(zoomInput.value));
   updateThemeControls(state.settings.theme);
   updateLanguageControls(state.language);
+  updateZoomControls(state.settings.zoom);
   $("#setSign").addEventListener("change", (e) => {
     $("#gpgField").hidden = !e.target.checked;
     if (e.target.checked) setTimeout(() => $("#setGpgKey").focus(), 30);

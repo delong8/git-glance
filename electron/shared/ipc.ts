@@ -72,6 +72,7 @@ export interface GitGlanceApi {
   saveSettings: (settings: SettingsInput) => Promise<SaveSettingsResult>;
   setTheme: (theme: ThemeMode) => Promise<ThemeMode>;
   setLanguage: (language: Language) => Promise<Language>;
+  setZoom: (zoom: number | null) => Promise<number | null>;
   pi: {
     send: (repoPath: string, message: string, selectedFile: string | null) => Promise<PiSendResult>;
     abort: (repoPath: string) => Promise<PiAbortResult>;

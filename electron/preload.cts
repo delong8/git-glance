@@ -57,6 +57,7 @@ const api: GitGlanceApi = {
   saveSettings: (settings: SettingsInput) => call<SaveSettingsResult>('settings:save', settings),
   setTheme: (theme: ThemeMode) => call<ThemeMode>('settings:theme', theme),
   setLanguage: (language: Language) => call<Language>('settings:language', language),
+  setZoom: (zoom) => call<number | null>('settings:zoom', zoom),
   pi: {
     send: (repoPath, message, selectedFile) => call<PiSendResult>('pi:send', repoPath, message, selectedFile),
     abort: (repoPath) => call<PiAbortResult>('pi:abort', repoPath),

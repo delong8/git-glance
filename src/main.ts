@@ -315,6 +315,7 @@ const state: AppState = {
     fetchAll: false,
     theme: 'dark',
     language: 'en',
+    zoom: null,
     llm: {
       provider: '',
       api: 'openai-completions',
@@ -508,6 +509,59 @@ async function chooseTheme(value: unknown): Promise<void> {
     state.settings = { ...state.settings, theme: previous };
     applyTheme(previous);
     updateThemeControls(previous);
+    toast(error instanceof Error ? error.message : String(error), 'warn');
+  }
+}
+
+/* ============================================================
+   Interface zoom
+   ============================================================ */
+const ZOOM_MIN = 0.5;
+const ZOOM_MAX = 5;
+let zoomRequestSeq = 0;
+
+function normalizeZoom(value: unknown): number | null {
+  const factor = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(factor)) return null;
+  const clamped = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, factor));
+  return Math.round(clamped * 10) / 10;
+}
+
+function zoomPercent(zoom: number | null): string {
+  return `${Math.round((zoom ?? 1) * 100)}%`;
+}
+
+function updateZoomControls(zoom: number | null): void {
+  const factor = zoom ?? 1;
+  const input = $<HTMLInputElement>('#setZoom');
+  if (input) {
+    input.value = String(factor);
+    input.style.setProperty('--range-progress', `${((factor - ZOOM_MIN) / (ZOOM_MAX - ZOOM_MIN)) * 100}%`);
+  }
+  const label = $('#setZoomValue');
+  if (label) label.textContent = zoomPercent(factor);
+}
+
+async function chooseZoom(value: unknown): Promise<void> {
+  const next = normalizeZoom(value);
+  const previous = state.settings.zoom ?? null;
+  if (next === previous) {
+    updateZoomControls(next);
+    return;
+  }
+  state.settings = { ...state.settings, zoom: next };
+  updateZoomControls(next);
+  if (!api) return;
+  const requestId = ++zoomRequestSeq;
+  try {
+    const saved = await api.setZoom(next);
+    if (requestId !== zoomRequestSeq) return;
+    state.settings = { ...state.settings, zoom: saved };
+    updateZoomControls(saved);
+  } catch (error) {
+    if (requestId !== zoomRequestSeq) return;
+    state.settings = { ...state.settings, zoom: previous };
+    updateZoomControls(previous);
     toast(error instanceof Error ? error.message : String(error), 'warn');
   }
 }
@@ -2558,6 +2612,7 @@ function populateSettingsForm(): void {
   });
   const theme = normalizeThemeMode(settings.theme || state.themeMode);
   updateThemeControls(theme);
+  updateZoomControls(settings.zoom ?? null);
   updateLanguageControls(normalizeLanguage(settings.language || state.language));
   $<HTMLSelectElement>('#setAutoFetch')!.value = settings.autoFetch || '15';
   $<HTMLInputElement>('#setSign')!.checked = !!settings.sign;
@@ -2923,6 +2978,17 @@ function bindStaticEvents(): void {
     button.addEventListener('click', () => {
       void chooseLanguage(button.dataset.value);
     });
+  });
+  $<HTMLInputElement>('#setZoom')?.addEventListener('input', (event) => {
+    const input = eventTarget(event) as HTMLInputElement | null;
+    if (!input) return;
+    const factor = normalizeZoom(input.value);
+    input.style.setProperty('--range-progress', `${(((factor ?? 1) - ZOOM_MIN) / (ZOOM_MAX - ZOOM_MIN)) * 100}%`);
+    const label = $('#setZoomValue');
+    if (label) label.textContent = zoomPercent(factor);
+  });
+  $<HTMLInputElement>('#setZoom')?.addEventListener('change', (event) => {
+    void chooseZoom((eventTarget(event) as HTMLInputElement | null)?.value);
   });
   $<HTMLInputElement>('#setSign')!?.addEventListener('change', (event) => {
     const field = $<HTMLElement>('#gpgField')!;

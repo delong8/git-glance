@@ -107,6 +107,7 @@ const ZH: Record<string, string> = {
   "Appearance": "外观",
   "Choose a theme, or let GitGlance follow your system appearance.": "选择主题，或让 GitGlance 跟随系统外观。",
   "Theme": "主题",
+  "Zoom": "缩放",
   "Light": "浅色",
   "Dark": "深色",
   "Follow system": "跟随系统",

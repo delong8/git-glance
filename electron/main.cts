@@ -2,7 +2,7 @@ import { app, BrowserWindow, dialog, ipcMain, Menu, nativeTheme, protocol, shell
 import type { IpcMainInvokeEvent, MenuItemConstructorOptions } from 'electron';
 import * as fs from 'node:fs/promises';
 import path from 'node:path';
-import { ConfigStore, isLanguage, isThemeMode, normalizeLlmSettings } from './lib/config.cjs';
+import { ConfigStore, isLanguage, isThemeMode, normalizeLlmSettings, normalizeZoom } from './lib/config.cjs';
 import * as git from './lib/git.cjs';
 import { PreviewService } from './lib/preview.cjs';
 import { PiService } from './lib/pi.cjs';
@@ -98,6 +98,14 @@ function windowBackground(theme: ThemeMode): string {
 function syncWindowBackground(theme: ThemeMode): void {
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.setBackgroundColor(windowBackground(theme));
+  }
+}
+
+/** Apply the stored interface zoom (null means 1.0) to every open window. */
+function applyZoomToWindows(zoom: number | null): void {
+  const factor = zoom ?? 1;
+  for (const window of BrowserWindow.getAllWindows()) {
+    if (!window.isDestroyed()) window.webContents.setZoomFactor(factor);
   }
 }
 
@@ -433,6 +441,13 @@ function registerIpc(): void {
     return ui.language;
   }));
 
+  ipcMain.handle('settings:zoom', wrapHandler(async (zoom: unknown): Promise<number | null> => {
+    const next = normalizeZoom(zoom);
+    const ui = await config.updateUiSettings({ zoom: next });
+    applyZoomToWindows(ui.zoom);
+    return ui.zoom;
+  }));
+
   ipcMain.handle('pi:send', wrapHandler(async (repoPath: unknown, message: unknown, selectedFile: unknown): Promise<PiSendResult> => {
     const known = assertKnownRepo(repoPath);
     if (typeof message !== 'string' || !message.trim()) throw new Error('Message is empty');
@@ -477,6 +492,10 @@ function createWindow(): void {
   window.webContents.on('will-navigate', (event, url) => {
     const allowed = devServerUrl ? url.startsWith(devServerUrl) : url.startsWith('app://bundle/');
     if (!allowed) event.preventDefault();
+  });
+  window.webContents.on('did-finish-load', () => {
+    if (window.isDestroyed()) return;
+    window.webContents.setZoomFactor(config.getUiSettings().zoom ?? 1);
   });
   window.once('ready-to-show', () => window.show());
   window.on('closed', () => {

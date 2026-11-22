@@ -47,7 +47,7 @@ Quick links:
 - **History tab** with a commit graph, refs, authors, stats, timestamps, and copyable hashes.
 - **AI Chat tab** backed by the Pi agent, with streaming responses, tool activity (including Git and shell commands), stop/new-chat controls, per-repository conversations, and a changed-files sidebar that shares the preview pane.
 - **Git settings** for identity, default branch, editor, pull strategy, GPG signing, pruning, and app-level auto-fetch behavior.
-- **Appearance** with light, dark, and system-following themes, applied live and remembered between launches.
+- **Appearance** with light, dark, and system-following themes plus interface zoom (50%–500%), applied live and remembered between launches.
 - **Language** with English and Simplified Chinese, applied live to the UI and native menus; repository content, code, and commit messages stay as-is.
 - **Native desktop shell** with a custom protocol, sandboxed renderer, context-isolated IPC, native menus, and single-instance behavior.
 
@@ -179,9 +179,10 @@ The Settings modal writes these keys to your **global** Git config (`~/.gitconfi
 | Fetch every remote | app preference |
 | Theme | app preference |
 | Language | app preference |
+| Zoom | app preference |
 | LLM provider (provider, API, base URL, key, model) | app preference |
 
-Auto-fetch interval, fetch-all behavior, theme, language, and the LLM provider are app preferences, not Git config. They are stored with the repository list in Electron's user data directory:
+Auto-fetch interval, fetch-all behavior, theme, language, zoom, and the LLM provider are app preferences, not Git config. They are stored with the repository list in Electron's user data directory:
 
 - macOS: `~/Library/Application Support/GitGlance/config.json`
 - Windows: `%APPDATA%/GitGlance/config.json`

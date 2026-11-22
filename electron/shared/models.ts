@@ -138,6 +138,8 @@ export interface UiSettings {
   fetchAll: boolean;
   theme: ThemeMode;
   language: Language;
+  /** Interface zoom factor (0.5–5.0). Null uses the default of 1.0. */
+  zoom: number | null;
 }
 
 export interface GitGlobalConfig {

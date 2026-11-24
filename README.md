@@ -15,7 +15,6 @@ Quick links:
 - [Browsing files and changes](./docs/USAGE.md#browsing-files-and-changes)
 - [Previewing files](./docs/USAGE.md#previewing-files)
 - [Committing changes](./docs/USAGE.md#committing-changes)
-- [History](./docs/USAGE.md#history)
 - [Worktrees](./docs/USAGE.md#worktrees)
 - [Remotes](./docs/USAGE.md#remotes)
 - [Branches](./docs/USAGE.md#branches)
@@ -31,9 +30,9 @@ Quick links:
 
 ### Screenshots
 
-| File tree and preview | History |
+| File tree and preview | Image preview |
 | --- | --- |
-| ![File tree with a syntax-highlighted preview](./docs/screenshots/files-preview.png) | ![Commit graph with branches and a merge commit](./docs/screenshots/history.png) |
+| ![File tree with a syntax-highlighted preview](./docs/screenshots/files-preview.png) | ![Image preview with zoom and metadata](./docs/screenshots/image-preview.png) |
 
 | Working tree diff | Settings |
 | --- | --- |
@@ -52,7 +51,6 @@ Quick links:
   - Text and source files: encoding detection (UTF-8/UTF-16 and legacy encodings), syntax highlighting, line numbers, and truncation for very large files.
   - Deleted files: preview from the HEAD revision.
   - Binary files: a clear fallback instead of garbled content.
-- **History tab** with a commit graph, refs, authors, stats, timestamps, and copyable hashes.
 - **Worktrees tab** listing every linked worktree for the repository, with branch, HEAD, path, main/current/locked/prunable badges, filtering, and open/reveal/copy actions.
 - **Remote tab** listing every configured remote with fetch and push URLs, the default branch, remote-tracking branches, filtering, per-remote fetch, and copy/open actions.
 - **Branches tab** listing local and remote-tracking branches with current/remote/gone badges, upstream and ahead/behind state, latest commit details, filtering, and checkout/copy actions, plus a summary-header branch picker for switching or creating branches from any branch.
@@ -275,7 +273,7 @@ npm run typecheck
 npm run smoke
 ```
 
-`npm run typecheck` runs the strict renderer and Electron TypeScript projects. The smoke test builds both, creates a temporary Git repository with a linked worktree, a remote, local/remote branches, lightweight/annotated tags, a stash, LFS-tracked plus large files, and a submodule, along with an Electron profile; it launches GitGlance and checks that the project list, README preview, history, all eleven repository tabs, statistics cards, the worktree, remote, branch, tag, stash, LFS, and submodule filters, the summary Stash action, and branch creation/switching through the branch picker. It does not touch your real configuration or repositories.
+`npm run typecheck` runs the strict renderer and Electron TypeScript projects. The smoke test builds both, creates a temporary Git repository with a linked worktree, a remote, local/remote branches, lightweight/annotated tags, a stash, LFS-tracked plus large files, and a submodule, along with an Electron profile; it launches GitGlance and checks that the project list, README preview, all ten repository tabs, statistics cards, the worktree, remote, branch, tag, stash, LFS, and submodule filters, the summary Stash action, and branch creation/switching through the branch picker. It does not touch your real configuration or repositories.
 
 To inspect the packaged rather than source app:
 

@@ -19,7 +19,6 @@ talking to Pi about your code.
 - [Browsing files and changes](#browsing-files-and-changes)
 - [Previewing files](#previewing-files)
 - [Committing changes](#committing-changes)
-- [History](#history)
 - [Worktrees](#worktrees)
 - [Remotes](#remotes)
 - [Branches](#branches)
@@ -106,7 +105,7 @@ The window is split into three persistent regions:
 - **Sidebar** — repositories, filtering, global sync status, and the Settings
   entry. The footer shows how many projects are open and the auto-fetch
   interval.
-- **Main panel** — a summary header shared by all tabs, eleven tabs, and the
+- **Main panel** — a summary header shared by all tabs, ten tabs, and the
   commit bar (File tree only).
 
 ### Summary header
@@ -126,9 +125,9 @@ The summary is the dashboard for the active repository:
   Windows, Command Prompt; on Linux, GitGlance uses the first available terminal
   emulator.
 
-The tabs below are **Chat**, **File tree**, **History**, **Worktrees**,
-**Remote**, **Branches**, **Tags**, **Stash**, **LFS**, **Submodules**, and
-**Statistics**. Chat is the default tab; the File tree badge shows the number
+The tabs below are **Chat**, **File tree**, **Worktrees**, **Remote**,
+**Branches**, **Tags**, **Stash**, **LFS**, **Submodules**, and **Statistics**.
+Chat is the default tab; the File tree badge shows the number
 of changed files, the Worktrees badge shows how many linked worktrees the
 repository has, the Remote badge shows how many remotes are configured, the
 Branches badge shows how many local and remote-tracking branches exist, the
@@ -222,21 +221,6 @@ message or an empty staging area produces a warning instead of a commit.
 GitGlance runs `git commit` with the staged index. It does not add files
 implicitly, and it does not amend or sign unless you enabled signing in
 Settings.
-
-## History
-
-The **History** tab renders the most recent 80 commits in topological order
-with a colored commit graph:
-
-- refs such as `main`, `origin/main`, and feature branches;
-- merge badges for commits with multiple parents;
-- author avatar and name, subject, short hash, +/− stats, and relative time;
-- a search field that filters by subject, author, or hash.
-
-![Commit graph with branches and a merge commit](./screenshots/history.png)
-
-Click a commit hash to copy the full SHA. History is read-only: commit
-checkout, revert, and cherry-pick are not part of the current UI.
 
 ## Worktrees
 

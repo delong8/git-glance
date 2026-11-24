@@ -502,10 +502,28 @@ discard changes, rewrite history, or use credentials.
   into folders. Select a file to open it in the right-hand preview column; the
   **×** button in the preview header hides the column again. Click a folder to
   collapse or expand it. Inline code references to changed files are clickable.
-- The left **History** column shows the current branch’s commit graph. Commit
-  hashes are clickable to copy the full SHA.
+- The left **History** column shows the commit graph across local branches,
+  remote-tracking branches, and tags. Commit hashes are clickable to copy the
+  full SHA.
 - Use the welcome suggestions for a quick summary, review, or commit-message
   draft.
+
+### Commit actions
+
+Right-click any commit in the **History** column for a grouped menu:
+
+| Action | Behavior |
+| --- | --- |
+| **New Branch** / **New Tag** | Create a local branch or lightweight tag at that commit; a modal asks for the name. The branch is not checked out. |
+| **Cherry Pick Commit** | Apply the commit to the current branch with `git cherry-pick`. Merge commits use their first parent. |
+| **Revert Commit** | Create a revert commit with `git revert --no-edit`. |
+| **Reset <branch> to here** | Choose **Soft**, **Mixed**, or **Hard**. Hard reset discards uncommitted index and working-tree changes. |
+| **Squash into parent** | Rewrite history with an interactive rebase to combine the commit into its parent. Disabled for the root commit. |
+| **Copy Commit SHA** | Copy the full commit hash. |
+
+Reset and squash rewrite history. Cherry-pick, revert, and squash abort and
+restore the previous state if Git reports a conflict, so resolve complex
+histories in a terminal.
 
 Prompts and file excerpts are sent to the model endpoint you configure. Git
 operations and previews stay local.

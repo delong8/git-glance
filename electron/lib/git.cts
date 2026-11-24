@@ -36,8 +36,23 @@ import type {
   SubmoduleStatus
 } from '../shared/models.js';
 
+/**
+ * GUI launches (Finder, Dock) inherit launchd's minimal PATH, which omits the
+ * Homebrew and `/usr/local` prefixes that interactive shells add. Git needs
+ * them to find helpers such as `git-lfs`, `git-credential-*` and difftools, so
+ * mirror the usual shell ordering instead of failing with "command not found".
+ */
+function gitPath(): string {
+  const current = (process.env.PATH || '/usr/bin:/bin:/usr/sbin:/sbin').split(':').filter(Boolean);
+  const missing = ['/opt/homebrew/bin', '/opt/homebrew/sbin', '/usr/local/bin', '/usr/local/sbin'].filter(
+    (dir) => !current.includes(dir)
+  );
+  return [...missing, ...current].join(':');
+}
+
 const GIT_ENV: NodeJS.ProcessEnv = {
   ...process.env,
+  PATH: gitPath(),
   LC_ALL: 'C',
   LANG: 'C',
   GIT_PAGER: 'cat',

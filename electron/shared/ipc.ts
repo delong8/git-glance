@@ -2,7 +2,19 @@ import type {
   AppSettings,
   Bootstrap,
   CommitResult,
+  DownloadReportResult,
   FileDiff,
+  GitBranchInfo,
+  GitCheckoutResult,
+  GitLfsReport,
+  GitRemoteInfo,
+  GitStashInfo,
+  GitSubmoduleInfo,
+  GitTagCheckoutResult,
+  GitTagInfo,
+  GitWorktree,
+  RepoStatistics,
+  StashAction,
   PiAbortResult,
   PiEvent,
   PiResetResult,
@@ -32,6 +44,16 @@ export type OpenRepositoryResult =
   | { canceled: true }
   | { canceled: false; path: string; bootstrap: Bootstrap };
 
+export interface OpenWorktreeResult {
+  path: string;
+  bootstrap: Bootstrap;
+}
+
+export interface OpenSubmoduleResult {
+  path: string;
+  bootstrap: Bootstrap;
+}
+
 export interface FetchOptions {
   all?: boolean;
   prune?: boolean;
@@ -55,6 +77,23 @@ export interface GitGlanceApi {
   selectRepository: (repoPath: string) => Promise<{ path: string }>;
   removeRepository: (repoPath: string) => Promise<{ bootstrap: Bootstrap }>;
   getSnapshot: (repoPath: string) => Promise<RepoSnapshot>;
+  getWorktrees: (repoPath: string) => Promise<GitWorktree[]>;
+  openWorktree: (repoPath: string, worktreePath: string) => Promise<OpenWorktreeResult>;
+  revealWorktree: (repoPath: string, worktreePath: string) => Promise<true>;
+  getRemotes: (repoPath: string) => Promise<GitRemoteInfo[]>;
+  fetchRemote: (repoPath: string, remoteName: string, prune?: boolean) => Promise<string>;
+  getBranches: (repoPath: string) => Promise<GitBranchInfo[]>;
+  checkoutBranch: (repoPath: string, branchName: string) => Promise<GitCheckoutResult>;
+  getTags: (repoPath: string) => Promise<GitTagInfo[]>;
+  checkoutTag: (repoPath: string, tagName: string) => Promise<GitTagCheckoutResult>;
+  getStashes: (repoPath: string) => Promise<GitStashInfo[]>;
+  runStashAction: (repoPath: string, ref: string, action: StashAction) => Promise<string>;
+  getLfsReport: (repoPath: string) => Promise<GitLfsReport>;
+  getSubmodules: (repoPath: string) => Promise<GitSubmoduleInfo[]>;
+  updateSubmodule: (repoPath: string, submodulePath: string) => Promise<string>;
+  openSubmodule: (repoPath: string, submodulePath: string) => Promise<OpenSubmoduleResult>;
+  getStatistics: (repoPath: string) => Promise<RepoStatistics>;
+  downloadStatistics: (repoPath: string, html: string) => Promise<DownloadReportResult>;
   getSummaries: () => Promise<RepoSummariesResult>;
   stage: (repoPath: string, filePath: string) => Promise<true>;
   unstage: (repoPath: string, filePath: string) => Promise<true>;

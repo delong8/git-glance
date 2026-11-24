@@ -17,8 +17,17 @@ import type {
   AppSettings,
   AutoFetchInterval,
   Bootstrap,
+  GitBranchInfo,
   GitCommit,
+  GitLargeFile,
+  GitLfsFile,
+  GitLfsReport,
+  GitRemoteInfo,
+  GitStashInfo,
   GitStatusFile,
+  GitSubmoduleInfo,
+  GitTagInfo,
+  GitWorktree,
   Language,
   LlmApiType,
   LlmSettings,
@@ -26,8 +35,11 @@ import type {
   PreviewData,
   PullStrategy,
   RepoSnapshot,
+  RepoStatistics,
   RepoSummary,
   SettingsInput,
+  StashAction,
+  SubmoduleStatus,
   ThemeMode
 } from '../electron/shared/models';
 import type {
@@ -209,6 +221,10 @@ function plural(count: number, word: string): string {
   return `${count} ${word}${count === 1 ? '' : 's'}`;
 }
 
+function pluralBranch(count: number): string {
+  return `${count} ${count === 1 ? 'branch' : 'branches'}`;
+}
+
 function gradientFor(seed: string): string[] {
   let hash = 0;
   for (let i = 0; i < seed.length; i += 1) hash = (hash * 31 + seed.charCodeAt(i)) | 0;
@@ -290,6 +306,43 @@ const state: AppState = {
   repo: null,
   repoError: null,
   activeTab: 'chat',
+  worktrees: [],
+  worktreesLoading: false,
+  worktreesError: null,
+  worktreesQuery: '',
+  remotes: [],
+  remotesLoading: false,
+  remotesError: null,
+  remotesQuery: '',
+  fetchingRemote: null,
+  branches: [],
+  branchesLoading: false,
+  branchesError: null,
+  branchesQuery: '',
+  switchingBranch: null,
+  tags: [],
+  tagsLoading: false,
+  tagsError: null,
+  tagsQuery: '',
+  checkingOutTag: null,
+  stashes: [],
+  stashesLoading: false,
+  stashesError: null,
+  stashesQuery: '',
+  stashAction: null,
+  lfsReport: null,
+  lfsLoading: false,
+  lfsError: null,
+  lfsQuery: '',
+  submodules: [],
+  submodulesLoading: false,
+  submodulesError: null,
+  submodulesQuery: '',
+  updatingSubmodule: null,
+  statistics: null,
+  statisticsLoading: false,
+  statisticsError: null,
+  statisticsDownloading: false,
   paneMode: 'preview',
   chatPaneMode: 'preview',
   selectedFile: null,
@@ -452,6 +505,7 @@ function applyLanguage(value: unknown, { remember = true }: { remember?: boolean
   }
   updateThemeControls(state.settings.theme || state.themeMode);
   updateLanguageControls(next);
+  renderStatistics();
 }
 
 applyLanguage(cachedLanguage(), { remember: false });
@@ -855,11 +909,56 @@ async function loadRepo(repoPath: string | null | undefined, { initial = false }
     state.chatPaneMode = 'preview';
     state.fileQuery = '';
     state.historyQuery = '';
+    state.worktrees = [];
+    state.worktreesError = null;
+    state.worktreesQuery = '';
+    state.worktreesLoading = true;
+    state.remotes = [];
+    state.remotesError = null;
+    state.remotesQuery = '';
+    state.remotesLoading = true;
+    state.fetchingRemote = null;
+    state.branches = [];
+    state.branchesError = null;
+    state.branchesQuery = '';
+    state.branchesLoading = true;
+    state.switchingBranch = null;
+    state.tags = [];
+    state.tagsError = null;
+    state.tagsQuery = '';
+    state.tagsLoading = true;
+    state.checkingOutTag = null;
+    state.stashes = [];
+    state.stashesError = null;
+    state.stashesQuery = '';
+    state.stashesLoading = true;
+    state.stashAction = null;
+    state.lfsReport = null;
+    state.lfsError = null;
+    state.lfsQuery = '';
+    state.lfsLoading = true;
+    state.submodules = [];
+    state.submodulesError = null;
+    state.submodulesQuery = '';
+    state.submodulesLoading = true;
+    state.updatingSubmodule = null;
+    state.statistics = null;
+    state.statisticsError = null;
+    state.statisticsLoading = false;
+    state.statisticsDownloading = false;
 
     state.loadingRepo = false;
     syncCommitInput(true);
     renderAll();
     syncChatInput(true);
+    void loadWorktrees(state.repo.path);
+    void loadRemotes(state.repo.path);
+    void loadBranches(state.repo.path);
+    void loadTags(state.repo.path);
+    void loadStashes(state.repo.path);
+    void loadLfsReport(state.repo.path);
+    void loadSubmodules(state.repo.path);
+    if (state.activeTab === 'statistics') void loadStatistics(state.repo.path);
 
     if (state.activeTab === 'chat' && state.chatSelectedFile) renderDetail('chat');
     hideRepoLoading();
@@ -899,6 +998,36 @@ function hideRepoLoading(): void {
 function showOnboarding(error: unknown = null): void {
   document.body.classList.add('no-repo');
   state.repo = null;
+  state.worktrees = [];
+  state.worktreesLoading = false;
+  state.worktreesError = null;
+  state.remotes = [];
+  state.remotesLoading = false;
+  state.remotesError = null;
+  state.fetchingRemote = null;
+  state.branches = [];
+  state.branchesLoading = false;
+  state.branchesError = null;
+  state.switchingBranch = null;
+  state.tags = [];
+  state.tagsLoading = false;
+  state.tagsError = null;
+  state.checkingOutTag = null;
+  state.stashes = [];
+  state.stashesLoading = false;
+  state.stashesError = null;
+  state.stashAction = null;
+  state.lfsReport = null;
+  state.lfsLoading = false;
+  state.lfsError = null;
+  state.submodules = [];
+  state.submodulesLoading = false;
+  state.submodulesError = null;
+  state.updatingSubmodule = null;
+  state.statistics = null;
+  state.statisticsLoading = false;
+  state.statisticsError = null;
+  state.statisticsDownloading = false;
   disposeDetail('main');
   disposeDetail('chat');
   const summaryRoot = $('#summaryRoot');
@@ -1044,8 +1173,6 @@ function renderSummary() {
     if (repo.ahead) sync.push(`<span class="ahead">${icon('arrow-up')}${repo.ahead} ahead</span>`);
     if (repo.behind) sync.push(`<span class="behind">${icon('arrow-down')}${repo.behind} behind</span>`);
     if (!repo.ahead && !repo.behind) sync.push(`<span class="synced">${icon('check')}up to date</span>`);
-  } else {
-    sync.push(`<span class="behind">${icon('alert')}no upstream</span>`);
   }
   const busy = state.busyAction;
   const canFetch = repo.remotes?.length > 0 && !busy;
@@ -1094,20 +1221,156 @@ function renderTabChrome() {
   $('#chatPanel')?.classList.toggle('is-active', state.activeTab === 'chat');
   $('#filesPanel')?.classList.toggle('is-active', state.activeTab === 'files');
   $('#historyPanel')?.classList.toggle('is-active', state.activeTab === 'history');
+  $('#worktreesPanel')?.classList.toggle('is-active', state.activeTab === 'worktrees');
+  $('#remotesPanel')?.classList.toggle('is-active', state.activeTab === 'remotes');
+  $('#branchesPanel')?.classList.toggle('is-active', state.activeTab === 'branches');
+  $('#tagsPanel')?.classList.toggle('is-active', state.activeTab === 'tags');
+  $('#stashesPanel')?.classList.toggle('is-active', state.activeTab === 'stashes');
+  $('#lfsPanel')?.classList.toggle('is-active', state.activeTab === 'lfs');
+  $('#submodulesPanel')?.classList.toggle('is-active', state.activeTab === 'submodules');
+  $('#statisticsPanel')?.classList.toggle('is-active', state.activeTab === 'statistics');
 
-  const chatActive = state.activeTab === 'chat';
+  const hideTools = state.activeTab === 'chat' || state.activeTab === 'statistics';
   const tools = $('#tabsTools');
-  if (tools) tools.hidden = chatActive;
-  if (!chatActive) {
+  if (tools) tools.hidden = hideTools;
+  if (!hideTools) {
     const search = $<HTMLInputElement>('#tabSearch');
     if (search) {
-      search.value = state.activeTab === 'files' ? state.fileQuery : state.historyQuery;
-      search.placeholder = state.activeTab === 'files' ? 'Filter files…' : 'Search commits, authors…';
-      search.setAttribute('aria-label', state.activeTab === 'files' ? 'Filter files' : 'Search commits and authors');
+      const filesActive = state.activeTab === 'files';
+      const historyActive = state.activeTab === 'history';
+      const worktreesActive = state.activeTab === 'worktrees';
+      const branchesActive = state.activeTab === 'branches';
+      const tagsActive = state.activeTab === 'tags';
+      const stashesActive = state.activeTab === 'stashes';
+      const lfsActive = state.activeTab === 'lfs';
+      const submodulesActive = state.activeTab === 'submodules';
+      search.value = filesActive
+        ? state.fileQuery
+        : historyActive
+          ? state.historyQuery
+          : worktreesActive
+            ? state.worktreesQuery
+            : branchesActive
+              ? state.branchesQuery
+              : tagsActive
+                ? state.tagsQuery
+                : stashesActive
+                  ? state.stashesQuery
+                  : lfsActive
+                    ? state.lfsQuery
+                    : submodulesActive
+                      ? state.submodulesQuery
+                      : state.remotesQuery;
+      search.placeholder = filesActive
+        ? 'Filter files…'
+        : historyActive
+          ? 'Search commits, authors…'
+          : worktreesActive
+            ? 'Filter worktrees…'
+            : branchesActive
+              ? 'Filter branches…'
+              : tagsActive
+                ? 'Filter tags…'
+                : stashesActive
+                  ? 'Filter stashes…'
+                  : lfsActive
+                    ? 'Filter LFS and large files…'
+                    : submodulesActive
+                      ? 'Filter submodules…'
+                      : 'Filter remotes…';
+      search.setAttribute('aria-label', filesActive
+        ? 'Filter files'
+        : historyActive
+          ? 'Search commits and authors'
+          : worktreesActive
+            ? 'Filter worktrees'
+            : branchesActive
+              ? 'Filter branches'
+              : tagsActive
+                ? 'Filter tags'
+                : stashesActive
+                  ? 'Filter stashes'
+                  : lfsActive
+                    ? 'Filter LFS and large files'
+                    : submodulesActive
+                      ? 'Filter submodules'
+                      : 'Filter remotes');
       syncSearchUI($('#tabSearchWrap'), search);
     }
   }
   updateFilesBadge();
+  updateWorktreesBadge();
+  updateRemotesBadge();
+  updateBranchesBadge();
+  updateTagsBadge();
+  updateStashesBadge();
+  updateLfsBadge();
+  updateSubmodulesBadge();
+  updateStatisticsBadge();
+}
+
+function updateStatisticsBadge(): void {
+  const badge = $('#statisticsBadge');
+  if (!badge) return;
+  const count = state.statistics?.commits.total || 0;
+  badge.textContent = count >= 1000 ? `${(count / 1000).toFixed(1)}k` : String(count);
+  badge.hidden = count === 0;
+}
+
+function updateSubmodulesBadge(): void {
+  const badge = $('#submodulesBadge');
+  if (!badge) return;
+  const count = state.submodules.length;
+  badge.textContent = String(count);
+  badge.hidden = count === 0;
+}
+
+function updateLfsBadge(): void {
+  const badge = $('#lfsBadge');
+  if (!badge) return;
+  const count = state.lfsReport?.lfs.length || 0;
+  badge.textContent = String(count);
+  badge.hidden = count === 0;
+}
+
+function updateStashesBadge(): void {
+  const badge = $('#stashesBadge');
+  if (!badge) return;
+  const count = state.stashes.length;
+  badge.textContent = String(count);
+  badge.hidden = count === 0;
+}
+
+function updateTagsBadge(): void {
+  const badge = $('#tagsBadge');
+  if (!badge) return;
+  const count = state.tags.length;
+  badge.textContent = String(count);
+  badge.hidden = count === 0;
+}
+
+function updateBranchesBadge(): void {
+  const badge = $('#branchesBadge');
+  if (!badge) return;
+  const count = state.branches.length;
+  badge.textContent = String(count);
+  badge.hidden = count === 0;
+}
+
+function updateRemotesBadge(): void {
+  const badge = $('#remotesBadge');
+  if (!badge) return;
+  const count = state.remotes.length;
+  badge.textContent = String(count);
+  badge.hidden = count === 0;
+}
+
+function updateWorktreesBadge(): void {
+  const badge = $('#worktreesBadge');
+  if (!badge) return;
+  const count = state.worktrees.length;
+  badge.textContent = String(count);
+  badge.hidden = count === 0;
 }
 
 function updateFilesBadge(): void {
@@ -1505,6 +1768,1570 @@ function renderHistory(): void {
       <div class="commit-when" title="${esc(commit.when || '')}">${esc(commit.when || '')}</div>
     </div>`;
   }).join('');
+}
+
+/* ============================================================
+   Worktrees
+   ============================================================ */
+let worktreesSeq = 0;
+
+async function loadWorktrees(repoPath: string, { silent = false }: { silent?: boolean } = {}): Promise<void> {
+  if (!repoPath) return;
+  const requestId = ++worktreesSeq;
+  state.worktreesLoading = true;
+  if (!silent) renderWorktrees();
+  try {
+    const worktrees = await api.getWorktrees(repoPath);
+    if (requestId !== worktreesSeq || state.repo?.path !== repoPath) return;
+    state.worktrees = worktrees;
+    state.worktreesError = null;
+  } catch (error) {
+    if (requestId !== worktreesSeq || state.repo?.path !== repoPath) return;
+    state.worktrees = [];
+    state.worktreesError = errorText(error);
+  } finally {
+    if (requestId === worktreesSeq) {
+      state.worktreesLoading = false;
+      renderWorktrees();
+    }
+  }
+}
+
+function worktreeRowHTML(worktree: GitWorktree): string {
+  const flags: string[] = [];
+  if (worktree.isCurrent) flags.push('<span class="wt-flag is-current">current</span>');
+  if (worktree.isMain) flags.push('<span class="wt-flag">main worktree</span>');
+  if (worktree.locked) flags.push(`<span class="wt-flag is-locked" title="${esc(worktree.lockReason || 'Locked worktree')}">locked</span>`);
+  if (worktree.prunable) flags.push(`<span class="wt-flag is-prunable" title="${esc(worktree.pruneReason || 'Prunable worktree')}">prunable</span>`);
+  if (worktree.bare) flags.push('<span class="wt-flag">bare</span>');
+  const branch = worktree.branch
+    ? `<span class="wt-branch" title="${esc(worktree.branch)}">${icon('branch')}${esc(worktree.branch)}</span>`
+    : `<span class="wt-branch is-detached" title="Detached HEAD">${icon('git-commit')}detached</span>`;
+  const shortHead = worktree.head ? worktree.head.slice(0, 7) : '—';
+  return `<div class="worktree-row${worktree.isCurrent ? ' is-current' : ''}${worktree.prunable ? ' is-prunable' : ''}">
+    <span class="wt-mark">${icon(worktree.isMain ? 'folder' : 'branch')}</span>
+    <div class="wt-main">
+      <div class="wt-name-line"><span class="wt-name">${esc(worktree.name)}</span>${flags.join('')}</div>
+      <div class="wt-path" title="${esc(worktree.path)}">${esc(displayPath(worktree.path))}</div>
+    </div>
+    <div class="wt-meta">
+      ${branch}
+      ${worktree.head ? `<button class="wt-head" data-copy-sha="${esc(worktree.head)}" title="Copy commit SHA">${esc(shortHead)}</button>` : ''}
+    </div>
+    <div class="wt-actions">
+      <button class="wt-action" data-worktree-open="${esc(worktree.path)}" title="${worktree.isCurrent ? 'Already open' : 'Open in GitGlance'}" aria-label="Open in GitGlance"${worktree.isCurrent || worktree.prunable || worktree.bare ? ' disabled' : ''}>${icon('chevron-right')}</button>
+      <button class="wt-action" data-worktree-reveal="${esc(worktree.path)}" title="Reveal in Finder" aria-label="Reveal in Finder">${icon('folder')}</button>
+      <button class="wt-action" data-worktree-copy="${esc(worktree.path)}" title="Copy worktree path" aria-label="Copy worktree path">${icon('copy')}</button>
+    </div>
+  </div>`;
+}
+
+function renderWorktrees(): void {
+  const list = $('#worktreesList');
+  const summary = $('#worktreesSummary');
+  if (!list) return;
+  const repo = state.repo;
+  const worktrees = state.worktrees;
+  const count = worktrees.length;
+
+  if (summary) {
+    if (!repo) summary.textContent = '';
+    else if (state.worktreesLoading && !count) summary.textContent = 'Loading worktrees…';
+    else if (state.worktreesError) summary.textContent = 'Worktrees could not be loaded';
+    else summary.textContent = `${plural(count, 'worktree')} · ${displayPath(repo.path)}`;
+  }
+
+  updateWorktreesBadge();
+  if (!repo) {
+    list.innerHTML = '';
+    return;
+  }
+
+  const refresh = $<HTMLButtonElement>('[data-action="refresh-worktrees"]');
+  if (refresh) {
+    refresh.disabled = state.worktreesLoading;
+    refresh.querySelector('.ico')?.classList.toggle('spin', state.worktreesLoading);
+  }
+
+  if (state.worktreesLoading && !count) {
+    list.innerHTML = '<div class="worktrees-loading"><span class="spinner"></span><span>Loading worktrees…</span></div>';
+    return;
+  }
+
+  if (state.worktreesError) {
+    list.innerHTML = `<div class="empty-list worktrees-empty">
+      <span class="e-icon">${icon('alert')}</span>
+      <h4>Worktrees unavailable</h4>
+      <p>${esc(state.worktreesError)}</p>
+      <button class="btn ghost sm" data-action="refresh-worktrees">${icon('refresh')}Try again</button>
+    </div>`;
+    return;
+  }
+
+  if (!count) {
+    list.innerHTML = `<div class="empty-list worktrees-empty">
+      <span class="e-icon">${icon('branch')}</span>
+      <h4>No linked worktrees</h4>
+      <p>This repository only has its main working tree. Add one with git worktree add, then refresh.</p>
+      <button class="btn ghost sm" data-action="refresh-worktrees">${icon('refresh')}Refresh</button>
+    </div>`;
+    return;
+  }
+
+  const query = state.worktreesQuery.trim().toLowerCase();
+  const items = worktrees.filter((worktree) => {
+    if (!query) return true;
+    return `${worktree.name} ${worktree.path} ${worktree.branch || ''} ${worktree.head || ''}`.toLowerCase().includes(query);
+  });
+
+  if (!items.length) {
+    list.innerHTML = `<div class="empty-list worktrees-empty">
+      <span class="e-icon">${icon('search')}</span>
+      <h4>No matching worktrees</h4>
+      <p>Nothing matches “${esc(state.worktreesQuery.trim())}”.</p>
+      <button class="btn ghost sm" data-action="clear-worktrees">Clear filter</button>
+    </div>`;
+    return;
+  }
+
+  list.innerHTML = items.map(worktreeRowHTML).join('');
+}
+
+async function openWorktreePath(worktreePath: string): Promise<void> {
+  if (!state.repo || !worktreePath) return;
+  try {
+    const result = await api.openWorktree(state.repo.path, worktreePath);
+    applyBootstrap(result.bootstrap);
+    await loadRepo(result.path);
+    hideSplash();
+    toast(`Opened ${getRepoSummary(result.path)?.name || worktreePath}`, 'success');
+  } catch (error) {
+    toast(errorText(error), 'warn');
+  }
+}
+
+function revealWorktreePath(worktreePath: string): void {
+  if (!state.repo || !worktreePath) return;
+  void api.revealWorktree(state.repo.path, worktreePath).catch((error: unknown) => toast(errorText(error), 'warn'));
+}
+
+/* ============================================================
+   Remotes
+   ============================================================ */
+let remotesSeq = 0;
+
+async function loadRemotes(repoPath: string, { silent = false }: { silent?: boolean } = {}): Promise<void> {
+  if (!repoPath) return;
+  const requestId = ++remotesSeq;
+  state.remotesLoading = true;
+  if (!silent) renderRemotes();
+  try {
+    const remotes = await api.getRemotes(repoPath);
+    if (requestId !== remotesSeq || state.repo?.path !== repoPath) return;
+    state.remotes = remotes;
+    state.remotesError = null;
+  } catch (error) {
+    if (requestId !== remotesSeq || state.repo?.path !== repoPath) return;
+    state.remotes = [];
+    state.remotesError = errorText(error);
+  } finally {
+    if (requestId === remotesSeq) {
+      state.remotesLoading = false;
+      renderRemotes();
+    }
+  }
+}
+
+function remoteRowHTML(remote: GitRemoteInfo): string {
+  const fetchUrl = remote.fetchUrl || remote.url;
+  const pushUrl = remote.pushUrl && remote.pushUrl !== fetchUrl ? remote.pushUrl : '';
+  const branches = remote.branches || [];
+  const visibleBranches = branches.slice(0, 8);
+  const hiddenBranches = branches.length - visibleBranches.length;
+  const branchPills = visibleBranches
+    .map((branch) => `<span class="remote-branch" title="${esc(branch)}">${esc(branch)}</span>`)
+    .join('') + (hiddenBranches > 0 ? `<span class="remote-branch is-more" title="${esc(branches.slice(8).join(', '))}">+${hiddenBranches}</span>` : '');
+  const defaultFlag = remote.defaultBranch
+    ? `<span class="remote-flag" title="Default branch">${esc(remote.defaultBranch)}</span>`
+    : '';
+  const fetching = state.fetchingRemote === remote.name;
+  const canOpen = /^https?:\/\//i.test(fetchUrl);
+  return `<div class="remote-row">
+    <span class="remote-mark">${icon('globe')}</span>
+    <div class="remote-main">
+      <div class="remote-name-line">
+        <span class="remote-name">${esc(remote.name)}</span>
+        ${defaultFlag}
+        <span class="remote-count">${pluralBranch(branches.length)}</span>
+      </div>
+      <div class="remote-url">
+        <span class="remote-url-label">fetch</span>
+        <span class="remote-url-value" title="${esc(fetchUrl)}">${esc(fetchUrl)}</span>
+      </div>
+      ${pushUrl ? `<div class="remote-url">
+        <span class="remote-url-label">push</span>
+        <span class="remote-url-value" title="${esc(pushUrl)}">${esc(pushUrl)}</span>
+      </div>` : ''}
+      ${branches.length ? `<div class="remote-branches">${branchPills}</div>` : ''}
+    </div>
+    <div class="remote-actions">
+      <button class="remote-fetch" data-remote-fetch="${esc(remote.name)}"${state.fetchingRemote ? ' disabled' : ''}>${icon('refresh', fetching ? 'spin' : '')}${fetching ? 'Fetching…' : 'Fetch'}</button>
+      <button class="remote-action" data-remote-copy="${esc(fetchUrl)}" title="Copy remote URL" aria-label="Copy remote URL">${icon('copy')}</button>
+      ${canOpen ? `<button class="remote-action" data-remote-open="${esc(fetchUrl)}" title="Open remote URL" aria-label="Open remote URL">${icon('globe')}</button>` : ''}
+    </div>
+  </div>`;
+}
+
+function renderRemotes(): void {
+  const list = $('#remotesList');
+  const summary = $('#remotesSummary');
+  if (!list) return;
+  const repo = state.repo;
+  const remotes = state.remotes;
+  const count = remotes.length;
+
+  if (summary) {
+    if (!repo) summary.textContent = '';
+    else if (state.remotesLoading && !count) summary.textContent = 'Loading remotes…';
+    else if (state.remotesError) summary.textContent = 'Remotes could not be loaded';
+    else summary.textContent = `${plural(count, 'remote')} · ${displayPath(repo.path)}`;
+  }
+
+  updateRemotesBadge();
+  if (!repo) {
+    list.innerHTML = '';
+    return;
+  }
+
+  const refresh = $<HTMLButtonElement>('[data-action="refresh-remotes"]');
+  if (refresh) {
+    refresh.disabled = state.remotesLoading;
+    refresh.querySelector('.ico')?.classList.toggle('spin', state.remotesLoading);
+  }
+
+  if (state.remotesLoading && !count) {
+    list.innerHTML = '<div class="remotes-loading"><span class="spinner"></span><span>Loading remotes…</span></div>';
+    return;
+  }
+
+  if (state.remotesError) {
+    list.innerHTML = `<div class="empty-list remotes-empty">
+      <span class="e-icon">${icon('alert')}</span>
+      <h4>Remotes unavailable</h4>
+      <p>${esc(state.remotesError)}</p>
+      <button class="btn ghost sm" data-action="refresh-remotes">${icon('refresh')}Try again</button>
+    </div>`;
+    return;
+  }
+
+  if (!count) {
+    list.innerHTML = `<div class="empty-list remotes-empty">
+      <span class="e-icon">${icon('globe')}</span>
+      <h4>No remotes configured</h4>
+      <p>This repository has no remotes. Add one with git remote add, then refresh.</p>
+      <button class="btn ghost sm" data-action="refresh-remotes">${icon('refresh')}Refresh</button>
+    </div>`;
+    return;
+  }
+
+  const query = state.remotesQuery.trim().toLowerCase();
+  const items = remotes.filter((remote) => {
+    if (!query) return true;
+    return `${remote.name} ${remote.fetchUrl || remote.url} ${remote.pushUrl || ''} ${(remote.branches || []).join(' ')}`
+      .toLowerCase()
+      .includes(query);
+  });
+
+  if (!items.length) {
+    list.innerHTML = `<div class="empty-list remotes-empty">
+      <span class="e-icon">${icon('search')}</span>
+      <h4>No matching remotes</h4>
+      <p>Nothing matches “${esc(state.remotesQuery.trim())}”.</p>
+      <button class="btn ghost sm" data-action="clear-remotes">Clear filter</button>
+    </div>`;
+    return;
+  }
+
+  list.innerHTML = items.map(remoteRowHTML).join('');
+}
+
+async function fetchRemote(remoteName: string): Promise<void> {
+  if (!state.repo || !remoteName || state.fetchingRemote || state.busyAction) return;
+  const repoPath = state.repo.path;
+  state.fetchingRemote = remoteName;
+  state.busyAction = 'fetch';
+  renderSummary();
+  renderRemotes();
+  try {
+    const output = await api.fetchRemote(repoPath, remoteName, !!state.settings.prune);
+    if (state.repo?.path === repoPath) {
+      await refreshRepo({ silent: true });
+      await refreshSummaries();
+    }
+    toast(briefGitOutput(output, `Fetched ${remoteName}`), 'success');
+  } catch (error) {
+    toast(errorText(error), 'warn');
+  } finally {
+    state.fetchingRemote = null;
+    if (state.busyAction === 'fetch') state.busyAction = null;
+    renderSummary();
+    renderRemotes();
+  }
+}
+
+function openRemoteUrl(url: string): void {
+  if (!/^https?:\/\//i.test(url)) return;
+  void api.openExternal(url).catch((error: unknown) => toast(errorText(error), 'warn'));
+}
+
+/* ============================================================
+   Branches
+   ============================================================ */
+let branchesSeq = 0;
+
+async function loadBranches(repoPath: string, { silent = false }: { silent?: boolean } = {}): Promise<void> {
+  if (!repoPath) return;
+  const requestId = ++branchesSeq;
+  state.branchesLoading = true;
+  if (!silent) renderBranches();
+  try {
+    const branches = await api.getBranches(repoPath);
+    if (requestId !== branchesSeq || state.repo?.path !== repoPath) return;
+    state.branches = branches;
+    state.branchesError = null;
+  } catch (error) {
+    if (requestId !== branchesSeq || state.repo?.path !== repoPath) return;
+    state.branches = [];
+    state.branchesError = errorText(error);
+  } finally {
+    if (requestId === branchesSeq) {
+      state.branchesLoading = false;
+      renderBranches();
+    }
+  }
+}
+
+function branchRowHTML(branch: GitBranchInfo): string {
+  const flags: string[] = [];
+  if (branch.current) flags.push('<span class="branch-flag is-current">current</span>');
+  if (branch.remote) flags.push('<span class="branch-flag">remote</span>');
+  if (branch.gone) flags.push(`<span class="branch-flag is-gone" title="${esc(branch.upstream || 'Upstream gone')}">gone</span>`);
+  const sync = !branch.remote && branch.upstream && !branch.gone
+    ? (branch.ahead || branch.behind
+      ? `${branch.ahead ? `<span class="branch-ahead">${icon('arrow-up')}${branch.ahead}</span>` : ''}${branch.behind ? `<span class="branch-behind">${icon('arrow-down')}${branch.behind}</span>` : ''}`
+      : `<span class="branch-synced">${icon('check')}up to date</span>`)
+    : '';
+  const upstream = !branch.remote
+    ? `<span class="branch-upstream" title="${esc(branch.upstream || 'No upstream configured')}">${icon('cloud')}${esc(branch.upstream || 'no upstream')}</span>`
+    : '';
+  const shortHead = branch.head ? branch.head.slice(0, 7) : '—';
+  const switching = state.switchingBranch === branch.name;
+  return `<div class="branch-row${branch.current ? ' is-current' : ''}${branch.remote ? ' is-remote' : ''}">
+    <span class="branch-mark">${icon(branch.current ? 'check' : branch.remote ? 'cloud' : 'branch')}</span>
+    <div class="branch-main">
+      <div class="branch-name-line">
+        <span class="branch-name" title="${esc(branch.name)}">${esc(branch.name)}</span>
+        ${flags.join('')}
+        ${upstream}
+        ${sync}
+      </div>
+      <div class="branch-commit" title="${esc(branch.subject)}">
+        <span class="branch-subject">${esc(branch.subject)}</span>
+        <span class="branch-sep">·</span>
+        <span class="branch-author">${esc(branch.author)}</span>
+        <span class="branch-sep">·</span>
+        <span class="branch-when">${esc(branch.when)}</span>
+      </div>
+    </div>
+    <button class="branch-head" data-copy-sha="${esc(branch.head)}" title="Copy commit SHA">${esc(shortHead)}</button>
+    <div class="branch-actions">
+      <button class="branch-checkout" data-branch-checkout="${esc(branch.name)}" title="Checkout branch"${branch.current || state.busyAction ? ' disabled' : ''}>${icon(switching ? 'refresh' : 'chevron-right', switching ? 'spin' : '')}${switching ? 'Checking out…' : 'Checkout'}</button>
+      <button class="branch-action" data-branch-copy="${esc(branch.name)}" title="Copy branch name" aria-label="Copy branch name">${icon('copy')}</button>
+    </div>
+  </div>`;
+}
+
+function renderBranches(): void {
+  const list = $('#branchesList');
+  const summary = $('#branchesSummary');
+  if (!list) return;
+  const repo = state.repo;
+  const branches = state.branches;
+  const count = branches.length;
+
+  if (summary) {
+    if (!repo) summary.textContent = '';
+    else if (state.branchesLoading && !count) summary.textContent = 'Loading branches…';
+    else if (state.branchesError) summary.textContent = 'Branches could not be loaded';
+    else summary.textContent = `${pluralBranch(count)} · ${displayPath(repo.path)}`;
+  }
+
+  updateBranchesBadge();
+  if (!repo) {
+    list.innerHTML = '';
+    return;
+  }
+
+  const refresh = $<HTMLButtonElement>('[data-action="refresh-branches"]');
+  if (refresh) {
+    refresh.disabled = state.branchesLoading;
+    refresh.querySelector('.ico')?.classList.toggle('spin', state.branchesLoading);
+  }
+
+  if (state.branchesLoading && !count) {
+    list.innerHTML = '<div class="branches-loading"><span class="spinner"></span><span>Loading branches…</span></div>';
+    return;
+  }
+
+  if (state.branchesError) {
+    list.innerHTML = `<div class="empty-list branches-empty">
+      <span class="e-icon">${icon('alert')}</span>
+      <h4>Branches unavailable</h4>
+      <p>${esc(state.branchesError)}</p>
+      <button class="btn ghost sm" data-action="refresh-branches">${icon('refresh')}Try again</button>
+    </div>`;
+    return;
+  }
+
+  if (!count) {
+    list.innerHTML = `<div class="empty-list branches-empty">
+      <span class="e-icon">${icon('git-merge')}</span>
+      <h4>No branches yet</h4>
+      <p>Make a commit to create the first branch.</p>
+      <button class="btn ghost sm" data-action="refresh-branches">${icon('refresh')}Refresh</button>
+    </div>`;
+    return;
+  }
+
+  const query = state.branchesQuery.trim().toLowerCase();
+  const items = branches.filter((branch) => {
+    if (!query) return true;
+    return `${branch.name} ${branch.upstream || ''} ${branch.author} ${branch.subject}`
+      .toLowerCase()
+      .includes(query);
+  });
+
+  if (!items.length) {
+    list.innerHTML = `<div class="empty-list branches-empty">
+      <span class="e-icon">${icon('search')}</span>
+      <h4>No matching branches</h4>
+      <p>Nothing matches “${esc(state.branchesQuery.trim())}”.</p>
+      <button class="btn ghost sm" data-action="clear-branches">Clear filter</button>
+    </div>`;
+    return;
+  }
+
+  list.innerHTML = items.map(branchRowHTML).join('');
+}
+
+async function checkoutBranchAction(branchName: string): Promise<void> {
+  if (!state.repo || !branchName || state.switchingBranch || state.busyAction) return;
+  const repoPath = state.repo.path;
+  state.switchingBranch = branchName;
+  state.busyAction = 'checkout';
+  renderSummary();
+  renderBranches();
+  try {
+    const result = await api.checkoutBranch(repoPath, branchName);
+    if (state.repo?.path === repoPath) {
+      await refreshRepo({ silent: true });
+      await refreshSummaries();
+    }
+    toast(`Switched to ${result.branch}`, 'success');
+  } catch (error) {
+    toast(errorText(error), 'warn');
+  } finally {
+    state.switchingBranch = null;
+    if (state.busyAction === 'checkout') state.busyAction = null;
+    renderSummary();
+    renderBranches();
+  }
+}
+
+/* ============================================================
+   Tags
+   ============================================================ */
+let tagsSeq = 0;
+
+async function loadTags(repoPath: string, { silent = false }: { silent?: boolean } = {}): Promise<void> {
+  if (!repoPath) return;
+  const requestId = ++tagsSeq;
+  state.tagsLoading = true;
+  if (!silent) renderTags();
+  try {
+    const tags = await api.getTags(repoPath);
+    if (requestId !== tagsSeq || state.repo?.path !== repoPath) return;
+    state.tags = tags;
+    state.tagsError = null;
+  } catch (error) {
+    if (requestId !== tagsSeq || state.repo?.path !== repoPath) return;
+    state.tags = [];
+    state.tagsError = errorText(error);
+  } finally {
+    if (requestId === tagsSeq) {
+      state.tagsLoading = false;
+      renderTags();
+    }
+  }
+}
+
+function tagRowHTML(tag: GitTagInfo): string {
+  const flags: string[] = [];
+  if (tag.targetType === 'commit') {
+    flags.push(`<span class="tag-flag${tag.annotated ? ' is-annotated' : ''}">${tag.annotated ? 'annotated' : 'lightweight'}</span>`);
+  } else {
+    flags.push(`<span class="tag-flag is-type">${esc(tag.targetType)}</span>`);
+  }
+  if (tag.atHead) flags.push('<span class="tag-flag is-head">HEAD</span>');
+  const note = tag.annotated
+    ? `<div class="tag-note" title="${esc(tag.annotation || '')}">
+        ${tag.annotation ? `<span class="tag-annotation">“${esc(tag.annotation)}”</span><span class="tag-sep">·</span>` : ''}
+        <span class="tag-note-label">tagged by</span>
+        <span class="tag-tagger">${esc(tag.tagger || '—')}</span>
+        ${tag.when ? `<span class="tag-sep">·</span><span class="tag-tag-when">${esc(tag.when)}</span>` : ''}
+      </div>`
+    : '';
+  const shortHead = tag.head ? tag.head.slice(0, 7) : '—';
+  const checking = state.checkingOutTag === tag.name;
+  const canCheckout = tag.targetType === 'commit';
+  return `<div class="tag-row${tag.atHead ? ' is-head' : ''}">
+    <span class="tag-mark">${icon('tag')}</span>
+    <div class="tag-main">
+      <div class="tag-name-line">
+        <span class="tag-name" title="${esc(tag.name)}">${esc(tag.name)}</span>
+        ${flags.join('')}
+      </div>
+      <div class="tag-commit" title="${esc(tag.subject)}">
+        <span class="tag-subject">${esc(tag.subject || '—')}</span>
+        ${tag.author ? `<span class="tag-sep">·</span><span class="tag-author">${esc(tag.author)}</span>` : ''}
+        ${tag.commitWhen ? `<span class="tag-sep">·</span><span class="tag-commit-when">${esc(tag.commitWhen)}</span>` : ''}
+      </div>
+      ${note}
+    </div>
+    <button class="tag-head" data-copy-sha="${esc(tag.head)}" title="Copy commit SHA">${esc(shortHead)}</button>
+    <div class="tag-actions">
+      <button class="tag-checkout" data-tag-checkout="${esc(tag.name)}" title="${canCheckout ? 'Checkout tag' : 'Tag does not point to a commit'}"${!canCheckout || state.busyAction ? ' disabled' : ''}>${icon(checking ? 'refresh' : 'chevron-right', checking ? 'spin' : '')}${checking ? 'Checking out…' : 'Checkout'}</button>
+      <button class="tag-action" data-tag-copy="${esc(tag.name)}" title="Copy tag name" aria-label="Copy tag name">${icon('copy')}</button>
+    </div>
+  </div>`;
+}
+
+function renderTags(): void {
+  const list = $('#tagsList');
+  const summary = $('#tagsSummary');
+  if (!list) return;
+  const repo = state.repo;
+  const tags = state.tags;
+  const count = tags.length;
+
+  if (summary) {
+    if (!repo) summary.textContent = '';
+    else if (state.tagsLoading && !count) summary.textContent = 'Loading tags…';
+    else if (state.tagsError) summary.textContent = 'Tags could not be loaded';
+    else summary.textContent = `${plural(count, 'tag')} · ${displayPath(repo.path)}`;
+  }
+
+  updateTagsBadge();
+  if (!repo) {
+    list.innerHTML = '';
+    return;
+  }
+
+  const refresh = $<HTMLButtonElement>('[data-action="refresh-tags"]');
+  if (refresh) {
+    refresh.disabled = state.tagsLoading;
+    refresh.querySelector('.ico')?.classList.toggle('spin', state.tagsLoading);
+  }
+
+  if (state.tagsLoading && !count) {
+    list.innerHTML = '<div class="tags-loading"><span class="spinner"></span><span>Loading tags…</span></div>';
+    return;
+  }
+
+  if (state.tagsError) {
+    list.innerHTML = `<div class="empty-list tags-empty">
+      <span class="e-icon">${icon('alert')}</span>
+      <h4>Tags unavailable</h4>
+      <p>${esc(state.tagsError)}</p>
+      <button class="btn ghost sm" data-action="refresh-tags">${icon('refresh')}Try again</button>
+    </div>`;
+    return;
+  }
+
+  if (!count) {
+    list.innerHTML = `<div class="empty-list tags-empty">
+      <span class="e-icon">${icon('tag')}</span>
+      <h4>No tags yet</h4>
+      <p>Create a tag with git tag NAME and it will appear here.</p>
+      <button class="btn ghost sm" data-action="refresh-tags">${icon('refresh')}Refresh</button>
+    </div>`;
+    return;
+  }
+
+  const query = state.tagsQuery.trim().toLowerCase();
+  const items = tags.filter((tag) => {
+    if (!query) return true;
+    return `${tag.name} ${tag.subject} ${tag.author} ${tag.annotation || ''} ${tag.tagger || ''}`
+      .toLowerCase()
+      .includes(query);
+  });
+
+  if (!items.length) {
+    list.innerHTML = `<div class="empty-list tags-empty">
+      <span class="e-icon">${icon('search')}</span>
+      <h4>No matching tags</h4>
+      <p>Nothing matches “${esc(state.tagsQuery.trim())}”.</p>
+      <button class="btn ghost sm" data-action="clear-tags">Clear filter</button>
+    </div>`;
+    return;
+  }
+
+  list.innerHTML = items.map(tagRowHTML).join('');
+}
+
+async function checkoutTagAction(tagName: string): Promise<void> {
+  if (!state.repo || !tagName || state.checkingOutTag || state.busyAction) return;
+  const repoPath = state.repo.path;
+  state.checkingOutTag = tagName;
+  state.busyAction = 'checkout';
+  renderSummary();
+  renderTags();
+  try {
+    const result = await api.checkoutTag(repoPath, tagName);
+    if (state.repo?.path === repoPath) {
+      await refreshRepo({ silent: true });
+      await refreshSummaries();
+    }
+    toast(`Checked out tag ${result.tag}`, 'success');
+  } catch (error) {
+    toast(errorText(error), 'warn');
+  } finally {
+    state.checkingOutTag = null;
+    if (state.busyAction === 'checkout') state.busyAction = null;
+    renderSummary();
+    renderTags();
+  }
+}
+
+/* ============================================================
+   Stashes
+   ============================================================ */
+let stashesSeq = 0;
+
+function pluralStash(count: number): string {
+  return `${count} ${count === 1 ? 'stash' : 'stashes'}`;
+}
+
+async function loadStashes(repoPath: string, { silent = false }: { silent?: boolean } = {}): Promise<void> {
+  if (!repoPath) return;
+  const requestId = ++stashesSeq;
+  state.stashesLoading = true;
+  if (!silent) renderStashes();
+  try {
+    const stashes = await api.getStashes(repoPath);
+    if (requestId !== stashesSeq || state.repo?.path !== repoPath) return;
+    state.stashes = stashes;
+    state.stashesError = null;
+  } catch (error) {
+    if (requestId !== stashesSeq || state.repo?.path !== repoPath) return;
+    state.stashes = [];
+    state.stashesError = errorText(error);
+  } finally {
+    if (requestId === stashesSeq) {
+      state.stashesLoading = false;
+      renderStashes();
+    }
+  }
+}
+
+function stashStatsHTML(stash: GitStashInfo): string {
+  if (!stash.files) return '<span class="stash-files">—</span>';
+  const files = `<span class="stash-files">${plural(stash.files, 'file')}</span>`;
+  if (stash.binary) return `<span class="stash-files">binary</span>${files}`;
+  return `<span class="stash-add">+${stash.add}</span><span class="stash-del">−${stash.del}</span>${files}`;
+}
+
+function stashRowHTML(stash: GitStashInfo): string {
+  const active = state.stashAction?.ref === stash.ref ? state.stashAction.action : null;
+  const shortSha = stash.sha ? stash.sha.slice(0, 7) : '—';
+  const branch = stash.branch
+    ? `<span class="stash-branch" title="${esc(stash.branch)}">${icon('branch')}${esc(stash.branch)}</span>`
+    : '';
+  const base = stash.base
+    ? `<div class="stash-base" title="${esc(stash.baseSubject)}">
+        <span class="stash-base-label">base</span>
+        <span class="stash-base-sha">${esc(stash.base.slice(0, 7))}</span>
+        <span class="stash-sep">·</span>
+        <span class="stash-base-subject">${esc(stash.baseSubject || '—')}</span>
+      </div>`
+    : '';
+  const disabled = state.busyAction ? ' disabled' : '';
+  const spinner = (action: StashAction): string => (active === action ? icon('refresh', 'spin') : '');
+  return `<div class="stash-row">
+    <span class="stash-mark">${icon('download')}</span>
+    <div class="stash-main">
+      <div class="stash-name-line">
+        <span class="stash-ref">${esc(stash.ref)}</span>
+        ${branch}
+        <span class="stash-when">${esc(stash.when)}</span>
+        <span class="stash-stats">${stashStatsHTML(stash)}</span>
+      </div>
+      <div class="stash-message" title="${esc(stash.message)}">${esc(stash.message)}</div>
+      ${base}
+    </div>
+    <button class="stash-head" data-copy-sha="${esc(stash.sha)}" title="Copy commit SHA">${esc(shortSha)}</button>
+    <div class="stash-actions">
+      <button class="stash-action" data-stash-action="apply" data-stash-ref="${esc(stash.ref)}" title="Apply stash"${disabled}>${spinner('apply')}Apply</button>
+      <button class="stash-action" data-stash-action="pop" data-stash-ref="${esc(stash.ref)}" title="Pop stash"${disabled}>${spinner('pop')}Pop</button>
+      <button class="stash-action is-danger" data-stash-action="drop" data-stash-ref="${esc(stash.ref)}" title="Drop stash"${disabled}>${spinner('drop')}Drop</button>
+      <button class="stash-copy" data-stash-copy="${esc(stash.ref)}" title="Copy stash reference" aria-label="Copy stash reference">${icon('copy')}</button>
+    </div>
+  </div>`;
+}
+
+function renderStashes(): void {
+  const list = $('#stashesList');
+  const summary = $('#stashesSummary');
+  if (!list) return;
+  const repo = state.repo;
+  const stashes = state.stashes;
+  const count = stashes.length;
+
+  if (summary) {
+    if (!repo) summary.textContent = '';
+    else if (state.stashesLoading && !count) summary.textContent = 'Loading stashes…';
+    else if (state.stashesError) summary.textContent = 'Stashes could not be loaded';
+    else summary.textContent = `${pluralStash(count)} · ${displayPath(repo.path)}`;
+  }
+
+  updateStashesBadge();
+  if (!repo) {
+    list.innerHTML = '';
+    return;
+  }
+
+  const refresh = $<HTMLButtonElement>('[data-action="refresh-stashes"]');
+  if (refresh) {
+    refresh.disabled = state.stashesLoading;
+    refresh.querySelector('.ico')?.classList.toggle('spin', state.stashesLoading);
+  }
+
+  if (state.stashesLoading && !count) {
+    list.innerHTML = '<div class="stashes-loading"><span class="spinner"></span><span>Loading stashes…</span></div>';
+    return;
+  }
+
+  if (state.stashesError) {
+    list.innerHTML = `<div class="empty-list stashes-empty">
+      <span class="e-icon">${icon('alert')}</span>
+      <h4>Stashes unavailable</h4>
+      <p>${esc(state.stashesError)}</p>
+      <button class="btn ghost sm" data-action="refresh-stashes">${icon('refresh')}Try again</button>
+    </div>`;
+    return;
+  }
+
+  if (!count) {
+    list.innerHTML = `<div class="empty-list stashes-empty">
+      <span class="e-icon">${icon('download')}</span>
+      <h4>No stashes yet</h4>
+      <p>Run git stash to save work in progress; it will appear here.</p>
+      <button class="btn ghost sm" data-action="refresh-stashes">${icon('refresh')}Refresh</button>
+    </div>`;
+    return;
+  }
+
+  const query = state.stashesQuery.trim().toLowerCase();
+  const items = stashes.filter((stash) => {
+    if (!query) return true;
+    return `${stash.ref} ${stash.sha} ${stash.branch || ''} ${stash.message} ${stash.baseSubject}`
+      .toLowerCase()
+      .includes(query);
+  });
+
+  if (!items.length) {
+    list.innerHTML = `<div class="empty-list stashes-empty">
+      <span class="e-icon">${icon('search')}</span>
+      <h4>No matching stashes</h4>
+      <p>Nothing matches “${esc(state.stashesQuery.trim())}”.</p>
+      <button class="btn ghost sm" data-action="clear-stashes">Clear filter</button>
+    </div>`;
+    return;
+  }
+
+  list.innerHTML = items.map(stashRowHTML).join('');
+}
+
+async function performStashAction(ref: string, action: StashAction): Promise<void> {
+  if (!state.repo || !ref || state.stashAction || state.busyAction) return;
+  if (action === 'drop') {
+    const confirmed = window.confirm(isChinese()
+      ? `删除 ${ref}？此操作无法撤销。`
+      : `Drop ${ref}? This cannot be undone.`);
+    if (!confirmed) return;
+  }
+  const repoPath = state.repo.path;
+  state.stashAction = { ref, action };
+  state.busyAction = 'stash';
+  renderSummary();
+  renderStashes();
+  try {
+    await api.runStashAction(repoPath, ref, action);
+    if (state.repo?.path === repoPath) {
+      await refreshRepo({ silent: true });
+      await refreshSummaries();
+    }
+    const label = action === 'apply' ? 'Applied' : action === 'pop' ? 'Popped' : 'Dropped';
+    toast(`${label} ${ref}`, 'success');
+  } catch (error) {
+    toast(errorText(error), 'warn');
+  } finally {
+    state.stashAction = null;
+    if (state.busyAction === 'stash') state.busyAction = null;
+    renderSummary();
+    renderStashes();
+  }
+}
+
+/* ============================================================
+   LFS
+   ============================================================ */
+let lfsSeq = 0;
+
+async function loadLfsReport(repoPath: string, { silent = false }: { silent?: boolean } = {}): Promise<void> {
+  if (!repoPath) return;
+  const requestId = ++lfsSeq;
+  state.lfsLoading = true;
+  if (!silent) renderLfs();
+  try {
+    const report = await api.getLfsReport(repoPath);
+    if (requestId !== lfsSeq || state.repo?.path !== repoPath) return;
+    state.lfsReport = report;
+    state.lfsError = null;
+  } catch (error) {
+    if (requestId !== lfsSeq || state.repo?.path !== repoPath) return;
+    state.lfsReport = null;
+    state.lfsError = errorText(error);
+  } finally {
+    if (requestId === lfsSeq) {
+      state.lfsLoading = false;
+      renderLfs();
+    }
+  }
+}
+
+function lfsFileRowHTML(file: GitLfsFile): string {
+  const flags: string[] = [];
+  if (file.pointer) flags.push('<span class="lfs-flag is-pointer">pointer</span>');
+  if (file.missing) flags.push('<span class="lfs-flag is-missing">missing</span>');
+  const oid = file.oid
+    ? `<span class="lfs-oid" title="sha256:${esc(file.oid)}">sha256:${esc(file.oid.slice(0, 10))}</span>`
+    : '';
+  const disabled = file.missing ? ' disabled' : '';
+  return `<div class="lfs-row">
+    <span class="lfs-mark">${icon('file')}</span>
+    <div class="lfs-main">
+      <div class="lfs-path" title="${esc(file.path)}">${esc(file.path)}</div>
+      <div class="lfs-meta">
+        <span class="lfs-size">${fmtBytes(file.size)}</span>
+        ${flags.join('')}
+        ${oid}
+      </div>
+    </div>
+    <div class="lfs-actions">
+      <button class="lfs-action" data-lfs-open="${esc(file.path)}" title="Open file" aria-label="Open file"${disabled}>${icon('file-code')}</button>
+      <button class="lfs-action" data-lfs-reveal="${esc(file.path)}" title="Reveal in Finder" aria-label="Reveal in Finder"${disabled}>${icon('folder')}</button>
+      <button class="lfs-action" data-copy-path="${esc(file.path)}" title="Copy path" aria-label="Copy path">${icon('copy')}</button>
+    </div>
+  </div>`;
+}
+
+function largeFileRowHTML(file: GitLargeFile): string {
+  const when = file.mtimeMs
+    ? `<span class="lfs-when" title="Last modified">${icon('clock')}${esc(timeAgo(new Date(file.mtimeMs).toISOString()))}</span>`
+    : '';
+  return `<div class="lfs-row">
+    <span class="lfs-mark">${icon('file')}</span>
+    <div class="lfs-main">
+      <div class="lfs-path" title="${esc(file.path)}">${esc(file.path)}</div>
+      <div class="lfs-meta">
+        <span class="lfs-size">${fmtBytes(file.size)}</span>
+        <span class="lfs-flag ${file.tracked ? 'is-tracked' : 'is-untracked'}">${file.tracked ? 'tracked' : 'untracked'}</span>
+        ${when}
+      </div>
+    </div>
+    <div class="lfs-actions">
+      <button class="lfs-action" data-lfs-open="${esc(file.path)}" title="Open file" aria-label="Open file">${icon('file-code')}</button>
+      <button class="lfs-action" data-lfs-reveal="${esc(file.path)}" title="Reveal in Finder" aria-label="Reveal in Finder">${icon('folder')}</button>
+      <button class="lfs-action" data-copy-path="${esc(file.path)}" title="Copy path" aria-label="Copy path">${icon('copy')}</button>
+    </div>
+  </div>`;
+}
+
+function lfsEmptyHTML(kind: 'lfs' | 'large', filtered: boolean): string {
+  if (filtered) {
+    return `<div class="empty-list lfs-empty">
+      <span class="e-icon">${icon('search')}</span>
+      <h4>No matching ${kind === 'lfs' ? 'LFS files' : 'large files'}</h4>
+      <p>Nothing matches “${esc(state.lfsQuery.trim())}”.</p>
+      <button class="btn ghost sm" data-action="clear-lfs">Clear filter</button>
+    </div>`;
+  }
+  return kind === 'lfs'
+    ? `<div class="empty-list lfs-empty">
+      <span class="e-icon">${icon('file')}</span>
+      <h4>No LFS files</h4>
+      <p>Track files with Git LFS and they will appear here.</p>
+    </div>`
+    : `<div class="empty-list lfs-empty">
+      <span class="e-icon">${icon('folder')}</span>
+      <h4>No large files</h4>
+      <p>No non-LFS files over ${fmtBytes(state.lfsReport?.threshold || 5 * 1024 * 1024)}.</p>
+    </div>`;
+}
+
+function renderLfs(): void {
+  const summary = $('#lfsSummary');
+  const split = $<HTMLElement>('#lfsSplit');
+  const stateEl = $<HTMLElement>('#lfsState');
+  const lfsList = $('#lfsList');
+  const largeList = $('#largeList');
+  if (!summary || !split || !stateEl || !lfsList || !largeList) return;
+  const report = state.lfsReport;
+  const lfsCount = report?.lfs.length || 0;
+  const largeCount = report?.large.length || 0;
+
+  if (!state.repo) {
+    summary.textContent = '';
+    split.hidden = true;
+    stateEl.hidden = true;
+    return;
+  }
+
+  updateLfsBadge();
+
+  if (state.lfsLoading && !report) {
+    summary.textContent = 'Loading LFS files…';
+    split.hidden = true;
+    stateEl.hidden = false;
+    stateEl.innerHTML = '<span class="spinner"></span><span>Loading LFS files…</span>';
+    return;
+  }
+
+  if (state.lfsError) {
+    summary.textContent = 'LFS files could not be loaded';
+    split.hidden = true;
+    stateEl.hidden = false;
+    stateEl.innerHTML = `<span class="e-icon">${icon('alert')}</span>
+      <h4>LFS files unavailable</h4>
+      <p>${esc(state.lfsError)}</p>
+      <button class="btn ghost sm" data-action="refresh-lfs">${icon('refresh')}Try again</button>`;
+    return;
+  }
+
+  split.hidden = false;
+  stateEl.hidden = true;
+  summary.textContent = `${plural(lfsCount, 'LFS file')} · ${plural(largeCount, 'large file')}`;
+  updateLfsBadge();
+
+  const lfsCountEl = $('#lfsCount');
+  if (lfsCountEl) lfsCountEl.textContent = String(lfsCount);
+  const largeCountEl = $('#largeCount');
+  if (largeCountEl) largeCountEl.textContent = String(largeCount);
+  const lfsTotal = $('#lfsTotal');
+  if (lfsTotal) lfsTotal.textContent = report?.lfs.length
+    ? fmtBytes(report.lfs.reduce((sum, file) => sum + file.size, 0))
+    : '';
+  const largeHint = $('#largeHint');
+  if (largeHint) largeHint.textContent = `> ${fmtBytes(report?.threshold || 5 * 1024 * 1024)}`;
+
+  const refresh = $<HTMLButtonElement>('[data-action="refresh-lfs"]');
+  if (refresh) {
+    refresh.disabled = state.lfsLoading;
+    refresh.querySelector('.ico')?.classList.toggle('spin', state.lfsLoading);
+  }
+
+  const query = state.lfsQuery.trim().toLowerCase();
+  const lfsFiles = (report?.lfs || []).filter((file) => !query || file.path.toLowerCase().includes(query));
+  const largeFiles = (report?.large || []).filter((file) => !query || file.path.toLowerCase().includes(query));
+
+  lfsList.innerHTML = lfsFiles.length
+    ? lfsFiles.map(lfsFileRowHTML).join('')
+    : lfsEmptyHTML('lfs', !!query);
+  largeList.innerHTML = largeFiles.length
+    ? largeFiles.map(largeFileRowHTML).join('')
+    : lfsEmptyHTML('large', !!query);
+}
+
+function openLfsPath(filePath: string): void {
+  if (!state.repo || !filePath) return;
+  void api.openPath(state.repo.path, filePath).catch((error: unknown) => toast(errorText(error), 'warn'));
+}
+
+function revealLfsPath(filePath: string): void {
+  if (!state.repo || !filePath) return;
+  void api.revealPath(state.repo.path, filePath).catch((error: unknown) => toast(errorText(error), 'warn'));
+}
+
+/* ============================================================
+   Submodules
+   ============================================================ */
+let submodulesSeq = 0;
+
+const SUBMODULE_STATUS_LABELS: Record<SubmoduleStatus, string> = {
+  current: 'up to date',
+  modified: 'modified',
+  uninitialized: 'uninitialized',
+  conflicted: 'conflicted'
+};
+
+async function loadSubmodules(repoPath: string, { silent = false }: { silent?: boolean } = {}): Promise<void> {
+  if (!repoPath) return;
+  const requestId = ++submodulesSeq;
+  state.submodulesLoading = true;
+  if (!silent) renderSubmodules();
+  try {
+    const submodules = await api.getSubmodules(repoPath);
+    if (requestId !== submodulesSeq || state.repo?.path !== repoPath) return;
+    state.submodules = submodules;
+    state.submodulesError = null;
+  } catch (error) {
+    if (requestId !== submodulesSeq || state.repo?.path !== repoPath) return;
+    state.submodules = [];
+    state.submodulesError = errorText(error);
+  } finally {
+    if (requestId === submodulesSeq) {
+      state.submodulesLoading = false;
+      renderSubmodules();
+    }
+  }
+}
+
+function submoduleRowHTML(submodule: GitSubmoduleInfo): string {
+  const shortIndex = submodule.indexSha ? submodule.indexSha.slice(0, 7) : '—';
+  const shortHead = submodule.headSha ? submodule.headSha.slice(0, 7) : '';
+  const flags: string[] = [
+    `<span class="sub-flag is-${submodule.status}">${SUBMODULE_STATUS_LABELS[submodule.status]}</span>`
+  ];
+  if (submodule.dirty) flags.push('<span class="sub-flag is-dirty">dirty</span>');
+  const displayBranch = submodule.currentBranch || submodule.branch;
+  const branch = displayBranch
+    ? `<span class="sub-branch" title="${esc(displayBranch)}">${icon('branch')}${esc(displayBranch)}</span>`
+    : '';
+  const shas = `<span class="sub-shas"><span class="k">index</span><span class="v">${esc(shortIndex)}</span>${shortHead && submodule.headSha !== submodule.indexSha ? `<span class="k">head</span><span class="v">${esc(shortHead)}</span>` : ''}</span>`;
+  const describe = submodule.describe ? `<span class="sub-describe">${esc(submodule.describe)}</span>` : '';
+  const commit = submodule.headSha
+    ? `<div class="sub-commit" title="${esc(submodule.subject)}">
+        <span class="sub-subject">${esc(submodule.subject || '—')}</span>
+        ${submodule.author ? `<span class="sub-sep">·</span><span class="sub-author">${esc(submodule.author)}</span>` : ''}
+        ${submodule.when ? `<span class="sub-sep">·</span><span class="sub-when">${esc(submodule.when)}</span>` : ''}
+      </div>`
+    : '<div class="sub-commit"><span class="sub-not-init">Not initialized</span></div>';
+  const initialized = !!submodule.headSha;
+  const updating = state.updatingSubmodule === submodule.path;
+  return `<div class="sub-row${submodule.dirty ? ' is-dirty' : ''}">
+    <span class="sub-mark">${icon('folder')}</span>
+    <div class="sub-main">
+      <div class="sub-name-line">
+        <span class="sub-path" title="${esc(submodule.path)}">${esc(submodule.path)}</span>
+        ${flags.join('')}
+        ${branch}
+      </div>
+      <div class="sub-meta-line">
+        <span class="sub-url" title="${esc(submodule.url)}">${icon('globe')}${esc(submodule.url || '—')}</span>
+        ${shas}
+        ${describe}
+      </div>
+      ${commit}
+    </div>
+    <button class="sub-head" data-copy-sha="${esc(submodule.indexSha)}" title="Copy index SHA">${esc(shortIndex)}</button>
+    <div class="sub-actions">
+      <button class="sub-update" data-submodule-update="${esc(submodule.path)}" title="Update submodule"${state.busyAction ? ' disabled' : ''}>${icon(updating ? 'refresh' : 'download', updating ? 'spin' : '')}${updating ? 'Updating…' : 'Update'}</button>
+      <button class="sub-action" data-submodule-open="${esc(submodule.path)}" title="Open in GitGlance" aria-label="Open in GitGlance"${initialized ? '' : ' disabled'}>${icon('chevron-right')}</button>
+      <button class="sub-action" data-submodule-reveal="${esc(submodule.path)}" title="Reveal in Finder" aria-label="Reveal in Finder"${initialized ? '' : ' disabled'}>${icon('folder')}</button>
+      <button class="sub-action" data-copy-path="${esc(submodule.path)}" title="Copy path" aria-label="Copy path">${icon('copy')}</button>
+    </div>
+  </div>`;
+}
+
+function renderSubmodules(): void {
+  const list = $('#submodulesList');
+  const summary = $('#submodulesSummary');
+  if (!list) return;
+  const repo = state.repo;
+  const submodules = state.submodules;
+  const count = submodules.length;
+
+  if (summary) {
+    if (!repo) summary.textContent = '';
+    else if (state.submodulesLoading && !count) summary.textContent = 'Loading submodules…';
+    else if (state.submodulesError) summary.textContent = 'Submodules could not be loaded';
+    else summary.textContent = `${plural(count, 'submodule')} · ${displayPath(repo.path)}`;
+  }
+
+  updateSubmodulesBadge();
+  if (!repo) {
+    list.innerHTML = '';
+    return;
+  }
+
+  const refresh = $<HTMLButtonElement>('[data-action="refresh-submodules"]');
+  if (refresh) {
+    refresh.disabled = state.submodulesLoading;
+    refresh.querySelector('.ico')?.classList.toggle('spin', state.submodulesLoading);
+  }
+
+  if (state.submodulesLoading && !count) {
+    list.innerHTML = '<div class="submodules-loading"><span class="spinner"></span><span>Loading submodules…</span></div>';
+    return;
+  }
+
+  if (state.submodulesError) {
+    list.innerHTML = `<div class="empty-list submodules-empty">
+      <span class="e-icon">${icon('alert')}</span>
+      <h4>Submodules unavailable</h4>
+      <p>${esc(state.submodulesError)}</p>
+      <button class="btn ghost sm" data-action="refresh-submodules">${icon('refresh')}Try again</button>
+    </div>`;
+    return;
+  }
+
+  if (!count) {
+    list.innerHTML = `<div class="empty-list submodules-empty">
+      <span class="e-icon">${icon('folder')}</span>
+      <h4>No submodules</h4>
+      <p>Add a submodule with git submodule add URL PATH.</p>
+      <button class="btn ghost sm" data-action="refresh-submodules">${icon('refresh')}Refresh</button>
+    </div>`;
+    return;
+  }
+
+  const query = state.submodulesQuery.trim().toLowerCase();
+  const items = submodules.filter((submodule) => {
+    if (!query) return true;
+    return `${submodule.path} ${submodule.url} ${submodule.branch || ''} ${submodule.status} ${submodule.subject} ${submodule.author}`
+      .toLowerCase()
+      .includes(query);
+  });
+
+  if (!items.length) {
+    list.innerHTML = `<div class="empty-list submodules-empty">
+      <span class="e-icon">${icon('search')}</span>
+      <h4>No matching submodules</h4>
+      <p>Nothing matches “${esc(state.submodulesQuery.trim())}”.</p>
+      <button class="btn ghost sm" data-action="clear-submodules">Clear filter</button>
+    </div>`;
+    return;
+  }
+
+  list.innerHTML = items.map(submoduleRowHTML).join('');
+}
+
+async function updateSubmoduleAction(submodulePath: string): Promise<void> {
+  if (!state.repo || !submodulePath || state.updatingSubmodule || state.busyAction) return;
+  const repoPath = state.repo.path;
+  state.updatingSubmodule = submodulePath;
+  state.busyAction = 'submodule';
+  renderSummary();
+  renderSubmodules();
+  try {
+    await api.updateSubmodule(repoPath, submodulePath);
+    if (state.repo?.path === repoPath) {
+      await refreshRepo({ silent: true });
+      await refreshSummaries();
+    }
+    toast(`Updated ${submodulePath}`, 'success');
+  } catch (error) {
+    toast(errorText(error), 'warn');
+  } finally {
+    state.updatingSubmodule = null;
+    if (state.busyAction === 'submodule') state.busyAction = null;
+    renderSummary();
+    renderSubmodules();
+  }
+}
+
+async function openSubmoduleAction(submodulePath: string): Promise<void> {
+  if (!state.repo || !submodulePath) return;
+  try {
+    const result = await api.openSubmodule(state.repo.path, submodulePath);
+    applyBootstrap(result.bootstrap);
+    await loadRepo(result.path);
+    hideSplash();
+    toast(`Opened ${getRepoSummary(result.path)?.name || submodulePath}`, 'success');
+  } catch (error) {
+    toast(errorText(error), 'warn');
+  }
+}
+
+function revealSubmodulePath(submodulePath: string): void {
+  if (!state.repo || !submodulePath) return;
+  void api.revealPath(state.repo.path, submodulePath).catch((error: unknown) => toast(errorText(error), 'warn'));
+}
+
+/* ============================================================
+   Statistics
+   ============================================================ */
+let statisticsSeq = 0;
+
+function languageStatInfo(ext: string): { name: string; color: string } {
+  if (!ext || ext === 'text') return { name: 'Text', color: '#8b9ab0' };
+  return LANGUAGE_BY_EXT[ext] || { name: ext.toUpperCase(), color: '#8b9ab0' };
+}
+
+function mergedStatisticsLanguages(statistics: RepoStatistics): { info: { name: string; color: string }; files: number; bytes: number }[] {
+  const map = new Map<string, { info: { name: string; color: string }; files: number; bytes: number }>();
+  for (const language of statistics.files.languages) {
+    const info = languageStatInfo(language.ext);
+    const entry = map.get(info.name) || { info, files: 0, bytes: 0 };
+    entry.files += language.files;
+    entry.bytes += language.bytes;
+    map.set(info.name, entry);
+  }
+  return [...map.values()].sort((a, b) => b.bytes - a.bytes);
+}
+
+function statisticsGeneratedLabel(iso: string): string {
+  const date = new Date(iso);
+  if (!Number.isFinite(date.getTime())) return '';
+  return date.toLocaleString(isChinese() ? 'zh-CN' : [], {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit'
+  });
+}
+
+async function loadStatistics(repoPath: string, { silent = false }: { silent?: boolean } = {}): Promise<void> {
+  if (!repoPath) return;
+  const requestId = ++statisticsSeq;
+  state.statisticsLoading = true;
+  if (!silent) renderStatistics();
+  try {
+    const statistics = await api.getStatistics(repoPath);
+    if (requestId !== statisticsSeq || state.repo?.path !== repoPath) return;
+    state.statistics = statistics;
+    state.statisticsError = null;
+  } catch (error) {
+    if (requestId !== statisticsSeq || state.repo?.path !== repoPath) return;
+    state.statistics = null;
+    state.statisticsError = errorText(error);
+  } finally {
+    if (requestId === statisticsSeq) {
+      state.statisticsLoading = false;
+      renderStatistics();
+    }
+  }
+}
+
+function statisticsLanguageRows(statistics: RepoStatistics): string {
+  const languages = mergedStatisticsLanguages(statistics);
+  if (!languages.length) {
+    return '<div class="stats-empty-line">No tracked files</div>';
+  }
+  const total = statistics.files.bytes || 1;
+  return languages.map(({ info, bytes }) => {
+    const pct = Math.max(1, Math.round((bytes / total) * 100));
+    return `<div class="lang-row">
+      <span class="lang-name">${esc(info.name)}</span>
+      <span class="lang-track"><span class="lang-fill" style="width:${pct}%;--lang-color:${info.color}"></span></span>
+      <span class="lang-value">${pct}% · ${fmtBytes(bytes)}</span>
+    </div>`;
+  }).join('');
+}
+
+function statisticsActivityHTML(statistics: RepoStatistics): string {
+  const max = Math.max(1, ...statistics.commits.activity.map((bucket) => bucket.count));
+  return `<div class="stats-activity">${statistics.commits.activity.map((bucket) => `
+    <div class="activity-col" title="${esc(bucket.label)} · ${bucket.count}">
+      <span class="activity-count">${bucket.count || ''}</span>
+      <span class="activity-bar" style="height:${Math.max(2, Math.round((bucket.count / max) * 78))}px"></span>
+      <span class="activity-label">${esc(bucket.label)}</span>
+    </div>`).join('')}</div>`;
+}
+
+function statisticsFactsHTML(statistics: RepoStatistics): string {
+  const facts: [string, string][] = [
+    ['Branch', statistics.repo.branch],
+    ['HEAD', statistics.repo.head || '—'],
+    ['Upstream', statistics.repo.upstream || 'no upstream'],
+    ['Ahead / behind', `${statistics.repo.ahead} / ${statistics.repo.behind}`],
+    ['Remotes', String(statistics.repo.remotes)],
+    ['Worktrees', String(statistics.repo.worktrees)],
+    ['Submodules', String(statistics.repo.submodules)],
+    ['Stashes', String(statistics.repo.stashes)],
+    ['Branches', `${statistics.repo.localBranches} local · ${statistics.repo.remoteBranches} remote`],
+    ['Tags', String(statistics.repo.tags)],
+    ['First commit', statistics.commits.firstWhen || '—'],
+    ['Last commit', statistics.commits.lastWhen || '—'],
+    ['Object store', fmtBytes(statistics.objectStoreBytes)],
+    ['Last fetch', timeAgo(statistics.repo.lastFetch)]
+  ];
+  return `<div class="stats-facts">${facts.map(([key, value]) => `
+    <div class="stat-fact"><span class="k">${esc(key)}</span><span class="v" title="${esc(value)}">${esc(value)}</span></div>`).join('')}</div>`;
+}
+
+function statisticsWorkingTreeHTML(statistics: RepoStatistics): string {
+  const tree = statistics.workingTree;
+  const facts: [string, string][] = [
+    ['Changes', String(tree.changes)],
+    ['Staged', String(tree.staged)],
+    ['Unstaged', String(tree.unstaged)],
+    ['Lines', `+${tree.add} −${tree.del}`],
+    ['Status', tree.changes ? 'uncommitted work' : 'clean']
+  ];
+  return `<div class="stats-facts">${facts.map(([key, value]) => `
+    <div class="stat-fact"><span class="k">${esc(key)}</span><span class="v">${esc(value)}</span></div>`).join('')}</div>`;
+}
+
+function statisticsContributorsHTML(statistics: RepoStatistics): string {
+  if (!statistics.contributors.length) return '<div class="stats-empty-line">No contributors yet</div>';
+  return `<div class="contrib-list">${statistics.contributors.map((contributor) => `
+    <div class="contrib-row">
+      ${avatarHTML(contributor.name, 'avatar-xs')}
+      <div class="contrib-main">
+        <span class="contrib-name">${esc(contributor.name)}</span>
+        <span class="contrib-email">${esc(contributor.email)}</span>
+      </div>
+      <span class="contrib-count">${plural(contributor.commits, 'commit')}</span>
+    </div>`).join('')}</div>`;
+}
+
+function renderStatistics(): void {
+  const body = $('#statisticsBody');
+  const summary = $('#statsSummary');
+  if (!body) return;
+  const repo = state.repo;
+  const statistics = state.statistics;
+
+  if (summary) {
+    if (!repo) summary.textContent = '';
+    else if (state.statisticsLoading && !statistics) summary.textContent = 'Loading statistics…';
+    else if (state.statisticsError) summary.textContent = 'Statistics could not be loaded';
+    else if (statistics) summary.textContent = `${statistics.repo.branch} · updated ${statisticsGeneratedLabel(statistics.generatedAt)}`;
+    else summary.textContent = 'Open this tab to load repository statistics.';
+  }
+
+  updateStatisticsBadge();
+  const refresh = $<HTMLButtonElement>('[data-action="refresh-statistics"]');
+  if (refresh) refresh.disabled = state.statisticsLoading;
+  const download = $<HTMLButtonElement>('[data-action="download-statistics"]');
+  if (download) {
+    download.disabled = !statistics || state.statisticsDownloading;
+    download.innerHTML = `${icon('download', state.statisticsDownloading ? 'spin' : '')}<span>${state.statisticsDownloading ? 'Preparing…' : 'Download'}</span>`;
+  }
+
+  if (!repo) {
+    body.innerHTML = '';
+    return;
+  }
+
+  if (state.statisticsLoading && !statistics) {
+    body.innerHTML = '<div class="stats-loading"><span class="spinner"></span><span>Loading statistics…</span></div>';
+    return;
+  }
+
+  if (state.statisticsError) {
+    body.innerHTML = `<div class="empty-list stats-empty">
+      <span class="e-icon">${icon('alert')}</span>
+      <h4>Statistics unavailable</h4>
+      <p>${esc(state.statisticsError)}</p>
+      <button class="btn ghost sm" data-action="refresh-statistics">${icon('refresh')}Try again</button>
+    </div>`;
+    return;
+  }
+
+  if (!statistics) {
+    body.innerHTML = '';
+    return;
+  }
+
+  const cards: [string, string, string][] = [
+    ['Commits', String(statistics.commits.total), statistics.commits.lastWhen ? `last ${statistics.commits.lastWhen}` : 'no commits yet'],
+    ['Contributors', String(statistics.commits.contributors), 'across the current branch'],
+    ['Tracked files', String(statistics.files.tracked), fmtBytes(statistics.files.bytes)],
+    ['Tracked size', fmtBytes(statistics.files.bytes), `${plural(mergedStatisticsLanguages(statistics).length, 'language')}`],
+    ['Branches', String(statistics.repo.localBranches + statistics.repo.remoteBranches), `${statistics.repo.localBranches} local · ${statistics.repo.remoteBranches} remote`],
+    ['Tags', String(statistics.repo.tags), statistics.repo.stashes ? `${pluralStash(statistics.repo.stashes)} saved` : 'no stashes']
+  ];
+
+  body.innerHTML = `
+    <div class="stats-grid">${cards.map(([label, value, sub]) => `
+      <div class="stat-card">
+        <span class="stat-label">${esc(label)}</span>
+        <span class="stat-value">${esc(value)}</span>
+        <span class="stat-sub">${esc(sub)}</span>
+      </div>`).join('')}</div>
+    <div class="stats-panels">
+      <div class="stats-card">
+        <h3>Languages <span class="muted">${fmtBytes(statistics.files.bytes)}</span></h3>
+        <div class="lang-list">${statisticsLanguageRows(statistics)}</div>
+      </div>
+      <div class="stats-card">
+        <h3>Commit activity <span class="muted">last 12 weeks</span></h3>
+        ${statisticsActivityHTML(statistics)}
+      </div>
+    </div>
+    <div class="stats-panels">
+      <div class="stats-card">
+        <h3>Repository</h3>
+        ${statisticsFactsHTML(statistics)}
+      </div>
+      <div class="stats-card">
+        <h3>Working tree</h3>
+        ${statisticsWorkingTreeHTML(statistics)}
+      </div>
+    </div>
+    <div class="stats-panels stats-panels-single">
+      <div class="stats-card">
+        <h3>Contributors <span class="muted">${plural(statistics.commits.contributors, 'contributor')}</span></h3>
+        ${statisticsContributorsHTML(statistics)}
+      </div>
+    </div>`;
+}
+
+function buildStatisticsReportHTML(statistics: RepoStatistics): string {
+  const zh = isChinese();
+  const L = (en: string, cn: string): string => (zh ? cn : en);
+  const generated = new Date(statistics.generatedAt).toLocaleString(zh ? 'zh-CN' : 'en-US', {
+    dateStyle: 'medium',
+    timeStyle: 'short'
+  });
+  const totalBytes = statistics.files.bytes || 1;
+  const languages = mergedStatisticsLanguages(statistics).map(({ info, bytes }) => {
+    const pct = Math.max(1, Math.round((bytes / totalBytes) * 100));
+    return `<div class="lang-row">
+      <span class="lang-name">${esc(info.name)}</span>
+      <span class="lang-track"><span class="lang-fill" style="width:${pct}%;background:${info.color}"></span></span>
+      <span class="lang-value">${pct}% · ${fmtBytes(bytes)}</span>
+    </div>`;
+  }).join('');
+  const activityMax = Math.max(1, ...statistics.commits.activity.map((bucket) => bucket.count));
+  const activity = statistics.commits.activity.map((bucket) => `
+    <div class="activity-col">
+      <span class="activity-count">${bucket.count || ''}</span>
+      <span class="activity-bar" style="height:${Math.max(3, Math.round((bucket.count / activityMax) * 90))}px"></span>
+      <span class="activity-label">${esc(bucket.label)}</span>
+    </div>`).join('');
+  const contributors = statistics.contributors.map((contributor) => `
+    <tr><td>${esc(contributor.name)}</td><td class="mono">${esc(contributor.email)}</td><td class="num">${contributor.commits}</td></tr>`).join('');
+  const facts: [string, string][] = [
+    [L('Branch', '分支'), statistics.repo.branch],
+    ['HEAD', statistics.repo.head || '—'],
+    [L('Upstream', '上游'), statistics.repo.upstream || L('no upstream', '无上游')],
+    [L('Ahead / behind', '领先 / 落后'), `${statistics.repo.ahead} / ${statistics.repo.behind}`],
+    [L('Remotes', '远程'), String(statistics.repo.remotes)],
+    [L('Worktrees', '工作树'), String(statistics.repo.worktrees)],
+    [L('Submodules', '子模块'), String(statistics.repo.submodules)],
+    [L('Stashes', '贮藏'), String(statistics.repo.stashes)],
+    [L('Branches', '分支数'), `${statistics.repo.localBranches} ${L('local', '本地')} · ${statistics.repo.remoteBranches} ${L('remote', '远程')}`],
+    [L('Tags', '标签'), String(statistics.repo.tags)],
+    [L('First commit', '首次提交'), statistics.commits.firstWhen || '—'],
+    [L('Last commit', '最近提交'), statistics.commits.lastWhen || '—'],
+    [L('Object store', '对象库'), fmtBytes(statistics.objectStoreBytes)],
+    [L('Last fetch', '最近获取'), timeAgo(statistics.repo.lastFetch)]
+  ];
+  const cards: [string, string, string][] = [
+    [L('Commits', '提交'), String(statistics.commits.total), statistics.commits.lastWhen ? `${L('last', '最近')} ${statistics.commits.lastWhen}` : ''],
+    [L('Contributors', '贡献者'), String(statistics.commits.contributors), ''],
+    [L('Tracked files', '已跟踪文件'), String(statistics.files.tracked), fmtBytes(statistics.files.bytes)],
+    [L('Tracked size', '已跟踪大小'), fmtBytes(statistics.files.bytes), ''],
+    [L('Branches', '分支'), String(statistics.repo.localBranches + statistics.repo.remoteBranches), `${statistics.repo.localBranches} ${L('local', '本地')} · ${statistics.repo.remoteBranches} ${L('remote', '远程')}`],
+    [L('Tags', '标签'), String(statistics.repo.tags), '']
+  ];
+  return `<!DOCTYPE html>
+<html lang="${zh ? 'zh-CN' : 'en'}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${esc(statistics.repo.name)} — ${L('Repository statistics', '仓库统计')}</title>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 32px 20px 48px; font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f4f6fb; color: #182033; }
+  .wrap { max-width: 1000px; margin: 0 auto; }
+  header { padding: 26px 28px; border-radius: 16px; color: #fff; background: linear-gradient(120deg, #3d5afe, #7c4dff 55%, #b06bff); box-shadow: 0 18px 45px rgba(61, 90, 254, .22); }
+  header h1 { margin: 0 0 4px; font-size: 28px; letter-spacing: -.02em; }
+  header p { margin: 0; opacity: .86; font-size: 13px; }
+  .meta { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 14px; font-size: 12px; opacity: .92; }
+  .cards { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin: 18px 0; }
+  .card { padding: 14px 16px; border-radius: 12px; background: #fff; border: 1px solid #e3e9f4; box-shadow: 0 4px 16px rgba(24, 32, 51, .04); }
+  .card .label { font-size: 10px; font-weight: 700; letter-spacing: .11em; text-transform: uppercase; color: #7c879c; }
+  .card .value { display: block; margin: 4px 0 2px; font-size: 24px; font-weight: 700; letter-spacing: -.03em; }
+  .card .sub { font-size: 11px; color: #8792a6; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  .panel { padding: 18px 20px; border-radius: 12px; background: #fff; border: 1px solid #e3e9f4; }
+  .panel h2 { margin: 0 0 14px; font-size: 11px; letter-spacing: .13em; text-transform: uppercase; color: #6d7890; }
+  .lang-row { display: grid; grid-template-columns: 110px 1fr 110px; gap: 10px; align-items: center; margin-bottom: 9px; font-size: 12px; }
+  .lang-name { font-weight: 600; }
+  .lang-track { height: 8px; border-radius: 4px; background: #edf1f8; overflow: hidden; }
+  .lang-fill { display: block; height: 100%; border-radius: 4px; }
+  .lang-value { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10px; color: #7c879c; text-align: right; }
+  .activity { display: flex; align-items: flex-end; gap: 6px; height: 130px; }
+  .activity-col { flex: 1; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 3px; }
+  .activity-bar { width: 100%; max-width: 26px; border-radius: 4px 4px 0 0; background: linear-gradient(180deg, #5b7cfa, #a7b9ff); }
+  .activity-count { font-size: 9px; color: #8b95a8; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .activity-label { font-size: 8px; color: #9aa3b3; white-space: nowrap; }
+  .facts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 18px; }
+  .fact .k { display: block; font-size: 9px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: #8b95a8; }
+  .fact .v { display: block; margin-top: 2px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; overflow-wrap: anywhere; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th, td { padding: 8px 6px; text-align: left; border-bottom: 1px solid #edf1f8; }
+  th { font-size: 9px; letter-spacing: .09em; text-transform: uppercase; color: #8b95a8; }
+  td.num { text-align: right; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  td.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10px; color: #6d7890; }
+  footer { margin-top: 22px; text-align: center; font-size: 11px; color: #8b95a8; }
+  @media (max-width: 760px) { .cards { grid-template-columns: repeat(2, 1fr); } .grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>${esc(statistics.repo.name)}</h1>
+    <p>${L('Repository statistics report', '仓库统计报告')} · ${esc(generated)}</p>
+    <div class="meta">
+      <span>${L('Branch', '分支')}: ${esc(statistics.repo.branch)}</span>
+      <span>HEAD: ${esc(statistics.repo.head || '—')}</span>
+      <span>${esc(statistics.repo.path)}</span>
+    </div>
+  </header>
+  <div class="cards">${cards.map(([label, value, sub]) => `
+    <div class="card"><span class="label">${esc(label)}</span><span class="value">${esc(value)}</span><span class="sub">${esc(sub)}</span></div>`).join('')}</div>
+  <div class="grid">
+    <section class="panel"><h2>${L('Languages', '语言')}</h2>${languages || `<p>${L('No tracked files', '暂无已跟踪文件')}</p>`}</section>
+    <section class="panel"><h2>${L('Commit activity · last 12 weeks', '提交活动 · 最近 12 周')}</h2><div class="activity">${activity}</div></section>
+  </div>
+  <div class="grid">
+    <section class="panel"><h2>${L('Repository', '仓库')}</h2><div class="facts">${facts.map(([key, value]) => `<div class="fact"><span class="k">${esc(key)}</span><span class="v">${esc(value)}</span></div>`).join('')}</div></section>
+    <section class="panel"><h2>${L('Working tree', '工作区')}</h2><div class="facts">
+      <div class="fact"><span class="k">${L('Changes', '更改')}</span><span class="v">${statistics.workingTree.changes}</span></div>
+      <div class="fact"><span class="k">${L('Staged', '已暂存')}</span><span class="v">${statistics.workingTree.staged}</span></div>
+      <div class="fact"><span class="k">${L('Unstaged', '未暂存')}</span><span class="v">${statistics.workingTree.unstaged}</span></div>
+      <div class="fact"><span class="k">${L('Lines', '行数')}</span><span class="v">+${statistics.workingTree.add} −${statistics.workingTree.del}</span></div>
+    </div></section>
+  </div>
+  <section class="panel"><h2>${L('Contributors', '贡献者')}</h2>
+    ${contributors ? `<table><thead><tr><th>${L('Name', '姓名')}</th><th>${L('Email', '邮箱')}</th><th class="num">${L('Commits', '提交')}</th></tr></thead><tbody>${contributors}</tbody></table>` : `<p>${L('No contributors yet', '暂无贡献者')}</p>`}
+  </section>
+  <footer>${L('Generated by GitGlance', '由 GitGlance 生成')} · ${esc(statistics.repo.path)}</footer>
+</div>
+</body>
+</html>`;
+}
+
+async function downloadStatisticsReport(): Promise<void> {
+  if (!state.repo || !state.statistics || state.statisticsDownloading) return;
+  state.statisticsDownloading = true;
+  renderStatistics();
+  try {
+    const result = await api.downloadStatistics(state.repo.path, buildStatisticsReportHTML(state.statistics));
+    if (!result.canceled) toast(`Report saved to ${result.path || 'file'}`, 'success');
+  } catch (error) {
+    toast(errorText(error), 'warn');
+  } finally {
+    state.statisticsDownloading = false;
+    renderStatistics();
+  }
 }
 
 /* ============================================================
@@ -2330,6 +4157,16 @@ async function refreshRepo({ silent = false, spinner = false }: { silent?: boole
     if (previousChatSelected && state.repo.files.some((file) => file.path === previousChatSelected)) state.chatSelectedFile = previousChatSelected;
     else state.chatSelectedFile = pickChatFile(state.repo);
     renderAll();
+    void loadWorktrees(target, { silent: true });
+    void loadRemotes(target, { silent: true });
+    void loadBranches(target, { silent: true });
+    void loadTags(target, { silent: true });
+    void loadStashes(target, { silent: true });
+    void loadLfsReport(target, { silent: true });
+    void loadSubmodules(target, { silent: true });
+    if (state.statistics || state.activeTab === 'statistics') {
+      void loadStatistics(target, { silent: true });
+    }
     if (!silent && spinner) toast('Repository refreshed', 'success');
   } catch (error) {
     if (!silent) toast(errorText(error), 'warn');
@@ -2520,6 +4357,14 @@ function renderAll(): void {
   renderTabChrome();
   renderFileTree();
   renderHistory();
+  renderWorktrees();
+  renderRemotes();
+  renderBranches();
+  renderTags();
+  renderStashes();
+  renderLfs();
+  renderSubmodules();
+  renderStatistics();
   renderChat();
   updateCommitBar();
 }
@@ -2720,6 +4565,46 @@ function switchTab(tab: Tab): void {
     renderChatSide();
     syncChatInput();
     renderDetail('chat');
+  } else if (tab === 'worktrees') {
+    renderWorktrees();
+    if (!state.worktrees.length && !state.worktreesLoading && !state.worktreesError) {
+      void loadWorktrees(state.repo.path, { silent: true });
+    }
+  } else if (tab === 'remotes') {
+    renderRemotes();
+    if (!state.remotes.length && !state.remotesLoading && !state.remotesError) {
+      void loadRemotes(state.repo.path, { silent: true });
+    }
+  } else if (tab === 'branches') {
+    renderBranches();
+    if (!state.branches.length && !state.branchesLoading && !state.branchesError) {
+      void loadBranches(state.repo.path, { silent: true });
+    }
+  } else if (tab === 'tags') {
+    renderTags();
+    if (!state.tags.length && !state.tagsLoading && !state.tagsError) {
+      void loadTags(state.repo.path, { silent: true });
+    }
+  } else if (tab === 'stashes') {
+    renderStashes();
+    if (!state.stashes.length && !state.stashesLoading && !state.stashesError) {
+      void loadStashes(state.repo.path, { silent: true });
+    }
+  } else if (tab === 'lfs') {
+    renderLfs();
+    if (!state.lfsReport && !state.lfsLoading && !state.lfsError) {
+      void loadLfsReport(state.repo.path, { silent: true });
+    }
+  } else if (tab === 'submodules') {
+    renderSubmodules();
+    if (!state.submodules.length && !state.submodulesLoading && !state.submodulesError) {
+      void loadSubmodules(state.repo.path, { silent: true });
+    }
+  } else if (tab === 'statistics') {
+    renderStatistics();
+    if (!state.statistics && !state.statisticsLoading && !state.statisticsError) {
+      void loadStatistics(state.repo.path);
+    }
   }
 }
 
@@ -2765,6 +4650,27 @@ function bindStaticEvents(): void {
     } else if (state.activeTab === 'history') {
       state.historyQuery = tabSearch.value;
       renderHistory();
+    } else if (state.activeTab === 'worktrees') {
+      state.worktreesQuery = tabSearch.value;
+      renderWorktrees();
+    } else if (state.activeTab === 'remotes') {
+      state.remotesQuery = tabSearch.value;
+      renderRemotes();
+    } else if (state.activeTab === 'branches') {
+      state.branchesQuery = tabSearch.value;
+      renderBranches();
+    } else if (state.activeTab === 'tags') {
+      state.tagsQuery = tabSearch.value;
+      renderTags();
+    } else if (state.activeTab === 'stashes') {
+      state.stashesQuery = tabSearch.value;
+      renderStashes();
+    } else if (state.activeTab === 'lfs') {
+      state.lfsQuery = tabSearch.value;
+      renderLfs();
+    } else if (state.activeTab === 'submodules') {
+      state.submodulesQuery = tabSearch.value;
+      renderSubmodules();
     }
     syncSearchUI($('#tabSearchWrap'), tabSearch);
   });
@@ -2776,6 +4682,27 @@ function bindStaticEvents(): void {
     } else if (state.activeTab === 'history') {
       state.historyQuery = '';
       renderHistory();
+    } else if (state.activeTab === 'worktrees') {
+      state.worktreesQuery = '';
+      renderWorktrees();
+    } else if (state.activeTab === 'remotes') {
+      state.remotesQuery = '';
+      renderRemotes();
+    } else if (state.activeTab === 'branches') {
+      state.branchesQuery = '';
+      renderBranches();
+    } else if (state.activeTab === 'tags') {
+      state.tagsQuery = '';
+      renderTags();
+    } else if (state.activeTab === 'stashes') {
+      state.stashesQuery = '';
+      renderStashes();
+    } else if (state.activeTab === 'lfs') {
+      state.lfsQuery = '';
+      renderLfs();
+    } else if (state.activeTab === 'submodules') {
+      state.submodulesQuery = '';
+      renderSubmodules();
     }
     tabSearch.value = '';
     syncSearchUI($('#tabSearchWrap'), tabSearch);
@@ -2883,6 +4810,163 @@ function bindStaticEvents(): void {
     }
   });
 
+  $('#worktreesList')?.addEventListener('click', (event) => {
+    const target = eventTarget(event);
+    const open = target?.closest<HTMLElement>('[data-worktree-open]');
+    if (open) {
+      event.preventDefault();
+      void openWorktreePath(open.dataset.worktreeOpen || '');
+      return;
+    }
+    const reveal = target?.closest<HTMLElement>('[data-worktree-reveal]');
+    if (reveal) {
+      event.preventDefault();
+      revealWorktreePath(reveal.dataset.worktreeReveal || '');
+      return;
+    }
+    const copy = target?.closest<HTMLElement>('[data-worktree-copy]');
+    if (copy) {
+      event.preventDefault();
+      copyText(copy.dataset.worktreeCopy || '', 'Worktree path copied to clipboard');
+      return;
+    }
+    const hash = target?.closest<HTMLElement>('[data-copy-sha]');
+    if (hash) {
+      const sha = hash.dataset.copySha;
+      if (sha) copyText(sha, `Copied ${sha.slice(0, 7)} to clipboard`);
+    }
+  });
+
+  $('#remotesList')?.addEventListener('click', (event) => {
+    const target = eventTarget(event);
+    const fetchButton = target?.closest<HTMLElement>('[data-remote-fetch]');
+    if (fetchButton) {
+      event.preventDefault();
+      void fetchRemote(fetchButton.dataset.remoteFetch || '');
+      return;
+    }
+    const copy = target?.closest<HTMLElement>('[data-remote-copy]');
+    if (copy) {
+      event.preventDefault();
+      copyText(copy.dataset.remoteCopy || '', 'Remote URL copied to clipboard');
+      return;
+    }
+    const open = target?.closest<HTMLElement>('[data-remote-open]');
+    if (open) {
+      event.preventDefault();
+      openRemoteUrl(open.dataset.remoteOpen || '');
+      return;
+    }
+  });
+
+  $('#branchesList')?.addEventListener('click', (event) => {
+    const target = eventTarget(event);
+    const checkout = target?.closest<HTMLElement>('[data-branch-checkout]');
+    if (checkout) {
+      event.preventDefault();
+      void checkoutBranchAction(checkout.dataset.branchCheckout || '');
+      return;
+    }
+    const copy = target?.closest<HTMLElement>('[data-branch-copy]');
+    if (copy) {
+      event.preventDefault();
+      copyText(copy.dataset.branchCopy || '', 'Branch name copied to clipboard');
+      return;
+    }
+    const hash = target?.closest<HTMLElement>('[data-copy-sha]');
+    if (hash) {
+      const sha = hash.dataset.copySha;
+      if (sha) copyText(sha, `Copied ${sha.slice(0, 7)} to clipboard`);
+    }
+  });
+
+  $('#tagsList')?.addEventListener('click', (event) => {
+    const target = eventTarget(event);
+    const checkout = target?.closest<HTMLElement>('[data-tag-checkout]');
+    if (checkout) {
+      event.preventDefault();
+      void checkoutTagAction(checkout.dataset.tagCheckout || '');
+      return;
+    }
+    const copy = target?.closest<HTMLElement>('[data-tag-copy]');
+    if (copy) {
+      event.preventDefault();
+      copyText(copy.dataset.tagCopy || '', 'Tag name copied to clipboard');
+      return;
+    }
+    const hash = target?.closest<HTMLElement>('[data-copy-sha]');
+    if (hash) {
+      const sha = hash.dataset.copySha;
+      if (sha) copyText(sha, `Copied ${sha.slice(0, 7)} to clipboard`);
+    }
+  });
+
+  $('#stashesList')?.addEventListener('click', (event) => {
+    const target = eventTarget(event);
+    const actionButton = target?.closest<HTMLElement>('[data-stash-action]');
+    if (actionButton) {
+      event.preventDefault();
+      const action = actionButton.dataset.stashAction as StashAction | undefined;
+      if (action === 'apply' || action === 'pop' || action === 'drop') {
+        void performStashAction(actionButton.dataset.stashRef || '', action);
+      }
+      return;
+    }
+    const copy = target?.closest<HTMLElement>('[data-stash-copy]');
+    if (copy) {
+      event.preventDefault();
+      copyText(copy.dataset.stashCopy || '', 'Stash reference copied to clipboard');
+      return;
+    }
+    const hash = target?.closest<HTMLElement>('[data-copy-sha]');
+    if (hash) {
+      const sha = hash.dataset.copySha;
+      if (sha) copyText(sha, `Copied ${sha.slice(0, 7)} to clipboard`);
+    }
+  });
+
+  $('#lfsPanel')?.addEventListener('click', (event) => {
+    const target = eventTarget(event);
+    const open = target?.closest<HTMLElement>('[data-lfs-open]');
+    if (open) {
+      event.preventDefault();
+      openLfsPath(open.dataset.lfsOpen || '');
+      return;
+    }
+    const reveal = target?.closest<HTMLElement>('[data-lfs-reveal]');
+    if (reveal) {
+      event.preventDefault();
+      revealLfsPath(reveal.dataset.lfsReveal || '');
+    }
+  });
+
+  $('#submodulesList')?.addEventListener('click', (event) => {
+    const target = eventTarget(event);
+    const update = target?.closest<HTMLElement>('[data-submodule-update]');
+    if (update) {
+      event.preventDefault();
+      void updateSubmoduleAction(update.dataset.submoduleUpdate || '');
+      return;
+    }
+    const open = target?.closest<HTMLElement>('[data-submodule-open]');
+    if (open) {
+      event.preventDefault();
+      void openSubmoduleAction(open.dataset.submoduleOpen || '');
+      return;
+    }
+    const reveal = target?.closest<HTMLElement>('[data-submodule-reveal]');
+    if (reveal) {
+      event.preventDefault();
+      revealSubmodulePath(reveal.dataset.submoduleReveal || '');
+      return;
+    }
+    const hash = target?.closest<HTMLElement>('[data-copy-sha]');
+    if (hash) {
+      const sha = hash.dataset.copySha;
+      if (sha) copyText(sha, `Copied ${sha.slice(0, 7)} to clipboard`);
+    }
+  });
+
   $('#openSettings')?.addEventListener('click', openSettings);
   $('#userChip')?.addEventListener('click', openSettings);
   $('#settingsClose')?.addEventListener('click', closeSettings);
@@ -2961,6 +5045,59 @@ function bindStaticEvents(): void {
       if ($<HTMLInputElement>('#tabSearch')) $<HTMLInputElement>('#tabSearch')!.value = '';
       syncSearchUI($('#tabSearchWrap'), $<HTMLInputElement>('#tabSearch'));
       renderHistory();
+    } else if (action === 'refresh-worktrees') {
+      if (state.repo) void loadWorktrees(state.repo.path);
+    } else if (action === 'clear-worktrees') {
+      state.worktreesQuery = '';
+      if ($<HTMLInputElement>('#tabSearch')) $<HTMLInputElement>('#tabSearch')!.value = '';
+      syncSearchUI($('#tabSearchWrap'), $<HTMLInputElement>('#tabSearch'));
+      renderWorktrees();
+    } else if (action === 'refresh-remotes') {
+      if (state.repo) void loadRemotes(state.repo.path);
+    } else if (action === 'clear-remotes') {
+      state.remotesQuery = '';
+      if ($<HTMLInputElement>('#tabSearch')) $<HTMLInputElement>('#tabSearch')!.value = '';
+      syncSearchUI($('#tabSearchWrap'), $<HTMLInputElement>('#tabSearch'));
+      renderRemotes();
+    } else if (action === 'refresh-branches') {
+      if (state.repo) void loadBranches(state.repo.path);
+    } else if (action === 'clear-branches') {
+      state.branchesQuery = '';
+      if ($<HTMLInputElement>('#tabSearch')) $<HTMLInputElement>('#tabSearch')!.value = '';
+      syncSearchUI($('#tabSearchWrap'), $<HTMLInputElement>('#tabSearch'));
+      renderBranches();
+    } else if (action === 'refresh-tags') {
+      if (state.repo) void loadTags(state.repo.path);
+    } else if (action === 'clear-tags') {
+      state.tagsQuery = '';
+      if ($<HTMLInputElement>('#tabSearch')) $<HTMLInputElement>('#tabSearch')!.value = '';
+      syncSearchUI($('#tabSearchWrap'), $<HTMLInputElement>('#tabSearch'));
+      renderTags();
+    } else if (action === 'refresh-stashes') {
+      if (state.repo) void loadStashes(state.repo.path);
+    } else if (action === 'clear-stashes') {
+      state.stashesQuery = '';
+      if ($<HTMLInputElement>('#tabSearch')) $<HTMLInputElement>('#tabSearch')!.value = '';
+      syncSearchUI($('#tabSearchWrap'), $<HTMLInputElement>('#tabSearch'));
+      renderStashes();
+    } else if (action === 'refresh-lfs') {
+      if (state.repo) void loadLfsReport(state.repo.path);
+    } else if (action === 'clear-lfs') {
+      state.lfsQuery = '';
+      if ($<HTMLInputElement>('#tabSearch')) $<HTMLInputElement>('#tabSearch')!.value = '';
+      syncSearchUI($('#tabSearchWrap'), $<HTMLInputElement>('#tabSearch'));
+      renderLfs();
+    } else if (action === 'refresh-submodules') {
+      if (state.repo) void loadSubmodules(state.repo.path);
+    } else if (action === 'clear-submodules') {
+      state.submodulesQuery = '';
+      if ($<HTMLInputElement>('#tabSearch')) $<HTMLInputElement>('#tabSearch')!.value = '';
+      syncSearchUI($('#tabSearchWrap'), $<HTMLInputElement>('#tabSearch'));
+      renderSubmodules();
+    } else if (action === 'refresh-statistics') {
+      if (state.repo) void loadStatistics(state.repo.path);
+    } else if (action === 'download-statistics') {
+      void downloadStatisticsReport();
     }
   });
 

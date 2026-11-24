@@ -754,6 +754,7 @@ kbd {
 .lang-dot { width: 6px; height: 6px; border-radius: 50%; box-shadow: 0 0 6px var(--lang-color, transparent); background: var(--lang-color, var(--accent)); }
 
 .branch-pill {
+  flex: none;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -766,18 +767,19 @@ kbd {
   font-family: var(--mono);
   font-size: 10.5px;
   font-weight: 500;
+  white-space: nowrap;
 }
 .branch-pill .ico { width: 12px; height: 12px; color: var(--accent); }
-.sync-pair { display: inline-flex; align-items: center; gap: 9px; font-family: var(--mono); font-size: 10.5px; }
-.sync-pair > span { display: inline-flex; align-items: center; gap: 3px; }
+.sync-pair { flex: none; display: inline-flex; align-items: center; gap: 9px; font-family: var(--mono); font-size: 10.5px; white-space: nowrap; }
+.sync-pair > span { display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; }
 .sync-pair .ico { width: 10px; height: 10px; }
 .sync-pair .ahead { color: var(--green-text); }
 .sync-pair .behind { color: var(--amber); }
 .sync-pair .synced { color: var(--green); }
-.remote { display: inline-flex; align-items: center; gap: 5px; font-family: var(--mono); font-size: 10.5px; color: var(--text-4); }
+.remote { flex: none; display: inline-flex; align-items: center; gap: 5px; font-family: var(--mono); font-size: 10.5px; color: var(--text-4); white-space: nowrap; }
 .remote .ico { width: 11px; height: 11px; }
 .title-sep { flex: none; width: 1px; height: 16px; margin: 0 2px; background: var(--border); }
-.fetch-time { color: var(--text-4); font-size: 10px; }
+.fetch-time { flex: none; color: var(--text-4); font-size: 10px; white-space: nowrap; }
 
 .summary-actions { grid-area: actions; justify-self: end; display: flex; align-items: center; gap: 7px; padding-top: 15px; flex: none; }
 .btn {
@@ -910,6 +912,8 @@ kbd {
   position: relative;
   display: flex;
   align-items: center;
+  flex: none;
+  white-space: nowrap;
   gap: 7px;
   height: 43px;
   padding: 0 11px;
@@ -972,6 +976,22 @@ kbd {
 #filesPanel.is-active { display: flex; }
 #historyPanel { overflow-y: auto; }
 #historyPanel.is-active { display: block; }
+#worktreesPanel { overflow-y: auto; }
+#worktreesPanel.is-active { display: block; }
+#remotesPanel { overflow-y: auto; }
+#remotesPanel.is-active { display: block; }
+#branchesPanel { overflow-y: auto; }
+#branchesPanel.is-active { display: block; }
+#tagsPanel { overflow-y: auto; }
+#tagsPanel.is-active { display: block; }
+#stashesPanel { overflow-y: auto; }
+#stashesPanel.is-active { display: block; }
+#lfsPanel { overflow: hidden; }
+#lfsPanel.is-active { display: flex; flex-direction: column; }
+#submodulesPanel { overflow-y: auto; }
+#submodulesPanel.is-active { display: block; }
+#statisticsPanel { overflow-y: auto; }
+#statisticsPanel.is-active { display: block; }
 
 /* ============================================================
    File tree / changes
@@ -1596,6 +1616,1171 @@ kbd {
 .commit-stats .none { color: var(--text-4); }
 .commit-when { text-align: right; font-size: 10px; color: var(--text-4); white-space: nowrap; }
 .history-empty { padding-top: 54px; }
+
+/* ============================================================
+   Worktrees
+   ============================================================ */
+#worktreesPanel { padding: 0 16px 22px; }
+.worktrees-head {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  padding: 12px 10px 10px;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(180deg, var(--bg-sticky) 65%, var(--bg-sticky-soft));
+  backdrop-filter: blur(10px);
+}
+.worktrees-title { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.worktrees-title .eyebrow { font-size: 9px; font-weight: 650; letter-spacing: 0.13em; text-transform: uppercase; color: var(--text-3); }
+.worktrees-sub { font-size: 10px; color: var(--text-4); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.worktrees-head .btn { flex: none; height: 27px; padding: 0 10px; font-size: 10.5px; }
+.worktrees-head .btn .ico { width: 12px; height: 12px; }
+.worktrees-list { display: flex; flex-direction: column; gap: 2px; padding-top: 4px; }
+.worktree-row {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto 82px;
+  gap: 10px;
+  align-items: center;
+  min-height: 60px;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+.worktree-row:hover { background: var(--fill); border-color: var(--border); }
+.worktree-row.is-current {
+  background: linear-gradient(90deg, var(--accent-soft), transparent 72%);
+  border-color: var(--border);
+}
+.wt-mark {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  color: var(--text-3);
+  background: var(--fill);
+  border: 1px solid var(--border);
+}
+.wt-mark .ico { width: 14px; height: 14px; }
+.worktree-row.is-current .wt-mark { color: var(--accent-text); background: var(--accent-soft); border-color: rgba(124, 156, 255, 0.24); }
+.worktree-row.is-prunable .wt-mark { color: var(--amber); }
+.wt-main { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.wt-name-line { display: flex; align-items: center; gap: 5px; min-width: 0; }
+.wt-name {
+  font-size: 12px;
+  font-weight: 560;
+  color: var(--text);
+  letter-spacing: -0.003em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.wt-flag {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  height: 16px;
+  padding: 0 5px;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  font-size: 8.5px;
+  font-weight: 650;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  background: var(--fill);
+  border-color: var(--border);
+}
+.wt-flag.is-current { color: var(--accent-text); background: rgba(124, 156, 255, 0.13); border-color: rgba(124, 156, 255, 0.22); }
+.wt-flag.is-locked { color: var(--amber); background: var(--amber-soft); border-color: rgba(245, 185, 85, 0.19); }
+.wt-flag.is-prunable { color: var(--red-text-soft); background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.2); }
+.wt-path {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  color: var(--text-4);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.worktree-row.is-current .wt-path { color: var(--text-3); }
+.wt-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; min-width: 0; }
+.wt-branch {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 210px;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  color: var(--text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.wt-branch .ico { width: 10px; height: 10px; flex: none; color: var(--accent); }
+.wt-branch.is-detached { color: var(--text-3); }
+.wt-branch.is-detached .ico { color: var(--text-4); }
+.wt-head {
+  padding: 2px 5px;
+  margin-right: -5px;
+  border-radius: 4px;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  color: var(--text-4);
+  transition: background 0.13s ease, color 0.13s ease;
+}
+.wt-head:hover { background: var(--fill-strong); color: var(--text-2); }
+.wt-actions { display: flex; align-items: center; justify-content: flex-end; gap: 1px; }
+.wt-action {
+  width: 25px;
+  height: 25px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  color: var(--text-4);
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.wt-action .ico { width: 13px; height: 13px; }
+.wt-action:hover:not(:disabled) { background: var(--fill-strong); color: var(--text); }
+.wt-action:disabled { opacity: 0.35; cursor: default; }
+.worktrees-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 64px 0;
+  font-size: 11px;
+  color: var(--text-3);
+}
+.worktrees-empty { padding-top: 54px; }
+
+/* ============================================================
+   Remotes
+   ============================================================ */
+#remotesPanel { padding: 0 16px 22px; }
+.remotes-head {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  padding: 12px 10px 10px;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(180deg, var(--bg-sticky) 65%, var(--bg-sticky-soft));
+  backdrop-filter: blur(10px);
+}
+.remotes-title { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.remotes-title .eyebrow { font-size: 9px; font-weight: 650; letter-spacing: 0.13em; text-transform: uppercase; color: var(--text-3); }
+.remotes-sub { font-size: 10px; color: var(--text-4); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.remotes-head .btn { flex: none; height: 27px; padding: 0 10px; font-size: 10.5px; }
+.remotes-head .btn .ico { width: 12px; height: 12px; }
+.remotes-list { display: flex; flex-direction: column; gap: 2px; padding-top: 4px; }
+.remote-row {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) 126px;
+  gap: 10px;
+  align-items: center;
+  min-height: 76px;
+  padding: 9px 10px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+.remote-row:hover { background: var(--fill); border-color: var(--border); }
+.remote-mark {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  color: var(--accent-text);
+  background: var(--accent-soft);
+  border: 1px solid rgba(124, 156, 255, 0.2);
+}
+.remote-mark .ico { width: 14px; height: 14px; }
+.remote-main { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.remote-name-line { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.remote-name {
+  font-size: 12.5px;
+  font-weight: 560;
+  color: var(--text);
+  letter-spacing: -0.003em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.remote-flag {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  height: 16px;
+  padding: 0 5px;
+  border-radius: 4px;
+  border: 1px solid rgba(124, 156, 255, 0.22);
+  background: rgba(124, 156, 255, 0.13);
+  font-family: var(--mono);
+  font-size: 8.5px;
+  font-weight: 650;
+  color: var(--accent-text);
+  white-space: nowrap;
+}
+.remote-count { flex: none; font-size: 9.5px; color: var(--text-4); white-space: nowrap; }
+.remote-url { display: flex; align-items: baseline; gap: 6px; min-width: 0; font-family: var(--mono); font-size: 9.5px; }
+.remote-url-label {
+  flex: none;
+  width: 31px;
+  font-size: 8px;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-4);
+}
+.remote-url-value { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-3); }
+.remote-branches { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 1px; }
+.remote-branch {
+  max-width: 190px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--fill);
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--text-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.remote-branch.is-more { color: var(--text-4); }
+.remote-actions { display: flex; align-items: center; gap: 4px; flex: none; }
+.remote-fetch {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 26px;
+  padding: 0 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--fill);
+  font-size: 9.5px;
+  font-weight: 560;
+  color: var(--text-2);
+  white-space: nowrap;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.remote-fetch .ico { width: 11px; height: 11px; }
+.remote-fetch:hover:not(:disabled) { background: var(--fill-strong); color: var(--text); }
+.remote-fetch:disabled { opacity: 0.5; cursor: default; }
+.remote-action {
+  width: 25px;
+  height: 25px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  color: var(--text-4);
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.remote-action .ico { width: 13px; height: 13px; }
+.remote-action:hover { background: var(--fill-strong); color: var(--text); }
+.remotes-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 64px 0;
+  font-size: 11px;
+  color: var(--text-3);
+}
+.remotes-empty { padding-top: 54px; }
+
+/* ============================================================
+   Branches
+   ============================================================ */
+#branchesPanel { padding: 0 16px 22px; }
+.branches-head {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  padding: 12px 10px 10px;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(180deg, var(--bg-sticky) 65%, var(--bg-sticky-soft));
+  backdrop-filter: blur(10px);
+}
+.branches-title { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.branches-title .eyebrow { font-size: 9px; font-weight: 650; letter-spacing: 0.13em; text-transform: uppercase; color: var(--text-3); }
+.branches-sub { font-size: 10px; color: var(--text-4); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.branches-head .btn { flex: none; height: 27px; padding: 0 10px; font-size: 10.5px; }
+.branches-head .btn .ico { width: 12px; height: 12px; }
+.branches-list { display: flex; flex-direction: column; gap: 2px; padding-top: 4px; }
+.branch-row {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) 62px 118px;
+  gap: 10px;
+  align-items: center;
+  min-height: 64px;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+.branch-row:hover { background: var(--fill); border-color: var(--border); }
+.branch-row.is-current {
+  background: linear-gradient(90deg, var(--accent-soft), transparent 72%);
+  border-color: var(--border);
+}
+.branch-mark {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  color: var(--text-3);
+  background: var(--fill);
+  border: 1px solid var(--border);
+}
+.branch-mark .ico { width: 14px; height: 14px; }
+.branch-row.is-current .branch-mark { color: var(--accent-text); background: var(--accent-soft); border-color: rgba(124, 156, 255, 0.24); }
+.branch-row.is-remote .branch-mark { color: var(--text-4); }
+.branch-main { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.branch-name-line { display: flex; align-items: center; gap: 5px; min-width: 0; }
+.branch-name {
+  font-size: 12.5px;
+  font-weight: 560;
+  color: var(--text);
+  letter-spacing: -0.003em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.branch-flag {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  height: 16px;
+  padding: 0 5px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--fill);
+  font-size: 8.5px;
+  font-weight: 650;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  white-space: nowrap;
+}
+.branch-flag.is-current { color: var(--accent-text); background: rgba(124, 156, 255, 0.13); border-color: rgba(124, 156, 255, 0.22); }
+.branch-flag.is-gone { color: var(--amber); background: var(--amber-soft); border-color: rgba(245, 185, 85, 0.19); }
+.branch-upstream {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  max-width: 190px;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  color: var(--text-4);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.branch-upstream .ico { width: 10px; height: 10px; flex: none; }
+.branch-ahead, .branch-behind, .branch-synced {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex: none;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  white-space: nowrap;
+}
+.branch-ahead { color: var(--green-text); }
+.branch-behind { color: var(--amber); }
+.branch-synced { color: var(--green); }
+.branch-ahead .ico, .branch-behind .ico, .branch-synced .ico { width: 10px; height: 10px; }
+.branch-commit { display: flex; align-items: baseline; gap: 5px; min-width: 0; font-size: 10px; color: var(--text-4); }
+.branch-subject { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-3); }
+.branch-sep { opacity: 0.5; }
+.branch-author, .branch-when { flex: none; white-space: nowrap; }
+.branch-head {
+  justify-self: start;
+  padding: 3px 5px;
+  margin-left: -5px;
+  border-radius: 4px;
+  color: var(--text-3);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: -0.01em;
+  transition: background 0.13s ease, color 0.13s ease;
+}
+.branch-head:hover { background: var(--fill-strong); color: var(--text-2); }
+.branch-actions { display: flex; align-items: center; justify-content: flex-end; gap: 4px; }
+.branch-checkout {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 26px;
+  padding: 0 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--fill);
+  font-size: 9.5px;
+  font-weight: 560;
+  color: var(--text-2);
+  white-space: nowrap;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.branch-checkout .ico { width: 11px; height: 11px; }
+.branch-checkout:hover:not(:disabled) { background: var(--fill-strong); color: var(--text); }
+.branch-checkout:disabled { opacity: 0.5; cursor: default; }
+.branch-action {
+  width: 25px;
+  height: 25px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  color: var(--text-4);
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.branch-action .ico { width: 13px; height: 13px; }
+.branch-action:hover { background: var(--fill-strong); color: var(--text); }
+.branches-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 64px 0;
+  font-size: 11px;
+  color: var(--text-3);
+}
+.branches-empty { padding-top: 54px; }
+
+/* ============================================================
+   Tags
+   ============================================================ */
+#tagsPanel { padding: 0 16px 22px; }
+.tags-head {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  padding: 12px 10px 10px;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(180deg, var(--bg-sticky) 65%, var(--bg-sticky-soft));
+  backdrop-filter: blur(10px);
+}
+.tags-title { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.tags-title .eyebrow { font-size: 9px; font-weight: 650; letter-spacing: 0.13em; text-transform: uppercase; color: var(--text-3); }
+.tags-sub { font-size: 10px; color: var(--text-4); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tags-head .btn { flex: none; height: 27px; padding: 0 10px; font-size: 10.5px; }
+.tags-head .btn .ico { width: 12px; height: 12px; }
+.tags-list { display: flex; flex-direction: column; gap: 2px; padding-top: 4px; }
+.tag-row {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) 62px 118px;
+  gap: 10px;
+  align-items: center;
+  min-height: 64px;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+.tag-row:hover { background: var(--fill); border-color: var(--border); }
+.tag-row.is-head {
+  background: linear-gradient(90deg, var(--accent-soft), transparent 72%);
+  border-color: var(--border);
+}
+.tag-mark {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  color: var(--text-3);
+  background: var(--fill);
+  border: 1px solid var(--border);
+}
+.tag-mark .ico { width: 14px; height: 14px; }
+.tag-row.is-head .tag-mark { color: var(--accent-text); background: var(--accent-soft); border-color: rgba(124, 156, 255, 0.24); }
+.tag-main { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.tag-name-line { display: flex; align-items: center; gap: 5px; min-width: 0; }
+.tag-name {
+  font-size: 12.5px;
+  font-weight: 560;
+  color: var(--text);
+  letter-spacing: -0.003em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.tag-flag {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  height: 16px;
+  padding: 0 5px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--fill);
+  font-size: 8.5px;
+  font-weight: 650;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  white-space: nowrap;
+}
+.tag-flag.is-annotated { color: var(--accent-text); background: rgba(124, 156, 255, 0.13); border-color: rgba(124, 156, 255, 0.22); }
+.tag-flag.is-head { color: var(--green-text); background: rgba(34, 197, 94, 0.1); border-color: rgba(34, 197, 94, 0.2); }
+.tag-flag.is-type { color: var(--amber); background: var(--amber-soft); border-color: rgba(245, 185, 85, 0.19); }
+.tag-commit { display: flex; align-items: baseline; gap: 5px; min-width: 0; font-size: 10px; color: var(--text-4); }
+.tag-subject { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-3); }
+.tag-sep { opacity: 0.5; }
+.tag-author, .tag-commit-when { flex: none; white-space: nowrap; }
+.tag-note { display: flex; align-items: baseline; gap: 5px; min-width: 0; font-size: 9.5px; color: var(--text-4); }
+.tag-annotation {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-3);
+  font-style: italic;
+}
+.tag-note-label { flex: none; font-size: 8px; font-weight: 650; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-4); }
+.tag-tagger { flex: none; color: var(--text-3); white-space: nowrap; }
+.tag-tag-when { flex: none; white-space: nowrap; }
+.tag-head {
+  justify-self: start;
+  padding: 3px 5px;
+  margin-left: -5px;
+  border-radius: 4px;
+  color: var(--text-3);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: -0.01em;
+  transition: background 0.13s ease, color 0.13s ease;
+}
+.tag-head:hover { background: var(--fill-strong); color: var(--text-2); }
+.tag-actions { display: flex; align-items: center; justify-content: flex-end; gap: 4px; }
+.tag-checkout {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 26px;
+  padding: 0 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--fill);
+  font-size: 9.5px;
+  font-weight: 560;
+  color: var(--text-2);
+  white-space: nowrap;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.tag-checkout .ico { width: 11px; height: 11px; }
+.tag-checkout:hover:not(:disabled) { background: var(--fill-strong); color: var(--text); }
+.tag-checkout:disabled { opacity: 0.5; cursor: default; }
+.tag-action {
+  width: 25px;
+  height: 25px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  color: var(--text-4);
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.tag-action .ico { width: 13px; height: 13px; }
+.tag-action:hover { background: var(--fill-strong); color: var(--text); }
+.tags-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 64px 0;
+  font-size: 11px;
+  color: var(--text-3);
+}
+.tags-empty { padding-top: 54px; }
+
+/* ============================================================
+   Stashes
+   ============================================================ */
+#stashesPanel { padding: 0 16px 22px; }
+.stashes-head {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  padding: 12px 10px 10px;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(180deg, var(--bg-sticky) 65%, var(--bg-sticky-soft));
+  backdrop-filter: blur(10px);
+}
+.stashes-title { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.stashes-title .eyebrow { font-size: 9px; font-weight: 650; letter-spacing: 0.13em; text-transform: uppercase; color: var(--text-3); }
+.stashes-sub { font-size: 10px; color: var(--text-4); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stashes-head .btn { flex: none; height: 27px; padding: 0 10px; font-size: 10.5px; }
+.stashes-head .btn .ico { width: 12px; height: 12px; }
+.stashes-list { display: flex; flex-direction: column; gap: 2px; padding-top: 4px; }
+.stash-row {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) 62px 200px;
+  gap: 10px;
+  align-items: center;
+  min-height: 80px;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+.stash-row:hover { background: var(--fill); border-color: var(--border); }
+.stash-mark {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  color: var(--accent-text);
+  background: var(--accent-soft);
+  border: 1px solid rgba(124, 156, 255, 0.2);
+}
+.stash-mark .ico { width: 14px; height: 14px; }
+.stash-main { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.stash-name-line { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.stash-ref {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  font-weight: 560;
+  color: var(--text);
+  white-space: nowrap;
+}
+.stash-branch {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  max-width: 140px;
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--text-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.stash-branch .ico { width: 10px; height: 10px; flex: none; color: var(--accent); }
+.stash-when { flex: none; font-size: 9.5px; color: var(--text-4); white-space: nowrap; }
+.stash-stats {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: auto;
+  flex: none;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  white-space: nowrap;
+}
+.stash-add { color: var(--green-text); }
+.stash-del { color: var(--red-text-soft); }
+.stash-files { color: var(--text-4); }
+.stash-message {
+  font-size: 10.5px;
+  color: var(--text-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.stash-base { display: flex; align-items: baseline; gap: 4px; min-width: 0; font-size: 9.5px; color: var(--text-4); }
+.stash-base-label { flex: none; font-size: 8px; font-weight: 650; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-4); }
+.stash-base-sha { flex: none; font-family: var(--mono); color: var(--text-3); }
+.stash-sep { flex: none; opacity: 0.5; }
+.stash-base-subject { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.stash-head {
+  justify-self: start;
+  padding: 3px 5px;
+  margin-left: -5px;
+  border-radius: 4px;
+  color: var(--text-3);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: -0.01em;
+  transition: background 0.13s ease, color 0.13s ease;
+}
+.stash-head:hover { background: var(--fill-strong); color: var(--text-2); }
+.stash-actions { display: flex; align-items: center; justify-content: flex-end; gap: 3px; }
+.stash-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  height: 25px;
+  padding: 0 7px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: var(--fill);
+  font-size: 9.5px;
+  font-weight: 560;
+  color: var(--text-2);
+  white-space: nowrap;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.stash-action .ico { width: 10px; height: 10px; }
+.stash-action:hover:not(:disabled) { background: var(--fill-strong); color: var(--text); }
+.stash-action:disabled { opacity: 0.5; cursor: default; }
+.stash-action.is-danger { color: var(--red-text-soft); }
+.stash-action.is-danger:hover:not(:disabled) { background: rgba(239, 68, 68, 0.1); color: var(--red-text-soft); }
+.stash-copy {
+  width: 25px;
+  height: 25px;
+  display: grid;
+  place-items: center;
+  border-radius: 5px;
+  color: var(--text-4);
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.stash-copy .ico { width: 12px; height: 12px; }
+.stash-copy:hover { background: var(--fill-strong); color: var(--text); }
+.stashes-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 64px 0;
+  font-size: 11px;
+  color: var(--text-3);
+}
+.stashes-empty { padding-top: 54px; }
+
+/* ============================================================
+   LFS
+   ============================================================ */
+#lfsPanel { min-height: 0; }
+.lfs-head {
+  flex: none;
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  padding: 12px 16px 10px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-glass);
+}
+.lfs-title { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.lfs-title .eyebrow { font-size: 9px; font-weight: 650; letter-spacing: 0.13em; text-transform: uppercase; color: var(--text-3); }
+.lfs-sub { font-size: 10px; color: var(--text-4); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lfs-head .btn { flex: none; height: 27px; padding: 0 10px; font-size: 10.5px; }
+.lfs-head .btn .ico { width: 12px; height: 12px; }
+.lfs-split { flex: 1; min-height: 0; display: flex; overflow: hidden; }
+.lfs-split[hidden] { display: none; }
+.lfs-column { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow-y: auto; }
+.lfs-column + .lfs-column { border-left: 1px solid var(--border); }
+.lfs-col-head {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(180deg, var(--bg-sticky) 65%, var(--bg-sticky-soft));
+  backdrop-filter: blur(10px);
+}
+.lfs-col-title { font-size: 9px; font-weight: 650; letter-spacing: 0.13em; text-transform: uppercase; color: var(--text-3); }
+.lfs-col-count {
+  min-width: 17px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 4px;
+  display: grid;
+  place-items: center;
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--text-3);
+  background: var(--fill-hover);
+  border: 1px solid var(--border);
+}
+.lfs-col-hint { margin-left: auto; font-family: var(--mono); font-size: 9px; color: var(--text-4); white-space: nowrap; }
+.lfs-list { display: flex; flex-direction: column; gap: 1px; padding: 6px 10px 16px; }
+.lfs-row {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  min-height: 48px;
+  padding: 7px 8px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+.lfs-row:hover { background: var(--fill); border-color: var(--border); }
+.lfs-mark {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  color: var(--text-3);
+  background: var(--fill);
+  border: 1px solid var(--border);
+}
+.lfs-mark .ico { width: 12px; height: 12px; }
+.lfs-main { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.lfs-path {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.lfs-meta { display: flex; align-items: center; gap: 6px; min-width: 0; font-size: 9.5px; color: var(--text-4); }
+.lfs-size { flex: none; font-family: var(--mono); color: var(--text-3); }
+.lfs-flag {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  height: 15px;
+  padding: 0 5px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--fill);
+  font-size: 8px;
+  font-weight: 650;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  white-space: nowrap;
+}
+.lfs-flag.is-pointer { color: var(--amber); background: var(--amber-soft); border-color: rgba(245, 185, 85, 0.19); }
+.lfs-flag.is-missing { color: var(--red-text-soft); background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.2); }
+.lfs-flag.is-tracked { color: var(--green-text); background: rgba(34, 197, 94, 0.1); border-color: rgba(34, 197, 94, 0.2); }
+.lfs-flag.is-untracked { color: var(--amber); background: var(--amber-soft); border-color: rgba(245, 185, 85, 0.19); }
+.lfs-oid { flex: none; font-family: var(--mono); font-size: 8.5px; color: var(--text-4); white-space: nowrap; }
+.lfs-when { flex: none; display: inline-flex; align-items: center; gap: 2px; color: var(--text-4); white-space: nowrap; }
+.lfs-when .ico { width: 9px; height: 9px; }
+.lfs-actions { display: flex; align-items: center; gap: 1px; }
+.lfs-action {
+  width: 23px;
+  height: 23px;
+  display: grid;
+  place-items: center;
+  border-radius: 5px;
+  color: var(--text-4);
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.lfs-action .ico { width: 12px; height: 12px; }
+.lfs-action:hover { background: var(--fill-strong); color: var(--text); }
+.lfs-empty { padding: 38px 16px 30px; }
+.lfs-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 40px;
+  color: var(--text-3);
+  font-size: 11px;
+  text-align: center;
+}
+.lfs-state[hidden] { display: none; }
+.lfs-state .e-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  color: var(--text-3);
+  background: var(--fill);
+  border: 1px solid var(--border);
+}
+.lfs-state .e-icon .ico { width: 19px; height: 19px; }
+.lfs-state h4 { margin: 0; font-size: 12.5px; font-weight: 560; color: var(--text-2); }
+.lfs-state p { margin: 0; max-width: 360px; font-size: 10px; line-height: 1.5; color: var(--text-4); }
+
+/* ============================================================
+   Submodules
+   ============================================================ */
+#submodulesPanel { padding: 0 16px 22px; }
+.submodules-head {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  padding: 12px 10px 10px;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(180deg, var(--bg-sticky) 65%, var(--bg-sticky-soft));
+  backdrop-filter: blur(10px);
+}
+.submodules-title { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.submodules-title .eyebrow { font-size: 9px; font-weight: 650; letter-spacing: 0.13em; text-transform: uppercase; color: var(--text-3); }
+.submodules-sub { font-size: 10px; color: var(--text-4); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.submodules-head .btn { flex: none; height: 27px; padding: 0 10px; font-size: 10.5px; }
+.submodules-head .btn .ico { width: 12px; height: 12px; }
+.submodules-list { display: flex; flex-direction: column; gap: 2px; padding-top: 4px; }
+.sub-row {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) 62px 168px;
+  gap: 10px;
+  align-items: center;
+  min-height: 84px;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+.sub-row:hover { background: var(--fill); border-color: var(--border); }
+.sub-row.is-dirty { border-color: rgba(245, 185, 85, 0.16); }
+.sub-mark {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  color: var(--text-3);
+  background: var(--fill);
+  border: 1px solid var(--border);
+}
+.sub-mark .ico { width: 14px; height: 14px; }
+.sub-row.is-dirty .sub-mark { color: var(--amber); }
+.sub-main { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.sub-name-line { display: flex; align-items: center; gap: 5px; min-width: 0; }
+.sub-path {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  font-weight: 560;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.sub-flag {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  height: 16px;
+  padding: 0 5px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--fill);
+  font-size: 8.5px;
+  font-weight: 650;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  white-space: nowrap;
+}
+.sub-flag.is-current { color: var(--green-text); background: rgba(34, 197, 94, 0.1); border-color: rgba(34, 197, 94, 0.2); }
+.sub-flag.is-modified, .sub-flag.is-dirty { color: var(--amber); background: var(--amber-soft); border-color: rgba(245, 185, 85, 0.19); }
+.sub-flag.is-uninitialized { color: var(--text-3); }
+.sub-flag.is-conflicted { color: var(--red-text-soft); background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.2); }
+.sub-branch {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  max-width: 140px;
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--text-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sub-branch .ico { width: 10px; height: 10px; flex: none; color: var(--accent); }
+.sub-meta-line { display: flex; align-items: center; gap: 6px; min-width: 0; font-size: 9.5px; color: var(--text-4); }
+.sub-url {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+  font-family: var(--mono);
+  color: var(--text-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sub-url .ico { width: 10px; height: 10px; flex: none; }
+.sub-shas { display: inline-flex; align-items: center; gap: 5px; flex: none; font-family: var(--mono); font-size: 8.5px; color: var(--text-4); white-space: nowrap; }
+.sub-shas .k { color: var(--text-4); }
+.sub-shas .v { color: var(--text-3); }
+.sub-describe { flex: none; font-family: var(--mono); font-size: 8.5px; color: var(--text-4); white-space: nowrap; }
+.sub-commit { display: flex; align-items: baseline; gap: 5px; min-width: 0; font-size: 10px; color: var(--text-4); }
+.sub-subject { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-3); }
+.sub-not-init { color: var(--text-4); }
+.sub-sep { opacity: 0.5; }
+.sub-author, .sub-when { flex: none; white-space: nowrap; }
+.sub-head {
+  justify-self: start;
+  padding: 3px 5px;
+  margin-left: -5px;
+  border-radius: 4px;
+  color: var(--text-3);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: -0.01em;
+  transition: background 0.13s ease, color 0.13s ease;
+}
+.sub-head:hover { background: var(--fill-strong); color: var(--text-2); }
+.sub-actions { display: flex; align-items: center; justify-content: flex-end; gap: 3px; }
+.sub-update {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 25px;
+  padding: 0 7px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: var(--fill);
+  font-size: 9.5px;
+  font-weight: 560;
+  color: var(--text-2);
+  white-space: nowrap;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.sub-update .ico { width: 10px; height: 10px; }
+.sub-update:hover:not(:disabled) { background: var(--fill-strong); color: var(--text); }
+.sub-update:disabled { opacity: 0.5; cursor: default; }
+.sub-action {
+  width: 23px;
+  height: 23px;
+  display: grid;
+  place-items: center;
+  border-radius: 5px;
+  color: var(--text-4);
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.sub-action .ico { width: 12px; height: 12px; }
+.sub-action:hover:not(:disabled) { background: var(--fill-strong); color: var(--text); }
+.sub-action:disabled { opacity: 0.4; cursor: default; }
+.submodules-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 64px 0;
+  font-size: 11px;
+  color: var(--text-3);
+}
+.submodules-empty { padding-top: 54px; }
+
+/* ============================================================
+   Statistics
+   ============================================================ */
+#statisticsPanel { padding: 0 16px 22px; }
+.stats-head {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  padding: 12px 10px 10px;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(180deg, var(--bg-sticky) 65%, var(--bg-sticky-soft));
+  backdrop-filter: blur(10px);
+}
+.stats-title { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.stats-title .eyebrow { font-size: 9px; font-weight: 650; letter-spacing: 0.13em; text-transform: uppercase; color: var(--text-3); }
+.stats-sub { font-size: 10px; color: var(--text-4); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stats-actions { display: flex; align-items: center; gap: 6px; flex: none; }
+.stats-actions .btn { height: 27px; padding: 0 10px; font-size: 10.5px; }
+.stats-actions .btn .ico { width: 12px; height: 12px; }
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+  padding: 14px 10px 0;
+}
+.stat-card {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 11px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: linear-gradient(180deg, var(--fill-soft), transparent 80%);
+}
+.stat-label { font-size: 8.5px; font-weight: 650; letter-spacing: 0.11em; text-transform: uppercase; color: var(--text-4); }
+.stat-value { font-size: 19px; font-weight: 600; color: var(--text); letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stat-sub { font-size: 9px; color: var(--text-4); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stats-panels { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px 10px 0; }
+.stats-panels-single { grid-template-columns: 1fr; }
+.stats-card {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--fill-soft);
+}
+.stats-card h3 {
+  margin: 0 0 10px;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 9px;
+  font-weight: 650;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.stats-card h3 .muted { margin-left: auto; font-family: var(--mono); font-size: 8.5px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--text-4); }
+.stats-facts { display: grid; grid-template-columns: 1fr 1fr; gap: 9px 14px; }
+.stat-fact { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.stat-fact .k { font-size: 8px; font-weight: 650; letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-4); }
+.stat-fact .v { font-family: var(--mono); font-size: 10px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lang-list { display: flex; flex-direction: column; gap: 8px; }
+.lang-row { display: grid; grid-template-columns: 94px minmax(0, 1fr) 66px; gap: 8px; align-items: center; }
+.lang-name { font-size: 10px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lang-track { height: 6px; border-radius: 3px; background: var(--fill); overflow: hidden; }
+.lang-fill { display: block; height: 100%; border-radius: 3px; background: var(--lang-color, var(--accent)); }
+.lang-value { font-family: var(--mono); font-size: 9px; color: var(--text-4); text-align: right; white-space: nowrap; }
+.stats-activity { display: flex; align-items: flex-end; gap: 5px; height: 112px; padding-top: 4px; }
+.activity-col { flex: 1; min-width: 0; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 3px; }
+.activity-bar {
+  width: 100%;
+  max-width: 24px;
+  min-height: 2px;
+  border-radius: 4px 4px 0 0;
+  background: linear-gradient(180deg, var(--accent), rgba(124, 156, 255, 0.35));
+}
+.activity-count { font-family: var(--mono); font-size: 8px; color: var(--text-4); }
+.activity-label { font-size: 7.5px; color: var(--text-4); white-space: nowrap; }
+.contrib-list { display: flex; flex-direction: column; gap: 6px; }
+.contrib-row { display: grid; grid-template-columns: 24px minmax(0, 1fr) 54px; gap: 8px; align-items: center; min-width: 0; }
+.contrib-main { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.contrib-name { font-size: 10px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.contrib-email { font-size: 8.5px; color: var(--text-4); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.contrib-count { font-family: var(--mono); font-size: 9px; color: var(--text-3); text-align: right; white-space: nowrap; }
+.stats-empty-line { padding: 4px 0; font-size: 10px; color: var(--text-4); }
+@media (max-width: 1280px) {
+  .stats-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 1040px) {
+  .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stats-panels { grid-template-columns: 1fr; }
+}
 
 /* ============================================================
    Chat tab
@@ -2240,7 +3425,17 @@ select.input option { background: var(--bg-option); color: var(--text); }
     column-gap: 20px;
   }
 }
+@media (max-width: 1760px) {
+  .tab { padding: 0; font-size: 11px; }
+  .tabs-tools .search { width: 120px; }
+}
+@media (max-width: 1420px) {
+  .tab-label { display: none; }
+  .tab { padding: 0 12px; }
+  .tabs-tools .search { width: 190px; }
+}
 @media (max-width: 1120px) {
+  .tab-badge { display: none; }
   .sidebar { width: 262px; }
   .user-chip .user-name { display: none; }
   .summary-actions { gap: 5px; }
@@ -2255,6 +3450,7 @@ select.input option { background: var(--bg-option); color: var(--text); }
 @media (max-width: 1040px) {
   .summary-tiles { grid-template-columns: 1fr 1fr; }
   .tile:nth-child(3) { display: none; }
+  .tabs-tools .search { width: 120px; }
   .chat-column { width: 50%; min-width: 310px; }
   .chat-detail .diff-kind { display: none; }
 }
@@ -2271,6 +3467,8 @@ select.input option { background: var(--bg-option); color: var(--text); }
   .changes-pane { width: 100%; max-width: none; border-right: 0; }
   .chat-side { display: none; }
   .chat-column { width: 100%; min-width: 0; border-right: 0; }
+  .lfs-split { flex-direction: column; }
+  .lfs-column + .lfs-column { border-left: 0; border-top: 1px solid var(--border); }
 }
 @media (max-height: 820px) {
   .chat-changes { max-height: 200px; }
@@ -2282,7 +3480,8 @@ select.input option { background: var(--bg-option); color: var(--text); }
   .title-row h1 { font-size: 22px; }
   .summary { padding: 17px 18px 0; }
   .tabs-bar { padding-left: 18px; padding-right: 18px; }
-  .tabs-tools .search { width: 155px; }
+  .tab { padding: 0 8px; }
+  .tabs-tools .search { width: 120px; }
   .summary-tiles { grid-template-columns: 1fr; }
   .tile:nth-child(2) { border-left: 0; border-top: 1px solid var(--border); }
   .tile:nth-child(3) { display: none; }
@@ -2349,6 +3548,7 @@ select.input option { background: var(--bg-option); color: var(--text); }
     <symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5"/><path d="M12 16.5h.01"/></symbol>
     <symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/></symbol>
     <symbol id="i-tag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m20.59 13.41-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82Z"/><circle cx="7" cy="7" r="1"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M22 20H2"/></symbol>
     <symbol id="i-sparkles" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M11.15 3.55a.9.9 0 0 1 1.7 0l1.46 4.44a2.8 2.8 0 0 0 1.77 1.77l4.44 1.46a.9.9 0 0 1 0 1.7l-4.44 1.46a2.8 2.8 0 0 0-1.77 1.77l-1.46 4.44a.9.9 0 0 1-1.7 0l-1.46-4.44a2.8 2.8 0 0 0-1.77-1.77l-4.44-1.46a.9.9 0 0 1 0-1.7l4.44-1.46a2.8 2.8 0 0 0 1.77-1.77z"/><path d="M18.85 2.3c.14-.4.66-.4.8 0l.55 1.65c.07.2.22.35.42.42l1.65.55c.4.14.4.66 0 .8l-1.65.55a.68.68 0 0 0-.42.42l-.55 1.65c-.14.4-.66.4-.8 0l-.55-1.65a.68.68 0 0 0-.42-.42l-1.65-.55c-.4-.14-.4-.66 0-.8l1.65-.55a.68.68 0 0 0 .42-.42z" opacity=".68"/></symbol>
     <symbol id="i-send" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></symbol>
     <symbol id="i-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
@@ -2427,19 +3627,59 @@ select.input option { background: var(--bg-option); color: var(--text); }
       <section class="summary" id="summaryRoot"></section>
 
       <div class="tabs-bar" role="tablist" aria-label="Repository views">
-        <button class="tab is-active" id="tabChat" data-tab="chat" role="tab" aria-selected="true" aria-controls="chatPanel">
+        <button class="tab is-active" id="tabChat" data-tab="chat" role="tab" aria-selected="true" aria-controls="chatPanel" title="Chat" aria-label="Chat">
           <svg class="ico" aria-hidden="true"><use href="#i-sparkles"/></svg>
-          Chat
+          <span class="tab-label">Chat</span>
           <span class="tab-ai-dot" aria-hidden="true"></span>
         </button>
-        <button class="tab" id="tabFiles" data-tab="files" role="tab" aria-selected="false" aria-controls="filesPanel">
+        <button class="tab" id="tabFiles" data-tab="files" role="tab" aria-selected="false" aria-controls="filesPanel" title="File tree" aria-label="File tree">
           <svg class="ico" aria-hidden="true"><use href="#i-folder"/></svg>
-          File tree
+          <span class="tab-label">File tree</span>
           <span class="tab-badge" id="filesBadge">0</span>
         </button>
-        <button class="tab" id="tabHistory" data-tab="history" role="tab" aria-selected="false" aria-controls="historyPanel">
+        <button class="tab" id="tabHistory" data-tab="history" role="tab" aria-selected="false" aria-controls="historyPanel" title="History" aria-label="History">
           <svg class="ico" aria-hidden="true"><use href="#i-clock"/></svg>
-          History
+          <span class="tab-label">History</span>
+        </button>
+        <button class="tab" id="tabWorktrees" data-tab="worktrees" role="tab" aria-selected="false" aria-controls="worktreesPanel" title="Worktrees" aria-label="Worktrees">
+          <svg class="ico" aria-hidden="true"><use href="#i-branch"/></svg>
+          <span class="tab-label">Worktrees</span>
+          <span class="tab-badge" id="worktreesBadge">0</span>
+        </button>
+        <button class="tab" id="tabRemotes" data-tab="remotes" role="tab" aria-selected="false" aria-controls="remotesPanel" title="Remote" aria-label="Remote">
+          <svg class="ico" aria-hidden="true"><use href="#i-globe"/></svg>
+          <span class="tab-label">Remote</span>
+          <span class="tab-badge" id="remotesBadge">0</span>
+        </button>
+        <button class="tab" id="tabBranches" data-tab="branches" role="tab" aria-selected="false" aria-controls="branchesPanel" title="Branches" aria-label="Branches">
+          <svg class="ico" aria-hidden="true"><use href="#i-git-merge"/></svg>
+          <span class="tab-label">Branches</span>
+          <span class="tab-badge" id="branchesBadge">0</span>
+        </button>
+        <button class="tab" id="tabTags" data-tab="tags" role="tab" aria-selected="false" aria-controls="tagsPanel" title="Tags" aria-label="Tags">
+          <svg class="ico" aria-hidden="true"><use href="#i-tag"/></svg>
+          <span class="tab-label">Tags</span>
+          <span class="tab-badge" id="tagsBadge">0</span>
+        </button>
+        <button class="tab" id="tabStashes" data-tab="stashes" role="tab" aria-selected="false" aria-controls="stashesPanel" title="Stash" aria-label="Stash">
+          <svg class="ico" aria-hidden="true"><use href="#i-download"/></svg>
+          <span class="tab-label">Stash</span>
+          <span class="tab-badge" id="stashesBadge">0</span>
+        </button>
+        <button class="tab" id="tabLfs" data-tab="lfs" role="tab" aria-selected="false" aria-controls="lfsPanel" title="LFS" aria-label="LFS">
+          <svg class="ico" aria-hidden="true"><use href="#i-file"/></svg>
+          <span class="tab-label">LFS</span>
+          <span class="tab-badge" id="lfsBadge">0</span>
+        </button>
+        <button class="tab" id="tabSubmodules" data-tab="submodules" role="tab" aria-selected="false" aria-controls="submodulesPanel" title="Submodules" aria-label="Submodules">
+          <svg class="ico" aria-hidden="true"><use href="#i-folder"/></svg>
+          <span class="tab-label">Submodules</span>
+          <span class="tab-badge" id="submodulesBadge">0</span>
+        </button>
+        <button class="tab" id="tabStatistics" data-tab="statistics" role="tab" aria-selected="false" aria-controls="statisticsPanel" title="Statistics" aria-label="Statistics">
+          <svg class="ico" aria-hidden="true"><use href="#i-chart"/></svg>
+          <span class="tab-label">Statistics</span>
+          <span class="tab-badge" id="statisticsBadge">0</span>
         </button>
         <div class="tabs-spacer"></div>
         <div class="tabs-tools" id="tabsTools">
@@ -2521,6 +3761,142 @@ select.input option { background: var(--bg-option); color: var(--text); }
             <span class="h-when">When</span>
           </div>
           <div class="history-list" id="historyList"></div>
+        </div>
+
+        <div class="panel" id="worktreesPanel" role="tabpanel" aria-labelledby="tabWorktrees">
+          <div class="worktrees-head">
+            <div class="worktrees-title">
+              <span class="eyebrow">Worktrees</span>
+              <span class="worktrees-sub" id="worktreesSummary"></span>
+            </div>
+            <button class="btn ghost" data-action="refresh-worktrees">
+              <svg class="ico" aria-hidden="true"><use href="#i-refresh"/></svg>
+              <span>Refresh</span>
+            </button>
+          </div>
+          <div class="worktrees-list" id="worktreesList"></div>
+        </div>
+
+        <div class="panel" id="remotesPanel" role="tabpanel" aria-labelledby="tabRemotes">
+          <div class="remotes-head">
+            <div class="remotes-title">
+              <span class="eyebrow">Remotes</span>
+              <span class="remotes-sub" id="remotesSummary"></span>
+            </div>
+            <button class="btn ghost" data-action="refresh-remotes">
+              <svg class="ico" aria-hidden="true"><use href="#i-refresh"/></svg>
+              <span>Refresh</span>
+            </button>
+          </div>
+          <div class="remotes-list" id="remotesList"></div>
+        </div>
+
+        <div class="panel" id="branchesPanel" role="tabpanel" aria-labelledby="tabBranches">
+          <div class="branches-head">
+            <div class="branches-title">
+              <span class="eyebrow">Branches</span>
+              <span class="branches-sub" id="branchesSummary"></span>
+            </div>
+            <button class="btn ghost" data-action="refresh-branches">
+              <svg class="ico" aria-hidden="true"><use href="#i-refresh"/></svg>
+              <span>Refresh</span>
+            </button>
+          </div>
+          <div class="branches-list" id="branchesList"></div>
+        </div>
+
+        <div class="panel" id="tagsPanel" role="tabpanel" aria-labelledby="tabTags">
+          <div class="tags-head">
+            <div class="tags-title">
+              <span class="eyebrow">Tags</span>
+              <span class="tags-sub" id="tagsSummary"></span>
+            </div>
+            <button class="btn ghost" data-action="refresh-tags">
+              <svg class="ico" aria-hidden="true"><use href="#i-refresh"/></svg>
+              <span>Refresh</span>
+            </button>
+          </div>
+          <div class="tags-list" id="tagsList"></div>
+        </div>
+
+        <div class="panel" id="stashesPanel" role="tabpanel" aria-labelledby="tabStashes">
+          <div class="stashes-head">
+            <div class="stashes-title">
+              <span class="eyebrow">Stashes</span>
+              <span class="stashes-sub" id="stashesSummary"></span>
+            </div>
+            <button class="btn ghost" data-action="refresh-stashes">
+              <svg class="ico" aria-hidden="true"><use href="#i-refresh"/></svg>
+              <span>Refresh</span>
+            </button>
+          </div>
+          <div class="stashes-list" id="stashesList"></div>
+        </div>
+
+        <div class="panel" id="lfsPanel" role="tabpanel" aria-labelledby="tabLfs">
+          <div class="lfs-head">
+            <div class="lfs-title">
+              <span class="eyebrow">LFS</span>
+              <span class="lfs-sub" id="lfsSummary"></span>
+            </div>
+            <button class="btn ghost" data-action="refresh-lfs">
+              <svg class="ico" aria-hidden="true"><use href="#i-refresh"/></svg>
+              <span>Refresh</span>
+            </button>
+          </div>
+          <div class="lfs-split" id="lfsSplit">
+            <section class="lfs-column">
+              <div class="lfs-col-head">
+                <span class="lfs-col-title">LFS files</span>
+                <span class="lfs-col-count" id="lfsCount">0</span>
+                <span class="lfs-col-hint" id="lfsTotal"></span>
+              </div>
+              <div class="lfs-list" id="lfsList"></div>
+            </section>
+            <section class="lfs-column">
+              <div class="lfs-col-head">
+                <span class="lfs-col-title">Large files</span>
+                <span class="lfs-col-count" id="largeCount">0</span>
+                <span class="lfs-col-hint" id="largeHint">&gt; 5 MB</span>
+              </div>
+              <div class="lfs-list" id="largeList"></div>
+            </section>
+          </div>
+          <div class="lfs-state" id="lfsState" hidden></div>
+        </div>
+
+        <div class="panel" id="submodulesPanel" role="tabpanel" aria-labelledby="tabSubmodules">
+          <div class="submodules-head">
+            <div class="submodules-title">
+              <span class="eyebrow">Submodules</span>
+              <span class="submodules-sub" id="submodulesSummary"></span>
+            </div>
+            <button class="btn ghost" data-action="refresh-submodules">
+              <svg class="ico" aria-hidden="true"><use href="#i-refresh"/></svg>
+              <span>Refresh</span>
+            </button>
+          </div>
+          <div class="submodules-list" id="submodulesList"></div>
+        </div>
+
+        <div class="panel" id="statisticsPanel" role="tabpanel" aria-labelledby="tabStatistics">
+          <div class="stats-head">
+            <div class="stats-title">
+              <span class="eyebrow">Statistics</span>
+              <span class="stats-sub" id="statsSummary"></span>
+            </div>
+            <div class="stats-actions">
+              <button class="btn ghost" data-action="refresh-statistics">
+                <svg class="ico" aria-hidden="true"><use href="#i-refresh"/></svg>
+                <span>Refresh</span>
+              </button>
+              <button class="btn primary" data-action="download-statistics">
+                <svg class="ico" aria-hidden="true"><use href="#i-download"/></svg>
+                <span>Download</span>
+              </button>
+            </div>
+          </div>
+          <div id="statisticsBody"></div>
         </div>
       </div>
     </main>
@@ -2786,6 +4162,28 @@ function randomSha() {
   return Array.from({ length: 7 }, () => "0123456789abcdef"[Math.floor(Math.random() * 16)]).join("");
 }
 function plural(n, word) { return `${n} ${word}${n === 1 ? "" : "s"}`; }
+function pluralBranch(n) { return `${n} ${n === 1 ? "branch" : "branches"}`; }
+function fmtBytes(bytes) {
+  if (!Number.isFinite(bytes) || bytes <= 0) return "0 B";
+  const units = ["B", "KB", "MB", "GB"];
+  const i = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+  const value = bytes / 1024 ** i;
+  return `${value >= 10 || i === 0 ? Math.round(value) : value.toFixed(1)} ${units[i]}`;
+}
+function timeAgoFromMs(ms) {
+  if (!ms) return "";
+  const seconds = Math.max(0, Math.floor((Date.now() - ms) / 1000));
+  if (seconds < 45) return "just now";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days}d ago`;
+  const months = Math.floor(days / 30);
+  if (months < 12) return `${months}mo ago`;
+  return `${Math.floor(months / 12)}y ago`;
+}
 
 /* Syntax highlighting for mock diffs */
 const HL_RE = /((?<!:)\/\/[^\n]*|\/\*[\s\S]*?\*\/)|("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|\b(export|import|const|let|var|await|async|function|return|if|else|for|of|in|new|type|interface|class|extends|throw|try|catch|true|false|null|undefined|from|default|switch|case|break|continue|func|package|struct|impl|pub)\b|\b([A-Z][A-Za-z0-9_]*)\b|\b(\d+(?:\.\d+)?)\b/g;
@@ -4025,6 +5423,343 @@ const REPO_TREES = {
   ]
 };
 
+/* Linked worktrees per project (mirrors `git worktree list --porcelain`). */
+const WORKTREES = {
+  "acme-console": [
+    { path: "~/dev/acme/console", name: "console", head: "9f2c1a4", branch: "main", detached: false, bare: false, locked: false, lockReason: null, prunable: false, pruneReason: null, isMain: true, isCurrent: true },
+    { path: "~/dev/acme/worktrees/oauth-pkce", name: "oauth-pkce", head: "3c4d5e6", branch: "feature/oauth-pkce", detached: false, bare: false, locked: false, lockReason: null, prunable: false, pruneReason: null, isMain: false, isCurrent: false },
+    { path: "~/dev/acme/worktrees/session-timeout", name: "session-timeout", head: "a1e77c9", branch: "fix/session-timeout", detached: false, bare: false, locked: true, lockReason: "Locked while integration tests run", prunable: false, pruneReason: null, isMain: false, isCurrent: false },
+    { path: "~/dev/acme/worktrees/v2.3-hotfix", name: "v2.3-hotfix", head: "0d33b87", branch: null, detached: true, bare: false, locked: false, lockReason: null, prunable: false, pruneReason: null, isMain: false, isCurrent: false }
+  ],
+  "orbit-api": [
+    { path: "~/dev/orbit/api", name: "api", head: "7c1e9d2", branch: "feat/rate-limits", detached: false, bare: false, locked: false, lockReason: null, prunable: false, pruneReason: null, isMain: true, isCurrent: true },
+    { path: "~/dev/orbit/worktrees/release-0.18", name: "release-0.18", head: "0a2b6c7", branch: "release/0.18", detached: false, bare: false, locked: false, lockReason: null, prunable: false, pruneReason: null, isMain: false, isCurrent: false },
+    { path: "~/dev/orbit/worktrees/api-legacy", name: "api-legacy", head: "d8c2f43", branch: "release/0.17", detached: false, bare: false, locked: false, lockReason: null, prunable: true, pruneReason: "gitdir file points to non-existent location", isMain: false, isCurrent: false }
+  ],
+  "atlas-design": [
+    { path: "~/dev/atlas/design-system", name: "design-system", head: "3ed9a10", branch: "main", detached: false, bare: false, locked: false, lockReason: null, prunable: false, pruneReason: null, isMain: true, isCurrent: true },
+    { path: "~/dev/atlas/worktrees/color-tokens", name: "color-tokens", head: "7f3e21a", branch: "docs/color-tokens", detached: false, bare: false, locked: false, lockReason: null, prunable: false, pruneReason: null, isMain: false, isCurrent: false }
+  ],
+  "dotfiles": [
+    { path: "~/.dotfiles", name: ".dotfiles", head: "4b9d0e1", branch: "main", detached: false, bare: false, locked: false, lockReason: null, prunable: false, pruneReason: null, isMain: true, isCurrent: true }
+  ]
+};
+
+/* Configured remotes per project (mirrors `git remote -v` + refs/remotes). */
+const REMOTES = {
+  "acme-console": [
+    {
+      name: "origin",
+      fetchUrl: "https://github.com/acme/console.git",
+      pushUrl: "git@github.com:acme/console.git",
+      defaultBranch: "main",
+      branches: ["main", "feature/oauth-pkce", "fix/session-timeout", "release/2.3"]
+    },
+    {
+      name: "upstream",
+      fetchUrl: "https://github.com/acme/console-upstream.git",
+      pushUrl: "https://github.com/acme/console-upstream.git",
+      defaultBranch: "main",
+      branches: ["main", "release/2.2"]
+    }
+  ],
+  "orbit-api": [
+    {
+      name: "origin",
+      fetchUrl: "git@github.com:orbit/api.git",
+      pushUrl: "git@github.com:orbit/api.git",
+      defaultBranch: "main",
+      branches: ["main", "feat/rate-limits", "release/0.18", "release/0.17"]
+    },
+    {
+      name: "mirror",
+      fetchUrl: "https://gitlab.com/orbit/api.git",
+      pushUrl: "https://gitlab.com/orbit/api.git",
+      defaultBranch: "main",
+      branches: ["main"]
+    }
+  ],
+  "atlas-design": [
+    {
+      name: "origin",
+      fetchUrl: "https://github.com/atlas/design-system.git",
+      pushUrl: "https://github.com/atlas/design-system.git",
+      defaultBranch: "main",
+      branches: ["main", "docs/color-tokens", "v3"]
+    }
+  ],
+  "dotfiles": [
+    {
+      name: "origin",
+      fetchUrl: "git@github.com:maya/dotfiles.git",
+      pushUrl: "git@github.com:maya/dotfiles.git",
+      defaultBranch: "main",
+      branches: ["main", "nvim"]
+    }
+  ]
+};
+
+/* Local and remote-tracking branches per project (mirrors `for-each-ref refs/heads refs/remotes`). */
+const BRANCHES = {
+  "acme-console": [
+    { name: "main", remote: false, current: true, head: "9f2c1a4", upstream: "origin/main", ahead: 0, behind: 0, gone: false, author: "Maya Chen", when: "2h ago", subject: "Refine token refresh & session handoff" },
+    { name: "feature/oauth-pkce", remote: false, current: false, head: "3c4d5e6", upstream: "origin/feature/oauth-pkce", ahead: 2, behind: 0, gone: false, author: "Theo Park", when: "5h ago", subject: "Add PKCE verifier to OAuth callback" },
+    { name: "fix/session-timeout", remote: false, current: false, head: "a1e77c9", upstream: "origin/fix/session-timeout", ahead: 1, behind: 0, gone: true, author: "Maya Chen", when: "yesterday", subject: "Polish sign-in error states" },
+    { name: "release/2.3", remote: false, current: false, head: "5a66c22", upstream: null, ahead: 0, behind: 0, gone: false, author: "Sofia Ruiz", when: "2d ago", subject: "Initialize release checks pipeline" },
+    { name: "origin/main", remote: true, current: false, head: "9f2c1a4", upstream: null, ahead: 0, behind: 0, gone: false, author: "Maya Chen", when: "2h ago", subject: "Refine token refresh & session handoff" },
+    { name: "origin/feature/oauth-pkce", remote: true, current: false, head: "3c4d5e6", upstream: null, ahead: 0, behind: 0, gone: false, author: "Theo Park", when: "5h ago", subject: "Add PKCE verifier to OAuth callback" },
+    { name: "upstream/main", remote: true, current: false, head: "9f2c1a4", upstream: null, ahead: 0, behind: 0, gone: false, author: "Maya Chen", when: "2h ago", subject: "Refine token refresh & session handoff" }
+  ],
+  "orbit-api": [
+    { name: "feat/rate-limits", remote: false, current: true, head: "7c1e9d2", upstream: "origin/feat-rate-limits", ahead: 4, behind: 0, gone: false, author: "Priya Raman", when: "31m ago", subject: "Add sliding-window limiter middleware" },
+    { name: "main", remote: false, current: false, head: "0a2b6c7", upstream: "origin/main", ahead: 0, behind: 0, gone: false, author: "Priya Raman", when: "5h ago", subject: "Release v0.18.2" },
+    { name: "release/0.18", remote: false, current: false, head: "0a2b6c7", upstream: "origin/release/0.18", ahead: 0, behind: 0, gone: false, author: "Dev Patel", when: "6h ago", subject: "Add Redis-backed limiter store" },
+    { name: "origin/feat-rate-limits", remote: true, current: false, head: "7c1e9d2", upstream: null, ahead: 0, behind: 0, gone: false, author: "Priya Raman", when: "31m ago", subject: "Add sliding-window limiter middleware" },
+    { name: "origin/main", remote: true, current: false, head: "0a2b6c7", upstream: null, ahead: 0, behind: 0, gone: false, author: "Priya Raman", when: "5h ago", subject: "Release v0.18.2" },
+    { name: "mirror/main", remote: true, current: false, head: "0a2b6c7", upstream: null, ahead: 0, behind: 0, gone: false, author: "Priya Raman", when: "5h ago", subject: "Release v0.18.2" }
+  ],
+  "atlas-design": [
+    { name: "main", remote: false, current: true, head: "3ed9a10", upstream: "origin/main", ahead: 0, behind: 3, gone: false, author: "Sofia Ruiz", when: "6h ago", subject: "Tune focus ring contrast for WCAG AA" },
+    { name: "docs/color-tokens", remote: false, current: false, head: "7f3e21a", upstream: "origin/docs/color-tokens", ahead: 0, behind: 0, gone: false, author: "Noah Kim", when: "10h ago", subject: "Document semantic color tokens" },
+    { name: "origin/main", remote: true, current: false, head: "3ed9a10", upstream: null, ahead: 0, behind: 0, gone: false, author: "Sofia Ruiz", when: "6h ago", subject: "Tune focus ring contrast for WCAG AA" },
+    { name: "origin/docs/color-tokens", remote: true, current: false, head: "7f3e21a", upstream: null, ahead: 0, behind: 0, gone: false, author: "Noah Kim", when: "10h ago", subject: "Document semantic color tokens" }
+  ],
+  "dotfiles": [
+    { name: "main", remote: false, current: true, head: "4b9d0e1", upstream: "origin/main", ahead: 1, behind: 0, gone: false, author: "Maya Chen", when: "1d ago", subject: "Switch to starship prompt config" },
+    { name: "origin/main", remote: true, current: false, head: "4b9d0e1", upstream: null, ahead: 0, behind: 0, gone: false, author: "Maya Chen", when: "1d ago", subject: "Switch to starship prompt config" },
+    { name: "origin/nvim", remote: true, current: false, head: "5b12c8e", upstream: null, ahead: 0, behind: 0, gone: false, author: "Maya Chen", when: "3d ago", subject: "Add LazyVim bootstrap" }
+  ]
+};
+
+/* Tags per project (mirrors `for-each-ref refs/tags`). */
+const TAGS = {
+  "acme-console": [
+    { name: "nightly", head: "9f2c1a4", targetType: "commit", annotated: false, atHead: true, subject: "Refine token refresh & session handoff", author: "Maya Chen", commitWhen: "2h ago", annotation: null, tagger: null, when: "2h ago", timestamp: 1764000000000 },
+    { name: "v2.3.0", head: "5a66c22", targetType: "commit", annotated: true, atHead: false, subject: "Initialize release checks pipeline", author: "Sofia Ruiz", commitWhen: "2d ago", annotation: "Release 2.3 — OAuth PKCE and session handoff", tagger: "Sofia Ruiz", when: "2d ago", timestamp: 1763500000000 },
+    { name: "v2.2.1", head: "a1e77c9", targetType: "commit", annotated: false, atHead: false, subject: "Polish sign-in error states", author: "Maya Chen", commitWhen: "yesterday", annotation: null, tagger: null, when: "yesterday", timestamp: 1763000000000 },
+    { name: "v2.2.0", head: "b7d1e02", targetType: "commit", annotated: true, atHead: false, subject: "Merge branch 'feature/oauth-pkce' into main", author: "Theo Park", commitWhen: "4h ago", annotation: "Release 2.2 — session refresh hardening", tagger: "Maya Chen", when: "3d ago", timestamp: 1762500000000 }
+  ],
+  "orbit-api": [
+    { name: "v0.18.2", head: "0a2b6c7", targetType: "commit", annotated: true, atHead: false, subject: "Release v0.18.2", author: "Priya Raman", commitWhen: "5h ago", annotation: "Release 0.18.2 — rate-limit headers", tagger: "Priya Raman", when: "5h ago", timestamp: 1763600000000 },
+    { name: "limiter-preview", head: "7c1e9d2", targetType: "commit", annotated: true, atHead: true, subject: "Add sliding-window limiter middleware", author: "Priya Raman", commitWhen: "31m ago", annotation: "Preview build for the limiter rollout", tagger: "Dev Patel", when: "20m ago", timestamp: 1763700000000 },
+    { name: "v0.17.4", head: "d8c2f43", targetType: "commit", annotated: false, atHead: false, subject: "Add Redis-backed limiter store", author: "Dev Patel", commitWhen: "6h ago", annotation: null, tagger: null, when: "6h ago", timestamp: 1762000000000 }
+  ],
+  "atlas-design": [
+    { name: "v3.4.0-rc.1", head: "3ed9a10", targetType: "commit", annotated: true, atHead: true, subject: "Tune focus ring contrast for WCAG AA", author: "Sofia Ruiz", commitWhen: "6h ago", annotation: "Release candidate 3.4.0", tagger: "Sofia Ruiz", when: "6h ago", timestamp: 1763800000000 },
+    { name: "v3.3.0", head: "bd41e70", targetType: "commit", annotated: true, atHead: false, subject: "Rename surface scale tokens", author: "Noah Kim", commitWhen: "yesterday", annotation: "Stable token release 3.3.0", tagger: "Sofia Ruiz", when: "3d ago", timestamp: 1761500000000 }
+  ],
+  "dotfiles": [
+    { name: "v1.0.0", head: "4b9d0e1", targetType: "commit", annotated: true, atHead: true, subject: "Switch to starship prompt config", author: "Maya Chen", commitWhen: "1d ago", annotation: "First dotfiles release", tagger: "Maya Chen", when: "1d ago", timestamp: 1763400000000 }
+  ]
+};
+
+/* Stash entries per project (mirrors `git stash list` + numstat). */
+const STASHES = {
+  "acme-console": [
+    { index: 0, ref: "stash@{0}", sha: "d41c2ab", branch: "main", message: "WIP on main: 9f2c1a4 Refine token refresh & session handoff", base: "9f2c1a4", baseSubject: "Refine token refresh & session handoff", when: "12m ago", timestamp: 1764100000, files: 3, add: 42, del: 7, binary: false },
+    { index: 1, ref: "stash@{1}", sha: "a7f93e1", branch: "feature/oauth-pkce", message: "On feature/oauth-pkce: checkout experiment", base: "3c4d5e6", baseSubject: "Add PKCE verifier to OAuth callback", when: "2h ago", timestamp: 1764090000, files: 1, add: 18, del: 2, binary: false },
+    { index: 2, ref: "stash@{2}", sha: "f20b8c4", branch: "main", message: "WIP on main: a1e77c9 Polish sign-in error states", base: "a1e77c9", baseSubject: "Polish sign-in error states", when: "yesterday", timestamp: 1764000000, files: 2, add: 0, del: 0, binary: true }
+  ],
+  "orbit-api": [
+    { index: 0, ref: "stash@{0}", sha: "8d2f1a0", branch: "feat/rate-limits", message: "On feat/rate-limits: limiter spike", base: "7c1e9d2", baseSubject: "Add sliding-window limiter middleware", when: "40m ago", timestamp: 1764200000, files: 2, add: 31, del: 12, binary: false },
+    { index: 1, ref: "stash@{1}", sha: "1c9e4b7", branch: "main", message: "WIP on main: 0a2b6c7 Release v0.18.2", base: "0a2b6c7", baseSubject: "Release v0.18.2", when: "3h ago", timestamp: 1764100000, files: 1, add: 6, del: 1, binary: false }
+  ],
+  "atlas-design": [
+    { index: 0, ref: "stash@{0}", sha: "5b7d2c1", branch: "main", message: "On main: contrast audit follow-up", base: "3ed9a10", baseSubject: "Tune focus ring contrast for WCAG AA", when: "4h ago", timestamp: 1764150000, files: 4, add: 27, del: 15, binary: false }
+  ],
+  "dotfiles": []
+};
+
+/* LFS and large-file audit per project. */
+const LFS_REPORTS = {
+  "acme-console": {
+    threshold: 5 * 1024 * 1024,
+    lfsAvailable: true,
+    lfs: [
+      { path: "assets/logo.psd", size: 48 * 1024 * 1024, oid: "5c3e1a2b7d9f4c8e0a1b2c3d4e5f60718293a4b5c6d7e8f90123456789abcd", pointer: false, missing: false },
+      { path: "assets/hero.png", size: 12.4 * 1024 * 1024, oid: "9f8e7d6c5b4a39281706f5e4d3c2b1a09876543210fedcba9876543210fedcba", pointer: false, missing: false },
+      { path: "design/theme.fig", size: 84 * 1024 * 1024, oid: "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f809", pointer: true, missing: false }
+    ],
+    large: [
+      { path: "build/app.dmg", size: 84 * 1024 * 1024, tracked: false, mtimeMs: Date.now() - 45 * 60 * 1000 },
+      { path: "video/demo.mp4", size: 23.4 * 1024 * 1024, tracked: true, mtimeMs: Date.now() - 3 * 60 * 60 * 1000 },
+      { path: "data/export.csv", size: 6.2 * 1024 * 1024, tracked: true, mtimeMs: Date.now() - 26 * 60 * 60 * 1000 }
+    ]
+  },
+  "orbit-api": {
+    threshold: 5 * 1024 * 1024,
+    lfsAvailable: true,
+    lfs: [
+      { path: "assets/rate-chart.png", size: 7.5 * 1024 * 1024, oid: "3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f8091a2b", pointer: false, missing: false }
+    ],
+    large: [
+      { path: "tmp/load-test.bin", size: 22 * 1024 * 1024, tracked: false, mtimeMs: Date.now() - 2 * 60 * 60 * 1000 }
+    ]
+  },
+  "atlas-design": {
+    threshold: 5 * 1024 * 1024,
+    lfsAvailable: true,
+    lfs: [
+      { path: "fonts/AtlasSans.woff2", size: 6.1 * 1024 * 1024, oid: "7d9f4c8e0a1b2c3d4e5f60718293a4b5c6d7e8f90123456789abcdef01234567", pointer: false, missing: false }
+    ],
+    large: [
+      { path: "media/hero.jpg", size: 9.3 * 1024 * 1024, tracked: true, mtimeMs: Date.now() - 8 * 60 * 60 * 1000 }
+    ]
+  },
+  "dotfiles": { threshold: 5 * 1024 * 1024, lfsAvailable: true, lfs: [], large: [] }
+};
+
+/* Submodules per project. */
+const SUBMODULES = {
+  "acme-console": [
+    { path: "vendor/ui-kit", url: "https://github.com/acme/ui-kit.git", branch: "main", currentBranch: "main", indexSha: "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678", headSha: "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678", status: "current", dirty: false, subject: "Release 2.1 tokens", author: "Sofia Ruiz", when: "3d ago", describe: "v2.1.0" },
+    { path: "packages/shared", url: "git@github.com:acme/shared.git", branch: "develop", currentBranch: "develop", indexSha: "1111111111111111111111111111111111111111", headSha: "2222222222222222222222222222222222222222", status: "modified", dirty: true, subject: "Add shared fetch wrapper", author: "Theo Park", when: "2h ago", describe: null },
+    { path: "vendor/analytics", url: "https://github.com/acme/analytics.git", branch: "main", currentBranch: null, indexSha: "3333333333333333333333333333333333333333", headSha: null, status: "uninitialized", dirty: false, subject: "", author: "", when: "", describe: null }
+  ],
+  "orbit-api": [
+    { path: "proto", url: "https://github.com/orbit/proto.git", branch: "main", currentBranch: "main", indexSha: "4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f", headSha: "4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f", status: "current", dirty: false, subject: "Add limiter proto messages", author: "Dev Patel", when: "yesterday", describe: null },
+    { path: "tools/bench", url: "https://github.com/orbit/bench.git", branch: "main", currentBranch: null, indexSha: "9f8e7d6c5b4a39281706f5e4d3c2b1a098765432", headSha: null, status: "uninitialized", dirty: false, subject: "", author: "", when: "", describe: null }
+  ],
+  "atlas-design": [
+    { path: "icons", url: "https://github.com/atlas/icons.git", branch: "main", currentBranch: "main", indexSha: "5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f7081", headSha: "6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192", status: "modified", dirty: false, subject: "Refresh outline icon set", author: "Noah Kim", when: "4h ago", describe: "v3.4.0-rc.1" }
+  ],
+  "dotfiles": []
+};
+
+/* Statistics helpers (demo data derived from the project fixtures). */
+const MOCK_LANGUAGES = {
+  ts: ["TypeScript", "#3178c6"],
+  tsx: ["TypeScript", "#3178c6"],
+  js: ["JavaScript", "#f1e05a"],
+  go: ["Go", "#00add8"],
+  css: ["CSS", "#563d7c"],
+  html: ["HTML", "#e34c26"],
+  md: ["Markdown", "#519aba"],
+  mdx: ["Markdown", "#519aba"],
+  json: ["JSON", "#8b9ab0"],
+  yml: ["YAML", "#cb171e"],
+  yaml: ["YAML", "#cb171e"],
+  sh: ["Shell", "#89e051"],
+  lua: ["Lua", "#000080"],
+  toml: ["TOML", "#9c4221"],
+  gitconfig: ["Git config", "#8b9ab0"],
+  zshrc: ["Shell", "#89e051"]
+};
+const COMMIT_TOTALS = { "acme-console": 1284, "orbit-api": 842, "atlas-design": 316, "dotfiles": 96 };
+const OBJECT_STORES = { "acme-console": 184 * 1024 * 1024, "orbit-api": 62 * 1024 * 1024, "atlas-design": 28 * 1024 * 1024, "dotfiles": 4 * 1024 * 1024 };
+
+function mockLanguage(ext) {
+  const entry = MOCK_LANGUAGES[ext];
+  return entry ? { name: entry[0], color: entry[1] } : { name: ext ? ext.toUpperCase() : "Text", color: "#8b9ab0" };
+}
+
+function projectTrackedFileStats(project) {
+  const paths = (REPO_TREES[project.id] || []).map((raw) => typeof raw === "string" ? raw : raw.path);
+  const languageMap = new Map();
+  let bytes = 0;
+  for (const p of paths) {
+    const base = p.split("/").pop() || p;
+    const dot = base.lastIndexOf(".");
+    const ext = dot > 0 ? base.slice(dot + 1).toLowerCase() : "text";
+    let hash = 0;
+    for (const ch of p) hash = (hash * 31 + ch.charCodeAt(0)) | 0;
+    const binary = ["png", "jpg", "gif", "webp", "pdf", "zip", "mp4", "dmg", "bin", "woff2", "psd", "fig"].includes(ext);
+    const size = (Math.abs(hash) % 9000 + 400) * (binary ? 14 : 2);
+    bytes += size;
+    const entry = languageMap.get(ext) || { ext, files: 0, bytes: 0 };
+    entry.files += 1;
+    entry.bytes += size;
+    languageMap.set(ext, entry);
+  }
+  return {
+    tracked: paths.length,
+    bytes,
+    languages: [...languageMap.values()].sort((a, b) => b.bytes - a.bytes).slice(0, 8)
+  };
+}
+
+function projectContributors(project) {
+  const map = new Map();
+  project.history.forEach((commit, index) => {
+    const entry = map.get(commit.author) || {
+      name: commit.author,
+      email: `${commit.author.toLowerCase().replace(/\s+/g, ".")}@acme.dev`,
+      commits: 0
+    };
+    entry.commits += Math.max(3, 24 - index * 2);
+    map.set(commit.author, entry);
+  });
+  return [...map.values()].sort((a, b) => b.commits - a.commits);
+}
+
+function recentWeekLabels() {
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  const offset = (now.getDay() + 6) % 7;
+  return Array.from({ length: 12 }, (_, index) => {
+    const date = new Date(now);
+    date.setDate(date.getDate() - offset - (11 - index) * 7);
+    return `${date.getMonth() + 1}/${date.getDate()}`;
+  });
+}
+
+function getProjectStats() {
+  const project = getProject();
+  const branches = getProjectBranches();
+  const fileStats = projectTrackedFileStats(project);
+  const contributors = projectContributors(project);
+  const localBranches = branches.filter((branch) => !branch.remote).length;
+  const remoteBranches = branches.length - localBranches;
+  const worktrees = getProjectWorktrees();
+  const remotes = getProjectRemotes();
+  const tags = getProjectTags();
+  const stashes = getProjectStashes();
+  const submodules = getProjectSubmodules();
+  const last = project.history[0];
+  const first = project.history[project.history.length - 1];
+  const labels = recentWeekLabels();
+  return {
+    generatedAt: new Date().toISOString(),
+    repo: {
+      name: project.name,
+      path: project.path,
+      branch: project.branch,
+      detached: false,
+      head: last?.sha || null,
+      upstream: project.upstream || null,
+      ahead: project.ahead || 0,
+      behind: project.behind || 0,
+      lastFetch: project.lastFetch || null,
+      remotes: remotes.length,
+      worktrees: worktrees.length,
+      submodules: submodules.length,
+      stashes: stashes.length,
+      localBranches,
+      remoteBranches,
+      tags: tags.length
+    },
+    commits: {
+      total: COMMIT_TOTALS[project.id] || project.history.length,
+      contributors: contributors.length,
+      firstWhen: first?.when || null,
+      lastWhen: last?.when || null,
+      lastSubject: last?.message || "",
+      lastAuthor: last?.author || "",
+      activity: (project.activity || []).map((count, index) => ({ label: labels[index] || "", count }))
+    },
+    contributors: contributors.slice(0, 12),
+    workingTree: {
+      changes: project.files.length,
+      staged: project.files.filter((file) => file.staged).length,
+      unstaged: project.files.filter((file) => !file.staged).length,
+      add: project.files.reduce((sum, file) => sum + (file.add || 0), 0),
+      del: project.files.reduce((sum, file) => sum + (file.del || 0), 0)
+    },
+    files: fileStats,
+    objectStoreBytes: OBJECT_STORES[project.id] || 0
+  };
+}
+
 /* ============================================================
    App state
    ============================================================ */
@@ -4037,6 +5772,13 @@ const state = {
   chatSelectedFile: null,
   fileQuery: "",
   historyQuery: "",
+  worktreesQuery: "",
+  remotesQuery: "",
+  branchesQuery: "",
+  tagsQuery: "",
+  stashesQuery: "",
+  lfsQuery: "",
+  submodulesQuery: "",
   projectQuery: "",
   treeExpanded: new Set(),
   currentUser: { name: "Maya Chen", email: "maya@acme.dev" },
@@ -4208,6 +5950,167 @@ const ZH = {
   "Chat": "对话",
   "File tree": "文件树",
   "History": "历史",
+  "Worktrees": "工作树",
+  "Remote": "远程",
+  "No matching worktrees": "没有匹配的工作树",
+  "No linked worktrees": "暂无链接工作树",
+  "Worktrees refreshed": "工作树已刷新",
+  "Worktree path copied to clipboard": "工作树路径已复制到剪贴板",
+  "Open in GitGlance": "在 GitGlance 中打开",
+  "Already open": "已打开",
+  "Reveal in Finder": "在访达中显示",
+  "Copy worktree path": "复制工作树路径",
+  "Copy commit SHA": "复制提交 SHA",
+  "Clear filter": "清除筛选",
+  "Refresh": "刷新",
+  "Worktrees unavailable": "工作树不可用",
+  "Worktrees could not be loaded": "无法加载工作树",
+  "Loading worktrees…": "正在加载工作树…",
+  "That worktree no longer exists": "该工作树已不存在",
+  "This repository only has its main working tree. Add one with git worktree add, then refresh.": "此仓库只有主工作树。使用 git worktree add 添加一个，然后刷新。",
+  "current": "当前",
+  "main worktree": "主工作树",
+  "locked": "已锁定",
+  "prunable": "可清理",
+  "bare": "裸仓库",
+  "detached": "分离 HEAD",
+  "Detached HEAD": "分离的 HEAD",
+  "Locked worktree": "已锁定的工作树",
+  "Prunable worktree": "可清理的工作树",
+  "Remotes": "远程",
+  "Loading remotes…": "正在加载远程…",
+  "Remotes could not be loaded": "无法加载远程",
+  "Remotes unavailable": "远程不可用",
+  "No remotes configured": "未配置远程",
+  "This repository has no remotes. Add one with git remote add, then refresh.": "此仓库未配置远程。使用 git remote add 添加一个，然后刷新。",
+  "No matching remotes": "没有匹配的远程",
+  "Remote URL copied to clipboard": "远程 URL 已复制到剪贴板",
+  "Copy remote URL": "复制远程 URL",
+  "Open remote URL": "打开远程 URL",
+  "Fetching…": "正在获取…",
+  "Remotes refreshed": "远程已刷新",
+  "Unknown remote": "未知远程",
+  "fetch": "获取",
+  "push": "推送",
+  "Branches": "分支",
+  "Loading branches…": "正在加载分支…",
+  "Branches could not be loaded": "无法加载分支",
+  "Branches unavailable": "分支不可用",
+  "No branches yet": "暂无分支",
+  "Make a commit to create the first branch.": "提交一次即可创建第一个分支。",
+  "No matching branches": "没有匹配的分支",
+  "Checkout": "切换",
+  "Checking out…": "正在切换…",
+  "Checkout branch": "切换分支",
+  "Copy branch name": "复制分支名称",
+  "Branch name copied to clipboard": "分支名称已复制到剪贴板",
+  "Unknown branch": "未知分支",
+  "remote": "远程",
+  "gone": "已删除",
+  "Upstream gone": "上游已删除",
+  "Branches refreshed": "分支已刷新",
+  "Tags": "标签",
+  "Loading tags…": "正在加载标签…",
+  "Tags could not be loaded": "无法加载标签",
+  "Tags unavailable": "标签不可用",
+  "No tags yet": "暂无标签",
+  "Create a tag with git tag NAME and it will appear here.": "使用 git tag NAME 创建标签，它将显示在这里。",
+  "No matching tags": "没有匹配的标签",
+  "Checkout tag": "检出标签",
+  "Tag does not point to a commit": "标签未指向提交",
+  "Copy tag name": "复制标签名称",
+  "Tag name copied to clipboard": "标签名称已复制到剪贴板",
+  "Unknown tag": "未知标签",
+  "Only tags that point to commits can be checked out": "只有指向提交的标签才能检出",
+  "annotated": "附注",
+  "lightweight": "轻量",
+  "tagged by": "标记者",
+  "Tags refreshed": "标签已刷新",
+  "Stash": "贮藏",
+  "Stashes": "贮藏",
+  "Loading stashes…": "正在加载贮藏…",
+  "Stashes could not be loaded": "无法加载贮藏",
+  "Stashes unavailable": "贮藏不可用",
+  "No stashes yet": "暂无贮藏",
+  "Run git stash to save work in progress; it will appear here.": "运行 git stash 保存进行中的工作，它将显示在这里。",
+  "No matching stashes": "没有匹配的贮藏",
+  "Apply": "应用",
+  "Pop": "弹出",
+  "Drop": "删除",
+  "Apply stash": "应用贮藏",
+  "Pop stash": "弹出贮藏",
+  "Drop stash": "删除贮藏",
+  "Copy stash reference": "复制贮藏引用",
+  "Stash reference copied to clipboard": "贮藏引用已复制到剪贴板",
+  "Unknown stash": "未知贮藏",
+  "Unknown stash action": "未知贮藏操作",
+  "base": "基线",
+  "Stashes refreshed": "贮藏已刷新",
+  "LFS": "LFS",
+  "LFS files": "LFS 文件",
+  "Large files": "大文件",
+  "Loading LFS files…": "正在加载 LFS 文件…",
+  "LFS files could not be loaded": "无法加载 LFS 文件",
+  "LFS files unavailable": "LFS 文件不可用",
+  "No LFS files": "暂无 LFS 文件",
+  "Track files with Git LFS and they will appear here.": "使用 Git LFS 跟踪文件后，它们将显示在这里。",
+  "No large files": "暂无大文件",
+  "No matching LFS files": "没有匹配的 LFS 文件",
+  "No matching large files": "没有匹配的大文件",
+  "pointer": "指针",
+  "missing": "缺失",
+  "tracked": "已跟踪",
+  "untracked": "未跟踪",
+  "Last modified": "最后修改",
+  "LFS report refreshed": "LFS 报告已刷新",
+  "Submodules": "子模块",
+  "Loading submodules…": "正在加载子模块…",
+  "Submodules could not be loaded": "无法加载子模块",
+  "Submodules unavailable": "子模块不可用",
+  "No submodules": "暂无子模块",
+  "Add a submodule with git submodule add URL PATH.": "使用 git submodule add URL PATH 添加子模块。",
+  "No matching submodules": "没有匹配的子模块",
+  "uninitialized": "未初始化",
+  "dirty": "有改动",
+  "Not initialized": "未初始化",
+  "Update": "更新",
+  "Updating…": "正在更新…",
+  "Update submodule": "更新子模块",
+  "Copy index SHA": "复制索引 SHA",
+  "index": "索引",
+  "head": "HEAD",
+  "That submodule no longer exists": "该子模块已不存在",
+  "Submodule is not initialized": "子模块尚未初始化",
+  "Submodules refreshed": "子模块已刷新",
+  "Initialized submodule": "已初始化的子模块",
+  "Statistics": "统计",
+  "Download": "下载",
+  "Preparing…": "正在准备…",
+  "Commits": "提交",
+  "Contributors": "贡献者",
+  "Tracked files": "已跟踪文件",
+  "Tracked size": "已跟踪大小",
+  "Languages": "语言",
+  "Commit activity": "提交活动",
+  "last 12 weeks": "最近 12 周",
+  "Unstaged": "未暂存",
+  "Lines": "行数",
+  "Status": "状态",
+  "clean": "干净",
+  "uncommitted work": "未提交的工作",
+  "Branch": "分支",
+  "Upstream": "上游",
+  "Ahead / behind": "领先 / 落后",
+  "First commit": "首次提交",
+  "Last commit": "最近提交",
+  "Object store": "对象库",
+  "Last fetch": "最近获取",
+  "no commits yet": "暂无提交",
+  "across the current branch": "当前分支",
+  "no stashes": "暂无贮藏",
+  "No tracked files": "暂无已跟踪文件",
+  "No contributors yet": "暂无贡献者",
+  "Statistics refreshed": "统计已刷新",
   "Beta": "测试版",
   "Private": "私有",
   "Local": "本地",
@@ -4245,6 +6148,7 @@ const ZH = {
   "No commits yet": "暂无提交",
   "Working tree clean": "工作区干净",
   "No upstream configured": "未配置上游",
+  "no upstream": "无上游",
   "up to date": "已同步",
   "thinking…": "思考中…",
   "No files": "暂无文件",
@@ -4371,6 +6275,20 @@ const ZH_ATTR = {
   "Repository views": "仓库视图",
   "Filter files": "筛选文件",
   "Filter files…": "筛选文件…",
+  "Filter worktrees": "筛选工作树",
+  "Filter worktrees…": "筛选工作树…",
+  "Filter remotes": "筛选远程",
+  "Filter remotes…": "筛选远程…",
+  "Filter branches": "筛选分支",
+  "Filter branches…": "筛选分支…",
+  "Filter tags": "筛选标签",
+  "Filter tags…": "筛选标签…",
+  "Filter stashes": "筛选贮藏",
+  "Filter stashes…": "筛选贮藏…",
+  "Filter LFS and large files": "筛选 LFS 和大文件",
+  "Filter LFS and large files…": "筛选 LFS 和大文件…",
+  "Filter submodules": "筛选子模块",
+  "Filter submodules…": "筛选子模块…",
   "Search commits, authors…": "搜索提交、作者…",
   "Search commits and authors": "搜索提交和作者",
   "Clear search": "清除搜索",
@@ -4409,6 +6327,36 @@ const ZH_ATTR = {
 const ZH_PATTERNS = [
   [/^(\d+) projects? · auto-fetch every (\d+) min$/, (m) => `${m[1]} 个项目 · 每 ${m[2]} 分钟自动获取`],
   [/^(\d+) projects? · auto-fetch off$/, (m) => `${m[1]} 个项目 · 自动获取已关闭`],
+  [/^(\d+) worktrees? · (.*)$/, (m) => `${m[1]} 个工作树 · ${m[2]}`],
+  [/^(\d+) worktrees?$/, (m) => `${m[1]} 个工作树`],
+  [/^(\d+) remotes? · (.*)$/, (m) => `${m[1]} 个远程 · ${m[2]}`],
+  [/^(\d+) remotes?$/, (m) => `${m[1]} 个远程`],
+  [/^(\d+) branch(?:es)? · (.*)$/, (m) => `${m[1]} 个分支 · ${m[2]}`],
+  [/^(\d+) branch(?:es)?$/, (m) => `${m[1]} 个分支`],
+  [/^(\d+) tags? · (.*)$/, (m) => `${m[1]} 个标签 · ${m[2]}`],
+  [/^(\d+) tags?$/, (m) => `${m[1]} 个标签`],
+  [/^(\d+) stashes? · (.*)$/, (m) => `${m[1]} 个贮藏 · ${m[2]}`],
+  [/^(\d+) stashes?$/, (m) => `${m[1]} 个贮藏`],
+  [/^(\d+) stash(?:es)? saved$/, (m) => `${m[1]} 个贮藏已保存`],
+  [/^(\d+) LFS files? · (\d+) large files?$/, (m) => `${m[1]} 个 LFS 文件 · ${m[2]} 个大文件`],
+  [/^(\d+) LFS files?$/, (m) => `${m[1]} 个 LFS 文件`],
+  [/^(\d+) large files?$/, (m) => `${m[1]} 个大文件`],
+  [/^No non-LFS files over (.+)\.$/, (m) => `没有超过 ${m[1]} 的非 LFS 文件。`],
+  [/^(\d+) submodules? · (.*)$/, (m) => `${m[1]} 个子模块 · ${m[2]}`],
+  [/^(\d+) submodules?$/, (m) => `${m[1]} 个子模块`],
+  [/^(\d+) commits?$/, (m) => `${m[1]} 个提交`],
+  [/^(\d+) contributors?$/, (m) => `${m[1]} 个贡献者`],
+  [/^(\d+) languages?$/, (m) => `${m[1]} 种语言`],
+  [/^(\d+) local · (\d+) remote$/, (m) => `${m[1]} 本地 · ${m[2]} 远程`],
+  [/^last (.+)$/, (m) => `最近 ${zhRelative(m[1])}`],
+  [/^(.+) · updated (.+)$/, (m) => `${m[1]} · 更新于 ${m[2]}`],
+  [/^Report saved to (.+)$/, (m) => `报告已保存到 ${m[1]}`],
+  [/^Updated (.+)$/, (m) => `已更新 ${m[1]}`],
+  [/^Checked out tag (.+)$/, (m) => `已检出标签 ${m[1]}`],
+  [/^Applied (.+)$/, (m) => `已应用 ${m[1]}`],
+  [/^Popped (.+)$/, (m) => `已弹出 ${m[1]}`],
+  [/^Dropped (.+)$/, (m) => `已删除 ${m[1]}`],
+  [/^Remote URL opened in browser: (.*)$/, (m) => `已在浏览器中打开远程 URL：${m[1]}`],
   [/^(\d+) projects?$/, (m) => `${m[1]} 个项目`],
   [/^(\d+) files? changed$/, (m) => `${m[1]} 个文件已更改`],
   [/^(\d+) changed files?$/, (m) => `${m[1]} 个已更改文件`],
@@ -4450,6 +6398,10 @@ const ZH_PATTERNS = [
   [/^Already up to date with (.+)$/, (m) => `已与 ${m[1]} 同步`],
   [/^Fast-forwarded (\d+) commits? from (.+)$/, (m) => `已从 ${m[2]} 快进 ${m[1]} 个提交`],
   [/^Pushed (\d+) commits? to (.+)$/, (m) => `已推送 ${m[1]} 个提交到 ${m[2]}`],
+  [/^Switched to branch '(.+)'$/, (m) => `已切换到分支 ${m[1]}`],
+  [/^Switched to a new branch '(.+)'$/, (m) => `已创建并切换到新分支 ${m[1]}`],
+  [/^Switched to (.+)$/, (m) => `已切换到 ${m[1]}`],
+  [/^Already on '(.+)'$/, (m) => `已在分支 ${m[1]} 上`],
   [/^(\d+) files? changed · (.+)$/, (m) => `${m[1]} 个文件已更改 · ${m[2]}`],
   [/^(.+) is unchanged and its contents aren’t loaded into this prototype\. Use Changes for tracked edits or copy the path below\.$/, (m) => `${m[1]} 未更改，其内容尚未加载到此原型中。使用“更改”查看已跟踪的编辑，或复制下方路径。`]
 ];
@@ -4475,6 +6427,46 @@ const I18N_SKIP_SELECTOR = [
   ".commit-msg",
   ".commit-author",
   ".commit-hash",
+  ".wt-name",
+  ".wt-path",
+  ".wt-branch",
+  ".wt-head",
+  ".remote-name",
+  ".remote-flag",
+  ".remote-url-value",
+  ".remote-branch",
+  ".branch-name",
+  ".branch-head",
+  ".branch-subject",
+  ".branch-author",
+  ".tag-name",
+  ".tag-head",
+  ".tag-subject",
+  ".tag-annotation",
+  ".tag-author",
+  ".tag-tagger",
+  ".stash-ref",
+  ".stash-branch",
+  ".stash-message",
+  ".stash-head",
+  ".stash-base-sha",
+  ".stash-base-subject",
+  ".lfs-path",
+  ".lfs-oid",
+  ".sub-path",
+  ".sub-url",
+  ".sub-head",
+  ".sub-subject",
+  ".sub-author",
+  ".sub-branch",
+  ".sub-describe",
+  ".stat-value",
+  ".stat-fact .v",
+  ".contrib-name",
+  ".contrib-email",
+  ".lang-name",
+  ".lang-value",
+  ".activity-label",
   ".proj-name",
   ".proj-path",
   ".tree-label",
@@ -4703,6 +6695,7 @@ function setLanguage(value, { remember = true } = {}) {
   updateThemeControls(state.settings.theme);
   renderChatThread();
   syncChatInput();
+  renderStatistics();
   translateUI();
 }
 
@@ -4903,22 +6896,178 @@ function renderTabChrome() {
   $("#chatPanel").classList.toggle("is-active", state.activeTab === "chat");
   $("#filesPanel").classList.toggle("is-active", state.activeTab === "files");
   $("#historyPanel").classList.toggle("is-active", state.activeTab === "history");
+  $("#worktreesPanel").classList.toggle("is-active", state.activeTab === "worktrees");
+  $("#remotesPanel").classList.toggle("is-active", state.activeTab === "remotes");
+  $("#branchesPanel").classList.toggle("is-active", state.activeTab === "branches");
+  $("#tagsPanel").classList.toggle("is-active", state.activeTab === "tags");
+  $("#stashesPanel").classList.toggle("is-active", state.activeTab === "stashes");
+  $("#lfsPanel").classList.toggle("is-active", state.activeTab === "lfs");
+  $("#submodulesPanel").classList.toggle("is-active", state.activeTab === "submodules");
+  $("#statisticsPanel").classList.toggle("is-active", state.activeTab === "statistics");
 
-  const chatActive = state.activeTab === "chat";
-  $("#tabsTools").hidden = chatActive;
-  if (!chatActive) {
+  const hideTools = state.activeTab === "chat" || state.activeTab === "statistics";
+  $("#tabsTools").hidden = hideTools;
+  if (!hideTools) {
     const search = $("#tabSearch");
-    search.value = state.activeTab === "files" ? state.fileQuery : state.historyQuery;
-    search.placeholder = state.activeTab === "files" ? "Filter files…" : "Search commits, authors…";
-    search.setAttribute("aria-label", state.activeTab === "files" ? "Filter files" : "Search commits and authors");
+    const filesActive = state.activeTab === "files";
+    const historyActive = state.activeTab === "history";
+    const worktreesActive = state.activeTab === "worktrees";
+    const branchesActive = state.activeTab === "branches";
+    const tagsActive = state.activeTab === "tags";
+    const stashesActive = state.activeTab === "stashes";
+    const lfsActive = state.activeTab === "lfs";
+    const submodulesActive = state.activeTab === "submodules";
+    search.value = filesActive
+      ? state.fileQuery
+      : historyActive
+        ? state.historyQuery
+        : worktreesActive
+          ? state.worktreesQuery
+          : branchesActive
+            ? state.branchesQuery
+            : tagsActive
+              ? state.tagsQuery
+              : stashesActive
+                ? state.stashesQuery
+                : lfsActive
+                  ? state.lfsQuery
+                  : submodulesActive
+                    ? state.submodulesQuery
+                    : state.remotesQuery;
+    search.placeholder = filesActive
+      ? "Filter files…"
+      : historyActive
+        ? "Search commits, authors…"
+        : worktreesActive
+          ? "Filter worktrees…"
+          : branchesActive
+            ? "Filter branches…"
+            : tagsActive
+              ? "Filter tags…"
+              : stashesActive
+                ? "Filter stashes…"
+                : lfsActive
+                  ? "Filter LFS and large files…"
+                  : submodulesActive
+                    ? "Filter submodules…"
+                    : "Filter remotes…";
+    search.setAttribute("aria-label", filesActive
+      ? "Filter files"
+      : historyActive
+        ? "Search commits and authors"
+        : worktreesActive
+          ? "Filter worktrees"
+          : branchesActive
+            ? "Filter branches"
+            : tagsActive
+              ? "Filter tags"
+              : stashesActive
+                ? "Filter stashes"
+                : lfsActive
+                  ? "Filter LFS and large files"
+                  : submodulesActive
+                    ? "Filter submodules"
+                    : "Filter remotes");
     syncSearchUI($("#tabSearchWrap"), search);
   }
   updateFilesBadge();
+  updateWorktreesBadge();
+  updateRemotesBadge();
+  updateBranchesBadge();
+  updateTagsBadge();
+  updateStashesBadge();
+  updateLfsBadge();
+  updateSubmodulesBadge();
+  updateStatisticsBadge();
+}
+
+function updateStatisticsBadge() {
+  const badge = $("#statisticsBadge");
+  const count = getProjectStats().commits.total;
+  badge.textContent = count >= 1000 ? `${(count / 1000).toFixed(1)}k` : count;
+  badge.hidden = count === 0;
+}
+
+function getProjectSubmodules() {
+  return SUBMODULES[getProject().id] || [];
+}
+
+function updateSubmodulesBadge() {
+  const badge = $("#submodulesBadge");
+  const count = getProjectSubmodules().length;
+  badge.textContent = count;
+  badge.hidden = count === 0;
+}
+
+function getProjectLfs() {
+  return LFS_REPORTS[getProject().id] || { threshold: 5 * 1024 * 1024, lfsAvailable: true, lfs: [], large: [] };
+}
+
+function updateLfsBadge() {
+  const badge = $("#lfsBadge");
+  const count = getProjectLfs().lfs.length;
+  badge.textContent = count;
+  badge.hidden = count === 0;
+}
+
+function getProjectStashes() {
+  return STASHES[getProject().id] || [];
+}
+
+function updateStashesBadge() {
+  const badge = $("#stashesBadge");
+  const count = getProjectStashes().length;
+  badge.textContent = count;
+  badge.hidden = count === 0;
 }
 
 function updateFilesBadge() {
   const badge = $("#filesBadge");
   const count = getProject().files.length;
+  badge.textContent = count;
+  badge.hidden = count === 0;
+}
+
+function getProjectWorktrees() {
+  return WORKTREES[getProject().id] || [];
+}
+
+function updateWorktreesBadge() {
+  const badge = $("#worktreesBadge");
+  const count = getProjectWorktrees().length;
+  badge.textContent = count;
+  badge.hidden = count === 0;
+}
+
+function getProjectRemotes() {
+  return REMOTES[getProject().id] || [];
+}
+
+function updateRemotesBadge() {
+  const badge = $("#remotesBadge");
+  const count = getProjectRemotes().length;
+  badge.textContent = count;
+  badge.hidden = count === 0;
+}
+
+function getProjectBranches() {
+  return BRANCHES[getProject().id] || [];
+}
+
+function updateBranchesBadge() {
+  const badge = $("#branchesBadge");
+  const count = getProjectBranches().length;
+  badge.textContent = count;
+  badge.hidden = count === 0;
+}
+
+function getProjectTags() {
+  return TAGS[getProject().id] || [];
+}
+
+function updateTagsBadge() {
+  const badge = $("#tagsBadge");
+  const count = getProjectTags().length;
   badge.textContent = count;
   badge.hidden = count === 0;
 }
@@ -5505,6 +7654,871 @@ function renderHistory() {
 }
 
 /* ============================================================
+   Worktrees
+   ============================================================ */
+function worktreeRowHTML(worktree) {
+  const flags = [];
+  if (worktree.isCurrent) flags.push(`<span class="wt-flag is-current">current</span>`);
+  if (worktree.isMain) flags.push(`<span class="wt-flag">main worktree</span>`);
+  if (worktree.locked) flags.push(`<span class="wt-flag is-locked" title="${esc(worktree.lockReason || "Locked worktree")}">locked</span>`);
+  if (worktree.prunable) flags.push(`<span class="wt-flag is-prunable" title="${esc(worktree.pruneReason || "Prunable worktree")}">prunable</span>`);
+  if (worktree.bare) flags.push(`<span class="wt-flag">bare</span>`);
+  const branch = worktree.branch
+    ? `<span class="wt-branch" title="${esc(worktree.branch)}">${icon("branch")}${esc(worktree.branch)}</span>`
+    : `<span class="wt-branch is-detached" title="Detached HEAD">${icon("git-commit")}detached</span>`;
+  const shortHead = worktree.head ? worktree.head.slice(0, 7) : "—";
+  return `<div class="worktree-row${worktree.isCurrent ? " is-current" : ""}${worktree.prunable ? " is-prunable" : ""}">
+    <span class="wt-mark">${icon(worktree.isMain ? "folder" : "branch")}</span>
+    <div class="wt-main">
+      <div class="wt-name-line"><span class="wt-name">${esc(worktree.name)}</span>${flags.join("")}</div>
+      <div class="wt-path" title="${esc(worktree.path)}">${esc(worktree.path)}</div>
+    </div>
+    <div class="wt-meta">
+      ${branch}
+      ${worktree.head ? `<button class="wt-head" data-copy-sha="${esc(worktree.head)}" title="Copy commit SHA">${esc(shortHead)}</button>` : ""}
+    </div>
+    <div class="wt-actions">
+      <button class="wt-action" data-worktree-open="${esc(worktree.path)}" title="${worktree.isCurrent ? "Already open" : "Open in GitGlance"}" aria-label="Open in GitGlance"${worktree.isCurrent || worktree.prunable ? " disabled" : ""}>${icon("chevron-right")}</button>
+      <button class="wt-action" data-worktree-reveal="${esc(worktree.path)}" title="Reveal in Finder" aria-label="Reveal in Finder">${icon("folder")}</button>
+      <button class="wt-action" data-worktree-copy="${esc(worktree.path)}" title="Copy worktree path" aria-label="Copy worktree path">${icon("copy")}</button>
+    </div>
+  </div>`;
+}
+
+function renderWorktrees() {
+  const list = $("#worktreesList");
+  const summary = $("#worktreesSummary");
+  const worktrees = getProjectWorktrees();
+  const count = worktrees.length;
+  summary.textContent = `${plural(count, "worktree")} · ${getProject().path}`;
+  updateWorktreesBadge();
+
+  const query = state.worktreesQuery.trim().toLowerCase();
+  const items = worktrees.filter((worktree) => {
+    if (!query) return true;
+    return `${worktree.name} ${worktree.path} ${worktree.branch || ""} ${worktree.head || ""}`.toLowerCase().includes(query);
+  });
+
+  if (!items.length) {
+    list.innerHTML = `<div class="empty-list worktrees-empty">
+      <span class="e-icon">${icon("search")}</span>
+      <h4>No matching worktrees</h4>
+      <p>Nothing matches “${esc(state.worktreesQuery.trim())}”.</p>
+      <button class="btn ghost sm" data-action="clear-worktrees">Clear filter</button>
+    </div>`;
+    return;
+  }
+  list.innerHTML = items.map(worktreeRowHTML).join("");
+}
+
+function openWorktreePath(worktreePath) {
+  const worktree = getProjectWorktrees().find((entry) => entry.path === worktreePath);
+  if (!worktree) {
+    toast("That worktree no longer exists", "warn");
+    return;
+  }
+  toast(`Opened ${worktree.name} in GitGlance`, "success");
+}
+
+function revealWorktreePath(worktreePath) {
+  toast(`Revealed ${worktreePath} in Finder`, "info");
+}
+
+/* ============================================================
+   Remotes
+   ============================================================ */
+function remoteRowHTML(remote) {
+  const pushUrl = remote.pushUrl && remote.pushUrl !== remote.fetchUrl ? remote.pushUrl : "";
+  const visibleBranches = remote.branches.slice(0, 8);
+  const hiddenBranches = remote.branches.length - visibleBranches.length;
+  const branchPills = visibleBranches
+    .map((branch) => `<span class="remote-branch" title="${esc(branch)}">${esc(branch)}</span>`)
+    .join("") + (hiddenBranches > 0 ? `<span class="remote-branch is-more" title="${esc(remote.branches.slice(8).join(", "))}">+${hiddenBranches}</span>` : "");
+  const defaultFlag = remote.defaultBranch
+    ? `<span class="remote-flag" title="Default branch">${esc(remote.defaultBranch)}</span>`
+    : "";
+  const canOpen = /^https?:\/\//i.test(remote.fetchUrl);
+  return `<div class="remote-row">
+    <span class="remote-mark">${icon("globe")}</span>
+    <div class="remote-main">
+      <div class="remote-name-line">
+        <span class="remote-name">${esc(remote.name)}</span>
+        ${defaultFlag}
+        <span class="remote-count">${pluralBranch(remote.branches.length)}</span>
+      </div>
+      <div class="remote-url">
+        <span class="remote-url-label">fetch</span>
+        <span class="remote-url-value" title="${esc(remote.fetchUrl)}">${esc(remote.fetchUrl)}</span>
+      </div>
+      ${pushUrl ? `<div class="remote-url">
+        <span class="remote-url-label">push</span>
+        <span class="remote-url-value" title="${esc(pushUrl)}">${esc(pushUrl)}</span>
+      </div>` : ""}
+      ${remote.branches.length ? `<div class="remote-branches">${branchPills}</div>` : ""}
+    </div>
+    <div class="remote-actions">
+      <button class="remote-fetch" data-remote-fetch="${esc(remote.name)}">${icon("refresh")}Fetch</button>
+      <button class="remote-action" data-remote-copy="${esc(remote.fetchUrl)}" title="Copy remote URL" aria-label="Copy remote URL">${icon("copy")}</button>
+      ${canOpen ? `<button class="remote-action" data-remote-open="${esc(remote.fetchUrl)}" title="Open remote URL" aria-label="Open remote URL">${icon("globe")}</button>` : ""}
+    </div>
+  </div>`;
+}
+
+function renderRemotes() {
+  const list = $("#remotesList");
+  const summary = $("#remotesSummary");
+  const remotes = getProjectRemotes();
+  summary.textContent = `${plural(remotes.length, "remote")} · ${getProject().path}`;
+  updateRemotesBadge();
+
+  if (!remotes.length) {
+    list.innerHTML = `<div class="empty-list remotes-empty">
+      <span class="e-icon">${icon("globe")}</span>
+      <h4>No remotes configured</h4>
+      <p>This repository has no remotes. Add one with git remote add, then refresh.</p>
+      <button class="btn ghost sm" data-action="refresh-remotes">${icon("refresh")}Refresh</button>
+    </div>`;
+    return;
+  }
+
+  const query = state.remotesQuery.trim().toLowerCase();
+  const items = remotes.filter((remote) => {
+    if (!query) return true;
+    return `${remote.name} ${remote.fetchUrl} ${remote.pushUrl || ""} ${remote.branches.join(" ")}`
+      .toLowerCase()
+      .includes(query);
+  });
+
+  if (!items.length) {
+    list.innerHTML = `<div class="empty-list remotes-empty">
+      <span class="e-icon">${icon("search")}</span>
+      <h4>No matching remotes</h4>
+      <p>Nothing matches “${esc(state.remotesQuery.trim())}”.</p>
+      <button class="btn ghost sm" data-action="clear-remotes">Clear filter</button>
+    </div>`;
+    return;
+  }
+
+  list.innerHTML = items.map(remoteRowHTML).join("");
+}
+
+function fetchRemote(remoteName) {
+  const remote = getProjectRemotes().find((entry) => entry.name === remoteName);
+  if (!remote) {
+    toast("Unknown remote", "warn");
+    return;
+  }
+  toast(`Fetched ${remote.name} · up to date`, "success");
+}
+
+function openRemoteUrl(url) {
+  toast(`Remote URL opened in browser: ${url}`, "info");
+}
+
+/* ============================================================
+   Branches
+   ============================================================ */
+function branchRowHTML(branch) {
+  const flags = [];
+  if (branch.current) flags.push(`<span class="branch-flag is-current">current</span>`);
+  if (branch.remote) flags.push(`<span class="branch-flag">remote</span>`);
+  if (branch.gone) flags.push(`<span class="branch-flag is-gone" title="${esc(branch.upstream || "Upstream gone")}">gone</span>`);
+  const sync = !branch.remote && branch.upstream && !branch.gone
+    ? (branch.ahead || branch.behind
+      ? `${branch.ahead ? `<span class="branch-ahead">${icon("arrow-up")}${branch.ahead}</span>` : ""}${branch.behind ? `<span class="branch-behind">${icon("arrow-down")}${branch.behind}</span>` : ""}`
+      : `<span class="branch-synced">${icon("check")}up to date</span>`)
+    : "";
+  const upstream = !branch.remote
+    ? `<span class="branch-upstream" title="${esc(branch.upstream || "No upstream configured")}">${icon("cloud")}${esc(branch.upstream || "no upstream")}</span>`
+    : "";
+  const shortHead = branch.head ? branch.head.slice(0, 7) : "—";
+  return `<div class="branch-row${branch.current ? " is-current" : ""}${branch.remote ? " is-remote" : ""}">
+    <span class="branch-mark">${icon(branch.current ? "check" : branch.remote ? "cloud" : "branch")}</span>
+    <div class="branch-main">
+      <div class="branch-name-line">
+        <span class="branch-name" title="${esc(branch.name)}">${esc(branch.name)}</span>
+        ${flags.join("")}
+        ${upstream}
+        ${sync}
+      </div>
+      <div class="branch-commit" title="${esc(branch.subject)}">
+        <span class="branch-subject">${esc(branch.subject)}</span>
+        <span class="branch-sep">·</span>
+        <span class="branch-author">${esc(branch.author)}</span>
+        <span class="branch-sep">·</span>
+        <span class="branch-when">${esc(branch.when)}</span>
+      </div>
+    </div>
+    <button class="branch-head" data-copy-sha="${esc(branch.head)}" title="Copy commit SHA">${esc(shortHead)}</button>
+    <div class="branch-actions">
+      <button class="branch-checkout" data-branch-checkout="${esc(branch.name)}" title="Checkout branch"${branch.current ? " disabled" : ""}>${icon("chevron-right")}Checkout</button>
+      <button class="branch-action" data-branch-copy="${esc(branch.name)}" title="Copy branch name" aria-label="Copy branch name">${icon("copy")}</button>
+    </div>
+  </div>`;
+}
+
+function renderBranches() {
+  const list = $("#branchesList");
+  const summary = $("#branchesSummary");
+  const branches = getProjectBranches();
+  const count = branches.length;
+  summary.textContent = `${pluralBranch(count)} · ${getProject().path}`;
+  updateBranchesBadge();
+
+  if (!count) {
+    list.innerHTML = `<div class="empty-list branches-empty">
+      <span class="e-icon">${icon("git-merge")}</span>
+      <h4>No branches yet</h4>
+      <p>Make a commit to create the first branch.</p>
+      <button class="btn ghost sm" data-action="refresh-branches">${icon("refresh")}Refresh</button>
+    </div>`;
+    return;
+  }
+
+  const query = state.branchesQuery.trim().toLowerCase();
+  const items = branches.filter((branch) => {
+    if (!query) return true;
+    return `${branch.name} ${branch.upstream || ""} ${branch.author} ${branch.subject}`
+      .toLowerCase()
+      .includes(query);
+  });
+
+  if (!items.length) {
+    list.innerHTML = `<div class="empty-list branches-empty">
+      <span class="e-icon">${icon("search")}</span>
+      <h4>No matching branches</h4>
+      <p>Nothing matches “${esc(state.branchesQuery.trim())}”.</p>
+      <button class="btn ghost sm" data-action="clear-branches">Clear filter</button>
+    </div>`;
+    return;
+  }
+
+  list.innerHTML = items.map(branchRowHTML).join("");
+}
+
+function checkoutBranchAction(branchName) {
+  const branch = getProjectBranches().find((entry) => entry.name === branchName);
+  if (!branch) {
+    toast("Unknown branch", "warn");
+    return;
+  }
+  if (branch.current) {
+    toast(`Already on '${branch.name}'`, "info");
+    return;
+  }
+  const localName = branch.remote ? branch.name.split("/").slice(1).join("/") : branch.name;
+  toast(`Switched to ${localName}`, "success");
+}
+
+/* ============================================================
+   Tags
+   ============================================================ */
+function tagRowHTML(tag) {
+  const flags = [];
+  if (tag.targetType === "commit") {
+    flags.push(`<span class="tag-flag${tag.annotated ? " is-annotated" : ""}">${tag.annotated ? "annotated" : "lightweight"}</span>`);
+  } else {
+    flags.push(`<span class="tag-flag is-type">${esc(tag.targetType)}</span>`);
+  }
+  if (tag.atHead) flags.push(`<span class="tag-flag is-head">HEAD</span>`);
+  const note = tag.annotated
+    ? `<div class="tag-note" title="${esc(tag.annotation || "")}">
+        ${tag.annotation ? `<span class="tag-annotation">“${esc(tag.annotation)}”</span><span class="tag-sep">·</span>` : ""}
+        <span class="tag-note-label">tagged by</span>
+        <span class="tag-tagger">${esc(tag.tagger || "—")}</span>
+        ${tag.when ? `<span class="tag-sep">·</span><span class="tag-tag-when">${esc(tag.when)}</span>` : ""}
+      </div>`
+    : "";
+  const shortHead = tag.head ? tag.head.slice(0, 7) : "—";
+  const canCheckout = tag.targetType === "commit";
+  return `<div class="tag-row${tag.atHead ? " is-head" : ""}">
+    <span class="tag-mark">${icon("tag")}</span>
+    <div class="tag-main">
+      <div class="tag-name-line">
+        <span class="tag-name" title="${esc(tag.name)}">${esc(tag.name)}</span>
+        ${flags.join("")}
+      </div>
+      <div class="tag-commit" title="${esc(tag.subject)}">
+        <span class="tag-subject">${esc(tag.subject || "—")}</span>
+        ${tag.author ? `<span class="tag-sep">·</span><span class="tag-author">${esc(tag.author)}</span>` : ""}
+        ${tag.commitWhen ? `<span class="tag-sep">·</span><span class="tag-commit-when">${esc(tag.commitWhen)}</span>` : ""}
+      </div>
+      ${note}
+    </div>
+    <button class="tag-head" data-copy-sha="${esc(tag.head)}" title="Copy commit SHA">${esc(shortHead)}</button>
+    <div class="tag-actions">
+      <button class="tag-checkout" data-tag-checkout="${esc(tag.name)}" title="${canCheckout ? "Checkout tag" : "Tag does not point to a commit"}"${canCheckout ? "" : " disabled"}>${icon("chevron-right")}Checkout</button>
+      <button class="tag-action" data-tag-copy="${esc(tag.name)}" title="Copy tag name" aria-label="Copy tag name">${icon("copy")}</button>
+    </div>
+  </div>`;
+}
+
+function renderTags() {
+  const list = $("#tagsList");
+  const summary = $("#tagsSummary");
+  const tags = [...getProjectTags()].sort((a, b) => b.timestamp - a.timestamp || a.name.localeCompare(b.name));
+  const count = tags.length;
+  summary.textContent = `${plural(count, "tag")} · ${getProject().path}`;
+  updateTagsBadge();
+
+  if (!count) {
+    list.innerHTML = `<div class="empty-list tags-empty">
+      <span class="e-icon">${icon("tag")}</span>
+      <h4>No tags yet</h4>
+      <p>Create a tag with git tag NAME and it will appear here.</p>
+      <button class="btn ghost sm" data-action="refresh-tags">${icon("refresh")}Refresh</button>
+    </div>`;
+    return;
+  }
+
+  const query = state.tagsQuery.trim().toLowerCase();
+  const items = tags.filter((tag) => {
+    if (!query) return true;
+    return `${tag.name} ${tag.subject} ${tag.author} ${tag.annotation || ""} ${tag.tagger || ""}`
+      .toLowerCase()
+      .includes(query);
+  });
+
+  if (!items.length) {
+    list.innerHTML = `<div class="empty-list tags-empty">
+      <span class="e-icon">${icon("search")}</span>
+      <h4>No matching tags</h4>
+      <p>Nothing matches “${esc(state.tagsQuery.trim())}”.</p>
+      <button class="btn ghost sm" data-action="clear-tags">Clear filter</button>
+    </div>`;
+    return;
+  }
+
+  list.innerHTML = items.map(tagRowHTML).join("");
+}
+
+function checkoutTagAction(tagName) {
+  const tag = getProjectTags().find((entry) => entry.name === tagName);
+  if (!tag) {
+    toast("Unknown tag", "warn");
+    return;
+  }
+  if (tag.targetType !== "commit") {
+    toast("Only tags that point to commits can be checked out", "warn");
+    return;
+  }
+  toast(`Checked out tag ${tag.name}`, "success");
+}
+
+/* ============================================================
+   Stashes
+   ============================================================ */
+function pluralStash(count) {
+  return `${count} ${count === 1 ? "stash" : "stashes"}`;
+}
+
+function stashStatsHTML(stash) {
+  if (!stash.files) return `<span class="stash-files">—</span>`;
+  const files = `<span class="stash-files">${plural(stash.files, "file")}</span>`;
+  if (stash.binary) return `<span class="stash-files">binary</span>${files}`;
+  return `<span class="stash-add">+${stash.add}</span><span class="stash-del">−${stash.del}</span>${files}`;
+}
+
+function stashRowHTML(stash) {
+  const shortSha = stash.sha ? stash.sha.slice(0, 7) : "—";
+  const branch = stash.branch
+    ? `<span class="stash-branch" title="${esc(stash.branch)}">${icon("branch")}${esc(stash.branch)}</span>`
+    : "";
+  const base = stash.base
+    ? `<div class="stash-base" title="${esc(stash.baseSubject)}">
+        <span class="stash-base-label">base</span>
+        <span class="stash-base-sha">${esc(stash.base.slice(0, 7))}</span>
+        <span class="stash-sep">·</span>
+        <span class="stash-base-subject">${esc(stash.baseSubject || "—")}</span>
+      </div>`
+    : "";
+  return `<div class="stash-row">
+    <span class="stash-mark">${icon("download")}</span>
+    <div class="stash-main">
+      <div class="stash-name-line">
+        <span class="stash-ref">${esc(stash.ref)}</span>
+        ${branch}
+        <span class="stash-when">${esc(stash.when)}</span>
+        <span class="stash-stats">${stashStatsHTML(stash)}</span>
+      </div>
+      <div class="stash-message" title="${esc(stash.message)}">${esc(stash.message)}</div>
+      ${base}
+    </div>
+    <button class="stash-head" data-copy-sha="${esc(stash.sha)}" title="Copy commit SHA">${esc(shortSha)}</button>
+    <div class="stash-actions">
+      <button class="stash-action" data-stash-action="apply" data-stash-ref="${esc(stash.ref)}" title="Apply stash">Apply</button>
+      <button class="stash-action" data-stash-action="pop" data-stash-ref="${esc(stash.ref)}" title="Pop stash">Pop</button>
+      <button class="stash-action is-danger" data-stash-action="drop" data-stash-ref="${esc(stash.ref)}" title="Drop stash">Drop</button>
+      <button class="stash-copy" data-stash-copy="${esc(stash.ref)}" title="Copy stash reference" aria-label="Copy stash reference">${icon("copy")}</button>
+    </div>
+  </div>`;
+}
+
+function renderStashes() {
+  const list = $("#stashesList");
+  const summary = $("#stashesSummary");
+  const stashes = [...getProjectStashes()].sort((a, b) => a.index - b.index);
+  const count = stashes.length;
+  summary.textContent = `${pluralStash(count)} · ${getProject().path}`;
+  updateStashesBadge();
+
+  if (!count) {
+    list.innerHTML = `<div class="empty-list stashes-empty">
+      <span class="e-icon">${icon("download")}</span>
+      <h4>No stashes yet</h4>
+      <p>Run git stash to save work in progress; it will appear here.</p>
+      <button class="btn ghost sm" data-action="refresh-stashes">${icon("refresh")}Refresh</button>
+    </div>`;
+    return;
+  }
+
+  const query = state.stashesQuery.trim().toLowerCase();
+  const items = stashes.filter((stash) => {
+    if (!query) return true;
+    return `${stash.ref} ${stash.sha} ${stash.branch || ""} ${stash.message} ${stash.baseSubject}`
+      .toLowerCase()
+      .includes(query);
+  });
+
+  if (!items.length) {
+    list.innerHTML = `<div class="empty-list stashes-empty">
+      <span class="e-icon">${icon("search")}</span>
+      <h4>No matching stashes</h4>
+      <p>Nothing matches “${esc(state.stashesQuery.trim())}”.</p>
+      <button class="btn ghost sm" data-action="clear-stashes">Clear filter</button>
+    </div>`;
+    return;
+  }
+
+  list.innerHTML = items.map(stashRowHTML).join("");
+}
+
+function removeStash(ref) {
+  const id = getProject().id;
+  STASHES[id] = (STASHES[id] || [])
+    .filter((stash) => stash.ref !== ref)
+    .map((stash, index) => ({ ...stash, index, ref: `stash@{${index}}` }));
+}
+
+function performStashAction(ref, action) {
+  const stash = getProjectStashes().find((entry) => entry.ref === ref);
+  if (!stash) {
+    toast("Unknown stash", "warn");
+    return;
+  }
+  if (action === "drop") {
+    const confirmed = window.confirm(state.language === "zh-CN"
+      ? `删除 ${ref}？此操作无法撤销。`
+      : `Drop ${ref}? This cannot be undone.`);
+    if (!confirmed) return;
+  }
+  if (action === "apply") {
+    toast(`Applied ${ref}`, "success");
+    return;
+  }
+  removeStash(ref);
+  toast(`${action === "pop" ? "Popped" : "Dropped"} ${ref}`, "success");
+  renderStashes();
+}
+
+/* ============================================================
+   LFS
+   ============================================================ */
+function lfsFileRowHTML(file) {
+  const flags = [];
+  if (file.pointer) flags.push(`<span class="lfs-flag is-pointer">pointer</span>`);
+  if (file.missing) flags.push(`<span class="lfs-flag is-missing">missing</span>`);
+  const oid = file.oid
+    ? `<span class="lfs-oid" title="sha256:${esc(file.oid)}">sha256:${esc(file.oid.slice(0, 10))}</span>`
+    : "";
+  const disabled = file.missing ? " disabled" : "";
+  return `<div class="lfs-row">
+    <span class="lfs-mark">${icon("file")}</span>
+    <div class="lfs-main">
+      <div class="lfs-path" title="${esc(file.path)}">${esc(file.path)}</div>
+      <div class="lfs-meta">
+        <span class="lfs-size">${fmtBytes(file.size)}</span>
+        ${flags.join("")}
+        ${oid}
+      </div>
+    </div>
+    <div class="lfs-actions">
+      <button class="lfs-action" data-lfs-open="${esc(file.path)}" title="Open file" aria-label="Open file"${disabled}>${icon("file-code")}</button>
+      <button class="lfs-action" data-lfs-reveal="${esc(file.path)}" title="Reveal in Finder" aria-label="Reveal in Finder"${disabled}>${icon("folder")}</button>
+      <button class="lfs-action" data-copy-path="${esc(file.path)}" title="Copy path" aria-label="Copy path">${icon("copy")}</button>
+    </div>
+  </div>`;
+}
+
+function largeFileRowHTML(file) {
+  const when = file.mtimeMs
+    ? `<span class="lfs-when" title="Last modified">${icon("clock")}${esc(timeAgoFromMs(file.mtimeMs))}</span>`
+    : "";
+  return `<div class="lfs-row">
+    <span class="lfs-mark">${icon("file")}</span>
+    <div class="lfs-main">
+      <div class="lfs-path" title="${esc(file.path)}">${esc(file.path)}</div>
+      <div class="lfs-meta">
+        <span class="lfs-size">${fmtBytes(file.size)}</span>
+        <span class="lfs-flag ${file.tracked ? "is-tracked" : "is-untracked"}">${file.tracked ? "tracked" : "untracked"}</span>
+        ${when}
+      </div>
+    </div>
+    <div class="lfs-actions">
+      <button class="lfs-action" data-lfs-open="${esc(file.path)}" title="Open file" aria-label="Open file">${icon("file-code")}</button>
+      <button class="lfs-action" data-lfs-reveal="${esc(file.path)}" title="Reveal in Finder" aria-label="Reveal in Finder">${icon("folder")}</button>
+      <button class="lfs-action" data-copy-path="${esc(file.path)}" title="Copy path" aria-label="Copy path">${icon("copy")}</button>
+    </div>
+  </div>`;
+}
+
+function lfsEmptyHTML(kind, filtered) {
+  if (filtered) {
+    return `<div class="empty-list lfs-empty">
+      <span class="e-icon">${icon("search")}</span>
+      <h4>No matching ${kind === "lfs" ? "LFS files" : "large files"}</h4>
+      <p>Nothing matches “${esc(state.lfsQuery.trim())}”.</p>
+      <button class="btn ghost sm" data-action="clear-lfs">Clear filter</button>
+    </div>`;
+  }
+  return kind === "lfs"
+    ? `<div class="empty-list lfs-empty">
+      <span class="e-icon">${icon("file")}</span>
+      <h4>No LFS files</h4>
+      <p>Track files with Git LFS and they will appear here.</p>
+    </div>`
+    : `<div class="empty-list lfs-empty">
+      <span class="e-icon">${icon("folder")}</span>
+      <h4>No large files</h4>
+      <p>No non-LFS files over ${fmtBytes(getProjectLfs().threshold)}.</p>
+    </div>`;
+}
+
+function renderLfs() {
+  const summary = $("#lfsSummary");
+  const report = getProjectLfs();
+  const lfsCount = report.lfs.length;
+  const largeCount = report.large.length;
+  summary.textContent = `${plural(lfsCount, "LFS file")} · ${plural(largeCount, "large file")}`;
+  updateLfsBadge();
+  $("#lfsCount").textContent = lfsCount;
+  $("#largeCount").textContent = largeCount;
+  $("#lfsTotal").textContent = lfsCount ? fmtBytes(report.lfs.reduce((sum, file) => sum + file.size, 0)) : "";
+  $("#largeHint").textContent = `> ${fmtBytes(report.threshold)}`;
+
+  const query = state.lfsQuery.trim().toLowerCase();
+  const lfsFiles = report.lfs.filter((file) => !query || file.path.toLowerCase().includes(query));
+  const largeFiles = report.large.filter((file) => !query || file.path.toLowerCase().includes(query));
+  $("#lfsList").innerHTML = lfsFiles.length
+    ? lfsFiles.map(lfsFileRowHTML).join("")
+    : lfsEmptyHTML("lfs", !!query);
+  $("#largeList").innerHTML = largeFiles.length
+    ? largeFiles.map(largeFileRowHTML).join("")
+    : lfsEmptyHTML("large", !!query);
+}
+
+function openLfsPath(filePath) {
+  toast(`Opened ${filePath}`, "success");
+}
+
+function revealLfsPath(filePath) {
+  toast(`Revealed ${filePath} in Finder`, "info");
+}
+
+/* ============================================================
+   Submodules
+   ============================================================ */
+const SUBMODULE_STATUS_LABELS = {
+  current: "up to date",
+  modified: "modified",
+  uninitialized: "uninitialized",
+  conflicted: "conflicted"
+};
+
+function submoduleRowHTML(submodule) {
+  const shortIndex = submodule.indexSha ? submodule.indexSha.slice(0, 7) : "—";
+  const shortHead = submodule.headSha ? submodule.headSha.slice(0, 7) : "";
+  const flags = [
+    `<span class="sub-flag is-${submodule.status}">${SUBMODULE_STATUS_LABELS[submodule.status]}</span>`
+  ];
+  if (submodule.dirty) flags.push(`<span class="sub-flag is-dirty">dirty</span>`);
+  const displayBranch = submodule.currentBranch || submodule.branch;
+  const branch = displayBranch
+    ? `<span class="sub-branch" title="${esc(displayBranch)}">${icon("branch")}${esc(displayBranch)}</span>`
+    : "";
+  const shas = `<span class="sub-shas"><span class="k">index</span><span class="v">${esc(shortIndex)}</span>${shortHead && submodule.headSha !== submodule.indexSha ? `<span class="k">head</span><span class="v">${esc(shortHead)}</span>` : ""}</span>`;
+  const describe = submodule.describe ? `<span class="sub-describe">${esc(submodule.describe)}</span>` : "";
+  const commit = submodule.headSha
+    ? `<div class="sub-commit" title="${esc(submodule.subject)}">
+        <span class="sub-subject">${esc(submodule.subject || "—")}</span>
+        ${submodule.author ? `<span class="sub-sep">·</span><span class="sub-author">${esc(submodule.author)}</span>` : ""}
+        ${submodule.when ? `<span class="sub-sep">·</span><span class="sub-when">${esc(submodule.when)}</span>` : ""}
+      </div>`
+    : `<div class="sub-commit"><span class="sub-not-init">Not initialized</span></div>`;
+  const initialized = !!submodule.headSha;
+  return `<div class="sub-row${submodule.dirty ? " is-dirty" : ""}">
+    <span class="sub-mark">${icon("folder")}</span>
+    <div class="sub-main">
+      <div class="sub-name-line">
+        <span class="sub-path" title="${esc(submodule.path)}">${esc(submodule.path)}</span>
+        ${flags.join("")}
+        ${branch}
+      </div>
+      <div class="sub-meta-line">
+        <span class="sub-url" title="${esc(submodule.url)}">${icon("globe")}${esc(submodule.url || "—")}</span>
+        ${shas}
+        ${describe}
+      </div>
+      ${commit}
+    </div>
+    <button class="sub-head" data-copy-sha="${esc(submodule.indexSha)}" title="Copy index SHA">${esc(shortIndex)}</button>
+    <div class="sub-actions">
+      <button class="sub-update" data-submodule-update="${esc(submodule.path)}" title="Update submodule">${icon("download")}Update</button>
+      <button class="sub-action" data-submodule-open="${esc(submodule.path)}" title="Open in GitGlance" aria-label="Open in GitGlance"${initialized ? "" : " disabled"}>${icon("chevron-right")}</button>
+      <button class="sub-action" data-submodule-reveal="${esc(submodule.path)}" title="Reveal in Finder" aria-label="Reveal in Finder"${initialized ? "" : " disabled"}>${icon("folder")}</button>
+      <button class="sub-action" data-copy-path="${esc(submodule.path)}" title="Copy path" aria-label="Copy path">${icon("copy")}</button>
+    </div>
+  </div>`;
+}
+
+function renderSubmodules() {
+  const list = $("#submodulesList");
+  const summary = $("#submodulesSummary");
+  const submodules = getProjectSubmodules();
+  const count = submodules.length;
+  summary.textContent = `${plural(count, "submodule")} · ${getProject().path}`;
+  updateSubmodulesBadge();
+
+  if (!count) {
+    list.innerHTML = `<div class="empty-list submodules-empty">
+      <span class="e-icon">${icon("folder")}</span>
+      <h4>No submodules</h4>
+      <p>Add a submodule with git submodule add URL PATH.</p>
+      <button class="btn ghost sm" data-action="refresh-submodules">${icon("refresh")}Refresh</button>
+    </div>`;
+    return;
+  }
+
+  const query = state.submodulesQuery.trim().toLowerCase();
+  const items = submodules.filter((submodule) => {
+    if (!query) return true;
+    return `${submodule.path} ${submodule.url} ${submodule.branch || ""} ${submodule.status} ${submodule.subject} ${submodule.author}`
+      .toLowerCase()
+      .includes(query);
+  });
+
+  if (!items.length) {
+    list.innerHTML = `<div class="empty-list submodules-empty">
+      <span class="e-icon">${icon("search")}</span>
+      <h4>No matching submodules</h4>
+      <p>Nothing matches “${esc(state.submodulesQuery.trim())}”.</p>
+      <button class="btn ghost sm" data-action="clear-submodules">Clear filter</button>
+    </div>`;
+    return;
+  }
+
+  list.innerHTML = items.map(submoduleRowHTML).join("");
+}
+
+function updateSubmoduleAction(submodulePath) {
+  const submodule = getProjectSubmodules().find((entry) => entry.path === submodulePath);
+  if (!submodule) {
+    toast("That submodule no longer exists", "warn");
+    return;
+  }
+  if (submodule.status === "current" && !submodule.dirty) {
+    toast(`Updated ${submodule.path}`, "success");
+    return;
+  }
+  submodule.headSha = submodule.indexSha;
+  submodule.status = "current";
+  submodule.dirty = false;
+  submodule.currentBranch = submodule.branch;
+  submodule.subject = "Initialized submodule";
+  submodule.author = "Maya Chen";
+  submodule.when = "just now";
+  renderSubmodules();
+  toast(`Updated ${submodule.path}`, "success");
+}
+
+function openSubmoduleAction(submodulePath) {
+  toast(`Opened ${submodulePath}`, "success");
+}
+
+function revealSubmodulePath(submodulePath) {
+  toast(`Revealed ${submodulePath} in Finder`, "info");
+}
+
+/* ============================================================
+   Statistics
+   ============================================================ */
+function mergedStatsLanguages(stats) {
+  const map = new Map();
+  for (const language of stats.files.languages) {
+    const info = mockLanguage(language.ext);
+    const entry = map.get(info.name) || { info, files: 0, bytes: 0 };
+    entry.files += language.files;
+    entry.bytes += language.bytes;
+    map.set(info.name, entry);
+  }
+  return [...map.values()].sort((a, b) => b.bytes - a.bytes);
+}
+
+function statsLanguageRows(stats) {
+  const languages = mergedStatsLanguages(stats);
+  if (!languages.length) return `<div class="stats-empty-line">No tracked files</div>`;
+  const total = stats.files.bytes || 1;
+  return languages.map(({ info, bytes }) => {
+    const pct = Math.max(1, Math.round((bytes / total) * 100));
+    return `<div class="lang-row">
+      <span class="lang-name">${esc(info.name)}</span>
+      <span class="lang-track"><span class="lang-fill" style="width:${pct}%;--lang-color:${info.color}"></span></span>
+      <span class="lang-value">${pct}% · ${fmtBytes(bytes)}</span>
+    </div>`;
+  }).join("");
+}
+
+function statsActivityHTML(stats) {
+  const max = Math.max(1, ...stats.commits.activity.map((bucket) => bucket.count));
+  return `<div class="stats-activity">${stats.commits.activity.map((bucket) => `
+    <div class="activity-col" title="${esc(bucket.label)} · ${bucket.count}">
+      <span class="activity-count">${bucket.count || ""}</span>
+      <span class="activity-bar" style="height:${Math.max(2, Math.round((bucket.count / max) * 78))}px"></span>
+      <span class="activity-label">${esc(bucket.label)}</span>
+    </div>`).join("")}</div>`;
+}
+
+function statsFactsHTML(stats) {
+  const facts = [
+    ["Branch", stats.repo.branch],
+    ["HEAD", stats.repo.head || "—"],
+    ["Upstream", stats.repo.upstream || "no upstream"],
+    ["Ahead / behind", `${stats.repo.ahead} / ${stats.repo.behind}`],
+    ["Remotes", String(stats.repo.remotes)],
+    ["Worktrees", String(stats.repo.worktrees)],
+    ["Submodules", String(stats.repo.submodules)],
+    ["Stashes", String(stats.repo.stashes)],
+    ["Branches", `${stats.repo.localBranches} local · ${stats.repo.remoteBranches} remote`],
+    ["Tags", String(stats.repo.tags)],
+    ["First commit", stats.commits.firstWhen || "—"],
+    ["Last commit", stats.commits.lastWhen || "—"],
+    ["Object store", fmtBytes(stats.objectStoreBytes)],
+    ["Last fetch", stats.repo.lastFetch || "never"]
+  ];
+  return `<div class="stats-facts">${facts.map(([key, value]) => `
+    <div class="stat-fact"><span class="k">${esc(key)}</span><span class="v" title="${esc(value)}">${esc(value)}</span></div>`).join("")}</div>`;
+}
+
+function statsWorkingTreeHTML(stats) {
+  const tree = stats.workingTree;
+  const facts = [
+    ["Changes", String(tree.changes)],
+    ["Staged", String(tree.staged)],
+    ["Unstaged", String(tree.unstaged)],
+    ["Lines", `+${tree.add} −${tree.del}`],
+    ["Status", tree.changes ? "uncommitted work" : "clean"]
+  ];
+  return `<div class="stats-facts">${facts.map(([key, value]) => `
+    <div class="stat-fact"><span class="k">${esc(key)}</span><span class="v">${esc(value)}</span></div>`).join("")}</div>`;
+}
+
+function statsContributorsHTML(stats) {
+  if (!stats.contributors.length) return `<div class="stats-empty-line">No contributors yet</div>`;
+  return `<div class="contrib-list">${stats.contributors.map((contributor) => `
+    <div class="contrib-row">
+      ${avatarHTML(contributor.name, "avatar-xs")}
+      <div class="contrib-main">
+        <span class="contrib-name">${esc(contributor.name)}</span>
+        <span class="contrib-email">${esc(contributor.email)}</span>
+      </div>
+      <span class="contrib-count">${plural(contributor.commits, "commit")}</span>
+    </div>`).join("")}</div>`;
+}
+
+function renderStatistics() {
+  const stats = getProjectStats();
+  const generated = new Date(stats.generatedAt).toLocaleString(state.language === "zh-CN" ? "zh-CN" : [], {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit"
+  });
+  $("#statsSummary").textContent = `${stats.repo.branch} · updated ${generated}`;
+  updateStatisticsBadge();
+  const cards = [
+    ["Commits", String(stats.commits.total), stats.commits.lastWhen ? `last ${stats.commits.lastWhen}` : "no commits yet"],
+    ["Contributors", String(stats.commits.contributors), "across the current branch"],
+    ["Tracked files", String(stats.files.tracked), fmtBytes(stats.files.bytes)],
+    ["Tracked size", fmtBytes(stats.files.bytes), `${plural(mergedStatsLanguages(stats).length, "language")}`],
+    ["Branches", String(stats.repo.localBranches + stats.repo.remoteBranches), `${stats.repo.localBranches} local · ${stats.repo.remoteBranches} remote`],
+    ["Tags", String(stats.repo.tags), stats.repo.stashes ? `${pluralStash(stats.repo.stashes)} saved` : "no stashes"]
+  ];
+  $("#statisticsBody").innerHTML = `
+    <div class="stats-grid">${cards.map(([label, value, sub]) => `
+      <div class="stat-card"><span class="stat-label">${esc(label)}</span><span class="stat-value">${esc(value)}</span><span class="stat-sub">${esc(sub)}</span></div>`).join("")}</div>
+    <div class="stats-panels">
+      <div class="stats-card"><h3>Languages <span class="muted">${fmtBytes(stats.files.bytes)}</span></h3><div class="lang-list">${statsLanguageRows(stats)}</div></div>
+      <div class="stats-card"><h3>Commit activity <span class="muted">last 12 weeks</span></h3>${statsActivityHTML(stats)}</div>
+    </div>
+    <div class="stats-panels">
+      <div class="stats-card"><h3>Repository</h3>${statsFactsHTML(stats)}</div>
+      <div class="stats-card"><h3>Working tree</h3>${statsWorkingTreeHTML(stats)}</div>
+    </div>
+    <div class="stats-panels stats-panels-single">
+      <div class="stats-card"><h3>Contributors <span class="muted">${plural(stats.commits.contributors, "contributor")}</span></h3>${statsContributorsHTML(stats)}</div>
+    </div>`;
+}
+
+function buildStatsReportHTML(stats) {
+  const zh = state.language === "zh-CN";
+  const L = (en, cn) => zh ? cn : en;
+  const generated = new Date(stats.generatedAt).toLocaleString(zh ? "zh-CN" : "en-US", { dateStyle: "medium", timeStyle: "short" });
+  const totalBytes = stats.files.bytes || 1;
+  const languages = mergedStatsLanguages(stats).map(({ info, bytes }) => {
+    const pct = Math.max(1, Math.round((bytes / totalBytes) * 100));
+    return `<div class="lang-row"><span class="lang-name">${esc(info.name)}</span><span class="lang-track"><span class="lang-fill" style="width:${pct}%;background:${info.color}"></span></span><span class="lang-value">${pct}% · ${fmtBytes(bytes)}</span></div>`;
+  }).join("");
+  const max = Math.max(1, ...stats.commits.activity.map((bucket) => bucket.count));
+  const activity = stats.commits.activity.map((bucket) => `<div class="activity-col"><span class="activity-count">${bucket.count || ""}</span><span class="activity-bar" style="height:${Math.max(3, Math.round((bucket.count / max) * 90))}px"></span><span class="activity-label">${esc(bucket.label)}</span></div>`).join("");
+  const contributors = stats.contributors.map((contributor) => `<tr><td>${esc(contributor.name)}</td><td class="mono">${esc(contributor.email)}</td><td class="num">${contributor.commits}</td></tr>`).join("");
+  const facts = [
+    [L("Branch", "分支"), stats.repo.branch], ["HEAD", stats.repo.head || "—"],
+    [L("Upstream", "上游"), stats.repo.upstream || L("no upstream", "无上游")],
+    [L("Ahead / behind", "领先 / 落后"), `${stats.repo.ahead} / ${stats.repo.behind}`],
+    [L("Remotes", "远程"), stats.repo.remotes], [L("Worktrees", "工作树"), stats.repo.worktrees],
+    [L("Submodules", "子模块"), stats.repo.submodules], [L("Stashes", "贮藏"), stats.repo.stashes],
+    [L("Branches", "分支"), `${stats.repo.localBranches} ${L("local", "本地")} · ${stats.repo.remoteBranches} ${L("remote", "远程")}`],
+    [L("Tags", "标签"), stats.repo.tags], [L("First commit", "首次提交"), stats.commits.firstWhen || "—"],
+    [L("Last commit", "最近提交"), stats.commits.lastWhen || "—"], [L("Object store", "对象库"), fmtBytes(stats.objectStoreBytes)]
+  ];
+  const cards = [
+    [L("Commits", "提交"), stats.commits.total, ""], [L("Contributors", "贡献者"), stats.commits.contributors, ""],
+    [L("Tracked files", "已跟踪文件"), stats.files.tracked, fmtBytes(stats.files.bytes)],
+    [L("Tracked size", "已跟踪大小"), fmtBytes(stats.files.bytes), ""],
+    [L("Branches", "分支"), stats.repo.localBranches + stats.repo.remoteBranches, ""],
+    [L("Tags", "标签"), stats.repo.tags, ""]
+  ];
+  return `<!DOCTYPE html><html lang="${zh ? "zh-CN" : "en"}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(stats.repo.name)} — ${L("Repository statistics", "仓库统计")}</title><style>
+  body{margin:0;padding:32px 20px;font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f4f6fb;color:#182033}.wrap{max-width:1000px;margin:0 auto}header{padding:26px 28px;border-radius:16px;color:#fff;background:linear-gradient(120deg,#3d5afe,#7c4dff 55%,#b06bff)}header h1{margin:0 0 4px;font-size:28px}header p{margin:0;opacity:.86}.cards{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin:18px 0}.card,.panel{padding:14px 16px;border-radius:12px;background:#fff;border:1px solid #e3e9f4}.label{font-size:10px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:#7c879c}.value{display:block;margin:4px 0 2px;font-size:24px;font-weight:700}.sub{font-size:11px;color:#8792a6}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}.panel h2{margin:0 0 14px;font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:#6d7890}.lang-row{display:grid;grid-template-columns:110px 1fr 110px;gap:10px;align-items:center;margin-bottom:9px}.lang-track{height:8px;border-radius:4px;background:#edf1f8;overflow:hidden}.lang-fill{display:block;height:100%}.lang-value{font:10px ui-monospace,Menlo,monospace;color:#7c879c;text-align:right}.activity{display:flex;align-items:flex-end;gap:6px;height:130px}.activity-col{flex:1;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:3px}.activity-bar{width:100%;max-width:26px;border-radius:4px 4px 0 0;background:linear-gradient(180deg,#5b7cfa,#a7b9ff)}.activity-count,.activity-label{font-size:8px;color:#8b95a8}.facts{display:grid;grid-template-columns:1fr 1fr;gap:10px 18px}.k{display:block;font-size:9px;font-weight:700;text-transform:uppercase;color:#8b95a8}.v{display:block;font:11px ui-monospace,Menlo,monospace;overflow-wrap:anywhere}table{width:100%;border-collapse:collapse}th,td{padding:8px 6px;text-align:left;border-bottom:1px solid #edf1f8}th{font-size:9px;text-transform:uppercase;color:#8b95a8}.num{text-align:right;font-family:ui-monospace,Menlo,monospace}.mono{font:10px ui-monospace,Menlo,monospace;color:#6d7890}footer{margin-top:22px;text-align:center;font-size:11px;color:#8b95a8}@media(max-width:760px){.cards{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:1fr}}
+  </style></head><body><div class="wrap"><header><h1>${esc(stats.repo.name)}</h1><p>${L("Repository statistics report", "仓库统计报告")} · ${esc(generated)}</p></header><div class="cards">${cards.map(([label, value, sub]) => `<div class="card"><span class="label">${esc(label)}</span><span class="value">${esc(value)}</span><span class="sub">${esc(sub)}</span></div>`).join("")}</div><div class="grid"><section class="panel"><h2>${L("Languages", "语言")}</h2>${languages}</section><section class="panel"><h2>${L("Commit activity · last 12 weeks", "提交活动 · 最近 12 周")}</h2><div class="activity">${activity}</div></section></div><div class="grid"><section class="panel"><h2>${L("Repository", "仓库")}</h2><div class="facts">${facts.map(([key, value]) => `<div><span class="k">${esc(key)}</span><span class="v">${esc(value)}</span></div>`).join("")}</div></section><section class="panel"><h2>${L("Working tree", "工作区")}</h2><div class="facts"><div><span class="k">${L("Changes", "更改")}</span><span class="v">${stats.workingTree.changes}</span></div><div><span class="k">${L("Staged", "已暂存")}</span><span class="v">${stats.workingTree.staged}</span></div><div><span class="k">${L("Unstaged", "未暂存")}</span><span class="v">${stats.workingTree.unstaged}</span></div><div><span class="k">${L("Lines", "行数")}</span><span class="v">+${stats.workingTree.add} −${stats.workingTree.del}</span></div></div></section></div><section class="panel"><h2>${L("Contributors", "贡献者")}</h2>${contributors ? `<table><thead><tr><th>${L("Name", "姓名")}</th><th>${L("Email", "邮箱")}</th><th class="num">${L("Commits", "提交")}</th></tr></thead><tbody>${contributors}</tbody></table>` : `<p>${L("No contributors yet", "暂无贡献者")}</p>`}</section><footer>${L("Generated by GitGlance", "由 GitGlance 生成")} · ${esc(stats.repo.path)}</footer></div></body></html>`;
+}
+
+function downloadStatisticsReport() {
+  const stats = getProjectStats();
+  const html = buildStatsReportHTML(stats);
+  const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = `${stats.repo.name.replace(/[^\w.-]+/g, "-").toLowerCase()}-statistics.html`;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  toast(`Report saved to ${anchor.download}`, "success");
+}
+
+/* ============================================================
    Chat
    ============================================================ */
 function chatTime() {
@@ -5908,6 +8922,14 @@ function renderAll() {
   renderFileTree();
   renderChat();
   renderHistory();
+  renderWorktrees();
+  renderRemotes();
+  renderBranches();
+  renderTags();
+  renderStashes();
+  renderLfs();
+  renderSubmodules();
+  renderStatistics();
   updateCommitBar();
 }
 
@@ -5916,6 +8938,13 @@ function selectProject(id) {
   state.projectId = id;
   state.fileQuery = "";
   state.historyQuery = "";
+  state.worktreesQuery = "";
+  state.remotesQuery = "";
+  state.branchesQuery = "";
+  state.tagsQuery = "";
+  state.stashesQuery = "";
+  state.lfsQuery = "";
+  state.submodulesQuery = "";
   state.treeExpanded = new Set();
   const p = getProject();
   state.selectedFile = pickTreeFile(p);
@@ -5926,6 +8955,12 @@ function selectProject(id) {
   renderAll();
   $("#changesPane").scrollTop = 0;
   $("#historyPanel").scrollTop = 0;
+  $("#worktreesPanel").scrollTop = 0;
+  $("#remotesPanel").scrollTop = 0;
+  $("#branchesPanel").scrollTop = 0;
+  $("#tagsPanel").scrollTop = 0;
+  $("#stashesPanel").scrollTop = 0;
+  $("#submodulesPanel").scrollTop = 0;
 }
 
 function switchTab(tab) {
@@ -5936,6 +8971,22 @@ function switchTab(tab) {
     renderChatThread();
     syncChatInput();
     resizeChatInput();
+  } else if (tab === "worktrees") {
+    renderWorktrees();
+  } else if (tab === "remotes") {
+    renderRemotes();
+  } else if (tab === "branches") {
+    renderBranches();
+  } else if (tab === "tags") {
+    renderTags();
+  } else if (tab === "stashes") {
+    renderStashes();
+  } else if (tab === "lfs") {
+    renderLfs();
+  } else if (tab === "submodules") {
+    renderSubmodules();
+  } else if (tab === "statistics") {
+    renderStatistics();
   }
 }
 
@@ -6223,12 +9274,40 @@ function init() {
     } else if (state.activeTab === "history") {
       state.historyQuery = tabSearch.value;
       renderHistory();
+    } else if (state.activeTab === "worktrees") {
+      state.worktreesQuery = tabSearch.value;
+      renderWorktrees();
+    } else if (state.activeTab === "remotes") {
+      state.remotesQuery = tabSearch.value;
+      renderRemotes();
+    } else if (state.activeTab === "branches") {
+      state.branchesQuery = tabSearch.value;
+      renderBranches();
+    } else if (state.activeTab === "tags") {
+      state.tagsQuery = tabSearch.value;
+      renderTags();
+    } else if (state.activeTab === "stashes") {
+      state.stashesQuery = tabSearch.value;
+      renderStashes();
+    } else if (state.activeTab === "lfs") {
+      state.lfsQuery = tabSearch.value;
+      renderLfs();
+    } else if (state.activeTab === "submodules") {
+      state.submodulesQuery = tabSearch.value;
+      renderSubmodules();
     }
     syncSearchUI($("#tabSearchWrap"), tabSearch);
   });
   $("#tabSearchClear").addEventListener("click", () => {
     if (state.activeTab === "files") { state.fileQuery = ""; renderFileTree(); }
     else if (state.activeTab === "history") { state.historyQuery = ""; renderHistory(); }
+    else if (state.activeTab === "worktrees") { state.worktreesQuery = ""; renderWorktrees(); }
+    else if (state.activeTab === "remotes") { state.remotesQuery = ""; renderRemotes(); }
+    else if (state.activeTab === "branches") { state.branchesQuery = ""; renderBranches(); }
+    else if (state.activeTab === "tags") { state.tagsQuery = ""; renderTags(); }
+    else if (state.activeTab === "stashes") { state.stashesQuery = ""; renderStashes(); }
+    else if (state.activeTab === "lfs") { state.lfsQuery = ""; renderLfs(); }
+    else if (state.activeTab === "submodules") { state.submodulesQuery = ""; renderSubmodules(); }
     tabSearch.value = "";
     syncSearchUI($("#tabSearchWrap"), tabSearch);
     tabSearch.focus();
@@ -6348,6 +9427,123 @@ function init() {
     if (hash) copyText(hash.dataset.copySha, `Copied ${hash.dataset.copySha} to clipboard`);
   });
 
+  // Worktree actions
+  $("#worktreesList").addEventListener("click", (e) => {
+    const open = e.target.closest("[data-worktree-open]");
+    if (open) {
+      openWorktreePath(open.dataset.worktreeOpen);
+      return;
+    }
+    const reveal = e.target.closest("[data-worktree-reveal]");
+    if (reveal) {
+      revealWorktreePath(reveal.dataset.worktreeReveal);
+      return;
+    }
+    const copy = e.target.closest("[data-worktree-copy]");
+    if (copy) {
+      copyText(copy.dataset.worktreeCopy, "Worktree path copied to clipboard");
+      return;
+    }
+    const hash = e.target.closest("[data-copy-sha]");
+    if (hash) copyText(hash.dataset.copySha, `Copied ${hash.dataset.copySha} to clipboard`);
+  });
+
+  // Remote actions
+  $("#remotesList").addEventListener("click", (e) => {
+    const fetchButton = e.target.closest("[data-remote-fetch]");
+    if (fetchButton) {
+      fetchRemote(fetchButton.dataset.remoteFetch);
+      return;
+    }
+    const copy = e.target.closest("[data-remote-copy]");
+    if (copy) {
+      copyText(copy.dataset.remoteCopy, "Remote URL copied to clipboard");
+      return;
+    }
+    const open = e.target.closest("[data-remote-open]");
+    if (open) openRemoteUrl(open.dataset.remoteOpen);
+  });
+
+  // Branch actions
+  $("#branchesList").addEventListener("click", (e) => {
+    const checkout = e.target.closest("[data-branch-checkout]");
+    if (checkout) {
+      checkoutBranchAction(checkout.dataset.branchCheckout);
+      return;
+    }
+    const copy = e.target.closest("[data-branch-copy]");
+    if (copy) {
+      copyText(copy.dataset.branchCopy, "Branch name copied to clipboard");
+      return;
+    }
+    const hash = e.target.closest("[data-copy-sha]");
+    if (hash) copyText(hash.dataset.copySha, `Copied ${hash.dataset.copySha} to clipboard`);
+  });
+
+  // Tag actions
+  $("#tagsList").addEventListener("click", (e) => {
+    const checkout = e.target.closest("[data-tag-checkout]");
+    if (checkout) {
+      checkoutTagAction(checkout.dataset.tagCheckout);
+      return;
+    }
+    const copy = e.target.closest("[data-tag-copy]");
+    if (copy) {
+      copyText(copy.dataset.tagCopy, "Tag name copied to clipboard");
+      return;
+    }
+    const hash = e.target.closest("[data-copy-sha]");
+    if (hash) copyText(hash.dataset.copySha, `Copied ${hash.dataset.copySha} to clipboard`);
+  });
+
+  // Stash actions
+  $("#stashesList").addEventListener("click", (e) => {
+    const actionButton = e.target.closest("[data-stash-action]");
+    if (actionButton) {
+      performStashAction(actionButton.dataset.stashRef, actionButton.dataset.stashAction);
+      return;
+    }
+    const copy = e.target.closest("[data-stash-copy]");
+    if (copy) {
+      copyText(copy.dataset.stashCopy, "Stash reference copied to clipboard");
+      return;
+    }
+    const hash = e.target.closest("[data-copy-sha]");
+    if (hash) copyText(hash.dataset.copySha, `Copied ${hash.dataset.copySha} to clipboard`);
+  });
+
+  // LFS actions
+  $("#lfsPanel").addEventListener("click", (e) => {
+    const open = e.target.closest("[data-lfs-open]");
+    if (open) {
+      openLfsPath(open.dataset.lfsOpen);
+      return;
+    }
+    const reveal = e.target.closest("[data-lfs-reveal]");
+    if (reveal) revealLfsPath(reveal.dataset.lfsReveal);
+  });
+
+  // Submodule actions
+  $("#submodulesList").addEventListener("click", (e) => {
+    const update = e.target.closest("[data-submodule-update]");
+    if (update) {
+      updateSubmoduleAction(update.dataset.submoduleUpdate);
+      return;
+    }
+    const open = e.target.closest("[data-submodule-open]");
+    if (open) {
+      openSubmoduleAction(open.dataset.submoduleOpen);
+      return;
+    }
+    const reveal = e.target.closest("[data-submodule-reveal]");
+    if (reveal) {
+      revealSubmodulePath(reveal.dataset.submoduleReveal);
+      return;
+    }
+    const hash = e.target.closest("[data-copy-sha]");
+    if (hash) copyText(hash.dataset.copySha, `Copied ${hash.dataset.copySha} to clipboard`);
+  });
+
   // Global actions (summary buttons, empty states, copy buttons)
   document.addEventListener("click", (e) => {
     const actionEl = e.target.closest("[data-action]");
@@ -6376,6 +9572,67 @@ function init() {
       $("#tabSearch").value = "";
       syncSearchUI($("#tabSearchWrap"), $("#tabSearch"));
       renderHistory();
+    } else if (action === "refresh-worktrees") {
+      renderWorktrees();
+      toast("Worktrees refreshed", "success");
+    } else if (action === "clear-worktrees") {
+      state.worktreesQuery = "";
+      $("#tabSearch").value = "";
+      syncSearchUI($("#tabSearchWrap"), $("#tabSearch"));
+      renderWorktrees();
+    } else if (action === "refresh-remotes") {
+      renderRemotes();
+      toast("Remotes refreshed", "success");
+    } else if (action === "clear-remotes") {
+      state.remotesQuery = "";
+      $("#tabSearch").value = "";
+      syncSearchUI($("#tabSearchWrap"), $("#tabSearch"));
+      renderRemotes();
+    } else if (action === "refresh-branches") {
+      renderBranches();
+      toast("Branches refreshed", "success");
+    } else if (action === "clear-branches") {
+      state.branchesQuery = "";
+      $("#tabSearch").value = "";
+      syncSearchUI($("#tabSearchWrap"), $("#tabSearch"));
+      renderBranches();
+    } else if (action === "refresh-tags") {
+      renderTags();
+      toast("Tags refreshed", "success");
+    } else if (action === "clear-tags") {
+      state.tagsQuery = "";
+      $("#tabSearch").value = "";
+      syncSearchUI($("#tabSearchWrap"), $("#tabSearch"));
+      renderTags();
+    } else if (action === "refresh-stashes") {
+      renderStashes();
+      toast("Stashes refreshed", "success");
+    } else if (action === "clear-stashes") {
+      state.stashesQuery = "";
+      $("#tabSearch").value = "";
+      syncSearchUI($("#tabSearchWrap"), $("#tabSearch"));
+      renderStashes();
+    } else if (action === "refresh-lfs") {
+      renderLfs();
+      toast("LFS report refreshed", "success");
+    } else if (action === "clear-lfs") {
+      state.lfsQuery = "";
+      $("#tabSearch").value = "";
+      syncSearchUI($("#tabSearchWrap"), $("#tabSearch"));
+      renderLfs();
+    } else if (action === "refresh-submodules") {
+      renderSubmodules();
+      toast("Submodules refreshed", "success");
+    } else if (action === "clear-submodules") {
+      state.submodulesQuery = "";
+      $("#tabSearch").value = "";
+      syncSearchUI($("#tabSearchWrap"), $("#tabSearch"));
+      renderSubmodules();
+    } else if (action === "refresh-statistics") {
+      renderStatistics();
+      toast("Statistics refreshed", "success");
+    } else if (action === "download-statistics") {
+      downloadStatisticsReport();
     }
   });
 

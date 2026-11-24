@@ -1,20 +1,30 @@
 import type {
   AppSettings,
+  GitBranchInfo,
+  GitLfsReport,
+  GitRemoteInfo,
+  GitStashInfo,
   GitStatusFile,
+  GitSubmoduleInfo,
+  GitTagInfo,
   GitTreeNode,
+  GitWorktree,
   Language,
   PiStatus,
   RepoSnapshot,
+  RepoStatistics,
   RepoSummary,
+  StashAction,
+  SubmoduleStatus,
   ThemeMode
 } from '../electron/shared/models';
 
 export type { PreviewData, ThemeMode, Language } from '../electron/shared/models';
 
-export type Tab = 'chat' | 'files' | 'history';
+export type Tab = 'chat' | 'files' | 'history' | 'worktrees' | 'remotes' | 'branches' | 'tags' | 'stashes' | 'lfs' | 'submodules' | 'statistics';
 export type PaneMode = 'preview' | 'diff';
 export type DetailScope = 'main' | 'chat';
-export type BusyAction = 'refresh' | 'fetch' | 'pull' | 'push';
+export type BusyAction = 'refresh' | 'fetch' | 'pull' | 'push' | 'checkout' | 'stash' | 'submodule';
 
 export interface RepoEntry extends GitTreeNode {
   change: GitStatusFile | null;
@@ -91,6 +101,43 @@ export interface AppState {
   repo: RepoState | null;
   repoError: string | null;
   activeTab: Tab;
+  worktrees: GitWorktree[];
+  worktreesLoading: boolean;
+  worktreesError: string | null;
+  worktreesQuery: string;
+  remotes: GitRemoteInfo[];
+  remotesLoading: boolean;
+  remotesError: string | null;
+  remotesQuery: string;
+  fetchingRemote: string | null;
+  branches: GitBranchInfo[];
+  branchesLoading: boolean;
+  branchesError: string | null;
+  branchesQuery: string;
+  switchingBranch: string | null;
+  tags: GitTagInfo[];
+  tagsLoading: boolean;
+  tagsError: string | null;
+  tagsQuery: string;
+  checkingOutTag: string | null;
+  stashes: GitStashInfo[];
+  stashesLoading: boolean;
+  stashesError: string | null;
+  stashesQuery: string;
+  stashAction: { ref: string; action: StashAction } | null;
+  lfsReport: GitLfsReport | null;
+  lfsLoading: boolean;
+  lfsError: string | null;
+  lfsQuery: string;
+  submodules: GitSubmoduleInfo[];
+  submodulesLoading: boolean;
+  submodulesError: string | null;
+  submodulesQuery: string;
+  updatingSubmodule: string | null;
+  statistics: RepoStatistics | null;
+  statisticsLoading: boolean;
+  statisticsError: string | null;
+  statisticsDownloading: boolean;
   paneMode: PaneMode;
   chatPaneMode: PaneMode;
   selectedFile: string | null;

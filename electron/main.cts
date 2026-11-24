@@ -11,14 +11,26 @@ import type {
   AutoFetchInterval,
   Bootstrap,
   CommitResult,
+  DownloadReportResult,
   FileDiff,
+  GitBranchInfo,
+  GitCheckoutResult,
+  GitLfsReport,
+  GitRemoteInfo,
+  GitStashInfo,
+  GitSubmoduleInfo,
+  GitTagCheckoutResult,
+  GitTagInfo,
+  GitWorktree,
   LlmSettings,
   PiSendResult,
   PreviewData,
   PullStrategy,
   RepoSnapshot,
+  RepoStatistics,
   RepoSummary,
   SettingsInput,
+  StashAction,
   ThemeMode,
   Language
 } from './shared/models.js';
@@ -27,6 +39,8 @@ import type {
   IpcEnvelope,
   MenuAction,
   OpenRepositoryResult,
+  OpenSubmoduleResult,
+  OpenWorktreeResult,
   RepoSummariesResult,
   SaveSettingsResult
 } from './shared/ipc.js';
@@ -321,6 +335,121 @@ function registerIpc(): void {
   ipcMain.handle('repo:snapshot', wrapHandler(async (repoPath: unknown): Promise<RepoSnapshot> => {
     const known = assertKnownRepo(repoPath);
     return git.getSnapshot(known);
+  }));
+
+  ipcMain.handle('repo:worktrees', wrapHandler(async (repoPath: unknown): Promise<GitWorktree[]> => {
+    const known = assertKnownRepo(repoPath);
+    return git.getWorktrees(known);
+  }));
+
+  ipcMain.handle('worktree:open', wrapHandler(async (repoPath: unknown, worktreePath: unknown): Promise<OpenWorktreeResult> => {
+    const known = assertKnownRepo(repoPath);
+    const target = String(worktreePath || '');
+    const worktrees = await git.getWorktrees(known);
+    const worktree = worktrees.find((entry) => entry.path === target);
+    if (!worktree) throw new Error(mt('That worktree no longer exists', '该工作树已不存在'));
+    if (worktree.prunable) throw new Error(mt('This worktree is prunable and cannot be opened', '此工作树已标记为可清理，无法打开'));
+    await git.getRepoSummary(worktree.path);
+    await config.addRepo(worktree.path);
+    return { path: worktree.path, bootstrap: await getBootstrap() };
+  }));
+
+  ipcMain.handle('worktree:reveal', wrapHandler(async (repoPath: unknown, worktreePath: unknown): Promise<true> => {
+    const known = assertKnownRepo(repoPath);
+    const target = String(worktreePath || '');
+    const worktrees = await git.getWorktrees(known);
+    if (!worktrees.some((entry) => entry.path === target)) throw new Error(mt('That worktree no longer exists', '该工作树已不存在'));
+    shell.showItemInFolder(target);
+    return true;
+  }));
+
+  ipcMain.handle('repo:remotes', wrapHandler(async (repoPath: unknown): Promise<GitRemoteInfo[]> => {
+    const known = assertKnownRepo(repoPath);
+    return git.getRemoteDetails(known);
+  }));
+
+  ipcMain.handle('git:fetch-remote', wrapHandler(async (repoPath: unknown, remoteName: unknown, prune: unknown): Promise<string> => {
+    const known = assertKnownRepo(repoPath);
+    return git.fetchRemote(known, String(remoteName || ''), prune !== false);
+  }));
+
+  ipcMain.handle('repo:branches', wrapHandler(async (repoPath: unknown): Promise<GitBranchInfo[]> => {
+    const known = assertKnownRepo(repoPath);
+    return git.getBranches(known);
+  }));
+
+  ipcMain.handle('git:checkout-branch', wrapHandler(async (repoPath: unknown, branchName: unknown): Promise<GitCheckoutResult> => {
+    const known = assertKnownRepo(repoPath);
+    return git.checkoutBranch(known, String(branchName || ''));
+  }));
+
+  ipcMain.handle('repo:tags', wrapHandler(async (repoPath: unknown): Promise<GitTagInfo[]> => {
+    const known = assertKnownRepo(repoPath);
+    return git.getTags(known);
+  }));
+
+  ipcMain.handle('git:checkout-tag', wrapHandler(async (repoPath: unknown, tagName: unknown): Promise<GitTagCheckoutResult> => {
+    const known = assertKnownRepo(repoPath);
+    return git.checkoutTag(known, String(tagName || ''));
+  }));
+
+  ipcMain.handle('repo:stashes', wrapHandler(async (repoPath: unknown): Promise<GitStashInfo[]> => {
+    const known = assertKnownRepo(repoPath);
+    return git.getStashes(known);
+  }));
+
+  ipcMain.handle('git:stash-action', wrapHandler(async (repoPath: unknown, ref: unknown, action: unknown): Promise<string> => {
+    const known = assertKnownRepo(repoPath);
+    return git.runStashAction(known, String(ref || ''), action as StashAction);
+  }));
+
+  ipcMain.handle('repo:lfs', wrapHandler(async (repoPath: unknown): Promise<GitLfsReport> => {
+    const known = assertKnownRepo(repoPath);
+    return git.getLfsReport(known);
+  }));
+
+  ipcMain.handle('repo:submodules', wrapHandler(async (repoPath: unknown): Promise<GitSubmoduleInfo[]> => {
+    const known = assertKnownRepo(repoPath);
+    return git.getSubmodules(known);
+  }));
+
+  ipcMain.handle('git:submodule-update', wrapHandler(async (repoPath: unknown, submodulePath: unknown): Promise<string> => {
+    const known = assertKnownRepo(repoPath);
+    return git.updateSubmodule(known, String(submodulePath || ''));
+  }));
+
+  ipcMain.handle('submodule:open', wrapHandler(async (repoPath: unknown, submodulePath: unknown): Promise<OpenSubmoduleResult> => {
+    const known = assertKnownRepo(repoPath);
+    const target = String(submodulePath || '');
+    const submodules = await git.getSubmodules(known);
+    const submodule = submodules.find((entry) => entry.path === target);
+    if (!submodule) throw new Error(mt('That submodule no longer exists', '该子模块已不存在'));
+    if (!submodule.headSha) throw new Error(mt('Submodule is not initialized', '子模块尚未初始化'));
+    const absolute = path.resolve(known, target);
+    await git.getRepoSummary(absolute);
+    await config.addRepo(absolute);
+    return { path: absolute, bootstrap: await getBootstrap() };
+  }));
+
+  ipcMain.handle('repo:statistics', wrapHandler(async (repoPath: unknown): Promise<RepoStatistics> => {
+    const known = assertKnownRepo(repoPath);
+    return git.getStatistics(known);
+  }));
+
+  ipcMain.handle('stats:download', wrapHandler(async (repoPath: unknown, html: unknown): Promise<DownloadReportResult> => {
+    const known = assertKnownRepo(repoPath);
+    if (typeof html !== 'string' || !html.trim()) throw new Error(mt('Report is empty', '报告为空'));
+    if (!mainWindow) throw new Error('No application window is available');
+    const base = path.basename(known).replace(/[^\w.-]+/g, '-') || 'repository';
+    const result = await dialog.showSaveDialog(mainWindow, {
+      title: mt('Save statistics report', '保存统计报告'),
+      buttonLabel: mt('Save report', '保存报告'),
+      defaultPath: path.join(app.getPath('downloads'), `${base}-statistics.html`),
+      filters: [{ name: 'HTML', extensions: ['html'] }]
+    });
+    if (result.canceled || !result.filePath) return { canceled: true };
+    await fs.writeFile(result.filePath, html, 'utf8');
+    return { canceled: false, path: result.filePath };
   }));
 
   ipcMain.handle('repo:summaries', wrapHandler(async (): Promise<RepoSummariesResult> => {

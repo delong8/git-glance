@@ -13,6 +13,195 @@ export interface GitRemote {
   pushUrl: string;
 }
 
+/** A configured remote plus its default and remote-tracking branches. */
+export interface GitRemoteInfo extends GitRemote {
+  /** Remote-tracking branch names with the remote prefix removed. */
+  branches: string[];
+  /** Branch pointed to by the remote's HEAD, when it is known. */
+  defaultBranch: string | null;
+}
+
+/** A local or remote-tracking branch with its latest commit and tracking state. */
+export interface GitBranchInfo {
+  /** Short local name, or the remote-tracking name such as `origin/main`. */
+  name: string;
+  remote: boolean;
+  current: boolean;
+  head: string;
+  upstream: string | null;
+  ahead: number;
+  behind: number;
+  /** True when the configured upstream no longer exists. */
+  gone: boolean;
+  author: string;
+  when: string;
+  timestamp: number;
+  subject: string;
+}
+
+export interface GitCheckoutResult {
+  /** Local branch that was checked out. */
+  branch: string;
+  output: string;
+}
+
+/** A tag with the object it points to and, for annotated tags, its annotation. */
+export interface GitTagInfo {
+  name: string;
+  /** Commit (or other object) the tag resolves to. */
+  head: string;
+  targetType: string;
+  annotated: boolean;
+  /** True when the tag points at the current HEAD commit. */
+  atHead: boolean;
+  subject: string;
+  author: string;
+  commitWhen: string;
+  annotation: string | null;
+  tagger: string | null;
+  /** Tagger date for annotated tags, otherwise the commit date. */
+  when: string;
+  timestamp: number;
+}
+
+export interface GitTagCheckoutResult {
+  tag: string;
+  head: string;
+  output: string;
+}
+
+export type StashAction = 'apply' | 'pop' | 'drop';
+
+/** A stash entry with its base commit and changed-file stats. */
+export interface GitStashInfo {
+  index: number;
+  ref: string;
+  sha: string;
+  branch: string | null;
+  /** Reflog subject such as `WIP on main: abc1234 Fix login`. */
+  message: string;
+  base: string | null;
+  baseSubject: string;
+  when: string;
+  timestamp: number;
+  files: number;
+  add: number;
+  del: number;
+  binary: boolean;
+}
+
+/** An LFS-tracked file as seen in the working tree. */
+export interface GitLfsFile {
+  path: string;
+  /** LFS object size when known, otherwise the working-tree size. */
+  size: number;
+  oid: string | null;
+  /** True when the working-tree file is still an LFS pointer. */
+  pointer: boolean;
+  missing: boolean;
+}
+
+/** A non-LFS file above the large-file threshold. */
+export interface GitLargeFile {
+  path: string;
+  size: number;
+  tracked: boolean;
+  mtimeMs: number | null;
+}
+
+export interface GitLfsReport {
+  lfs: GitLfsFile[];
+  large: GitLargeFile[];
+  threshold: number;
+  /** True when the `git lfs` command is available. */
+  lfsAvailable: boolean;
+}
+
+export type SubmoduleStatus = 'current' | 'modified' | 'uninitialized' | 'conflicted';
+
+/** A submodule entry from `.gitmodules` plus its checked-out state. */
+export interface GitSubmoduleInfo {
+  path: string;
+  url: string;
+  branch: string | null;
+  indexSha: string;
+  headSha: string | null;
+  currentBranch: string | null;
+  status: SubmoduleStatus;
+  dirty: boolean;
+  subject: string;
+  author: string;
+  when: string;
+  describe: string | null;
+}
+
+export interface RepoLanguageStat {
+  ext: string;
+  files: number;
+  bytes: number;
+}
+
+export interface RepoContributorStat {
+  name: string;
+  email: string;
+  commits: number;
+}
+
+export interface RepoActivityBucket {
+  label: string;
+  count: number;
+}
+
+export interface RepoStatistics {
+  generatedAt: string;
+  repo: {
+    name: string;
+    path: string;
+    branch: string;
+    detached: boolean;
+    head: string | null;
+    upstream: string | null;
+    ahead: number;
+    behind: number;
+    lastFetch: string | null;
+    remotes: number;
+    worktrees: number;
+    submodules: number;
+    stashes: number;
+    localBranches: number;
+    remoteBranches: number;
+    tags: number;
+  };
+  commits: {
+    total: number;
+    contributors: number;
+    firstWhen: string | null;
+    lastWhen: string | null;
+    lastSubject: string;
+    lastAuthor: string;
+    activity: RepoActivityBucket[];
+  };
+  contributors: RepoContributorStat[];
+  workingTree: {
+    changes: number;
+    staged: number;
+    unstaged: number;
+    add: number;
+    del: number;
+  };
+  files: {
+    tracked: number;
+    bytes: number;
+    languages: RepoLanguageStat[];
+  };
+  objectStoreBytes: number;
+}
+
+export interface DownloadReportResult {
+  canceled: boolean;
+  path?: string;
+}
+
 export interface BranchInfo {
   branch: string;
   detached: boolean;
@@ -60,6 +249,24 @@ export interface GitCommit {
   message: string;
   stats: [number, number];
   merge: boolean;
+}
+
+/** A linked worktree as reported by `git worktree list --porcelain`. */
+export interface GitWorktree {
+  path: string;
+  name: string;
+  head: string | null;
+  branch: string | null;
+  detached: boolean;
+  bare: boolean;
+  locked: boolean;
+  lockReason: string | null;
+  prunable: boolean;
+  pruneReason: string | null;
+  /** The first entry in the list owns the repository's main working tree. */
+  isMain: boolean;
+  /** True for the worktree GitGlance currently has open. */
+  isCurrent: boolean;
 }
 
 export interface RepoSummary {

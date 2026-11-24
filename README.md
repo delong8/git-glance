@@ -119,7 +119,7 @@ The macOS package is built with electron-builder into `release/`:
 ```bash
 npm run pack:mac           # release/mac-arm64/GitGlance.app
 npm run dist:mac           # Apple Silicon DMG, signs if a Developer ID is available
-npm run dist:mac:unsigned  # force an unsigned local build
+npm run dist:mac:unsigned  # force a local build without a Developer ID (ad-hoc signed)
 ```
 
 The DMG is written to:
@@ -130,7 +130,13 @@ release/GitGlance-[YYMMDD.COMMIT_SHORT_SHA]-arm.dmg
 
 For example: `release/GitGlance-261124.a1b2c3d-arm.dmg`. The date is the local build date (`YYMMDD`) and the suffix is `git rev-parse --short=7 HEAD`.
 
-Open it and drag **GitGlance** to Applications. Locally built artifacts are not quarantined by macOS, so the unsigned build opens normally on the build machine. Moving an unsigned build to another Mac can trigger a Gatekeeper warning.
+Open it and drag **GitGlance** to Applications. Without a Developer ID certificate the build is ad-hoc signed by `scripts/after-pack.mjs`; locally built artifacts are not quarantined by macOS, so it opens normally on the build machine. A copy moved to another Mac is quarantined by the download, and Gatekeeper refuses to launch it until the quarantine flag is cleared:
+
+```bash
+xattr -dr com.apple.quarantine /Applications/GitGlance.app
+```
+
+Clearing the flag is only a workaround for local testing — for distribution, sign with a Developer ID and notarize (below).
 
 By default the installer targets Apple Silicon (`arm64`). To build a universal DMG, run:
 

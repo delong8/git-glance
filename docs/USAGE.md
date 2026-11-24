@@ -649,9 +649,16 @@ Environment variables:
   50 MB, PDFs at 150 MB, and office documents at 100 MB. Open the file in its
   default app instead.
 - **macOS says the app is damaged or from an unidentified developer.** Local
-  unsigned builds are not notarized. On the build machine they open normally;
-  on another Mac, use a Developer ID–signed and notarized build. See the README
-  for signing steps.
+  builds are ad-hoc signed, not notarized. On the build machine they open
+  normally; on another Mac, the download is quarantined and Gatekeeper blocks
+  it. Clear the flag to test:
+
+  ```bash
+  xattr -dr com.apple.quarantine /Applications/GitGlance.app
+  ```
+
+  For distribution, use a Developer ID–signed and notarized build. See the
+  README for signing steps.
 - **The window opens but the repository list is empty.** The app may be using a
   different profile. Check `GITGLANCE_USER_DATA` and the config path shown in
   Settings.

@@ -290,13 +290,6 @@ function displayPath(repoPath: string | null | undefined): string {
   return repoPath;
 }
 
-function crumbsFor(repoPath: string | null | undefined): string {
-  const display = displayPath(repoPath);
-  return display.split('/').filter(Boolean).map((part, index, array) =>
-    `<span class="crumb${index === array.length - 1 ? ' last' : ''}">${esc(part)}</span>`
-  ).join('<span class="path-sep">/</span>');
-}
-
 /* ============================================================
    State
    ============================================================ */
@@ -396,6 +389,7 @@ const state: AppState = {
   lastFocusRefresh: 0,
   themeMode: 'dark',
   language: 'en',
+  sidebarHidden: false,
   appVersion: ''
 };
 
@@ -706,23 +700,6 @@ function ancestorsOf(filePath: string | null): string[] {
 
 function expandTreeAncestors(filePath: string | null): void {
   for (const folder of ancestorsOf(filePath)) state.treeExpanded.add(folder);
-}
-
-function dominantLanguage(repo: RepoState | null): { name: string; color: string } {
-  if (!repo) return { name: 'Git', color: '#7c9cff' };
-  const counts = new Map<string, number>();
-  for (const entry of repoEntries(repo)) {
-    if (entry.kind !== 'file') continue;
-    const ext = extensionOf(entry.path);
-    if (!ext) continue;
-    counts.set(ext, (counts.get(ext) || 0) + 1);
-  }
-  let best: { ext: string; count: number } | null = null;
-  for (const [ext, count] of counts) {
-    if (!best || count > best.count) best = { ext, count };
-  }
-  const language = best ? LANGUAGE_BY_EXT[best.ext] : null;
-  return language || { name: 'Git', color: '#7c9cff' };
 }
 
 function mergeSummaryFromSnapshot(snapshot: RepoSnapshot): void {
@@ -1132,12 +1109,14 @@ function renderTitlebar() {
   const summary = state.repo || (state.activeRepo ? getRepoSummary(state.activeRepo) : null);
   if (context) {
     if (summary) {
+      const shownPath = displayPath(summary.path);
+      const separator = shownPath.startsWith('/') ? '' : '<span class="wc-slash">/</span>';
       context.innerHTML = `
         <span class="wc-name">${esc(summary.name)}</span>
-        <span class="wc-slash">/</span>
-        <span class="wc-branch">${icon('branch')}${esc(summary.branch || '—')}</span>`;
+        ${separator}
+        <span class="wc-path"><span class="wc-path-text" title="${esc(summary.path)}">${esc(shownPath)}</span><button class="copy-btn" data-action="copy-path" title="Copy repository path" aria-label="Copy repository path">${icon('copy')}</button></span>`;
     } else {
-      context.innerHTML = `<span class="wc-name">GitGlance</span><span class="wc-slash">/</span><span class="wc-branch">No repository</span>`;
+      context.innerHTML = `<span class="wc-name">GitGlance</span><span class="wc-slash">/</span><span class="wc-path"><span class="wc-path-text">No repository</span></span>`;
     }
   }
   document.title = summary ? `${summary.name} — GitGlance` : 'GitGlance';
@@ -1167,7 +1146,6 @@ function renderSidebarMeta() {
 function renderSummary() {
   if (!state.repo) return;
   const repo = state.repo;
-  const language = dominantLanguage(repo);
   const sync = [];
   if (repo.upstream) {
     if (repo.ahead) sync.push(`<span class="ahead">${icon('arrow-up')}${repo.ahead} ahead</span>`);
@@ -1184,14 +1162,9 @@ function renderSummary() {
   summaryRoot.innerHTML = `
     <div class="summary-top">
       <div class="summary-id">
-        <div class="path-line">
-          ${crumbsFor(repo.path)}
-          <button class="copy-btn" data-action="copy-path" title="Copy repository path" aria-label="Copy repository path">${icon('copy')}</button>
-        </div>
         <div class="title-row">
           <h1>${esc(repo.name)}</h1>
           <span class="chip">${icon(repo.remotes?.length ? 'cloud' : 'laptop')}${repo.remotes?.length ? 'Remote' : 'Local'}</span>
-          <span class="lang"><span class="lang-dot" style="--lang-color:${language.color}"></span>${esc(language.name)}</span>
           <span class="title-sep" aria-hidden="true"></span>
           <span class="branch-pill">${icon('branch')}${esc(repo.branch)}</span>
           <span class="sync-pair">${sync.join('')}</span>
@@ -4608,6 +4581,24 @@ function switchTab(tab: Tab): void {
   }
 }
 
+function applySidebarState(): void {
+  const app = document.querySelector('.app');
+  if (app) app.classList.toggle('is-sidebar-hidden', state.sidebarHidden);
+  const sidebar = $('#projectSidebar');
+  if (sidebar) sidebar.inert = state.sidebarHidden;
+  const button = $('#sidebarToggle');
+  if (!button) return;
+  const label = state.sidebarHidden ? 'Show projects' : 'Hide projects';
+  button.setAttribute('title', label);
+  button.setAttribute('aria-label', label);
+  button.setAttribute('aria-pressed', String(state.sidebarHidden));
+}
+
+function toggleSidebar(): void {
+  state.sidebarHidden = !state.sidebarHidden;
+  applySidebarState();
+}
+
 function handleMenu(action: MenuAction): void {
   if (action === 'open-repository') openRepository();
   else if (action === 'refresh') refreshRepo({ spinner: true });
@@ -5025,14 +5016,16 @@ function bindStaticEvents(): void {
     const actionElement = eventTarget(event)?.closest<HTMLElement>('[data-action]');
     if (!actionElement) return;
     const action = actionElement.dataset.action;
-    if (action === 'open-repo') openRepository();
+    if (action === 'toggle-sidebar') toggleSidebar();
+    else if (action === 'open-repo') openRepository();
     else if (action === 'retry-repo') loadRepo(state.activeRepo || state.repos[0]?.path, { initial: false });
     else if (action === 'refresh') refreshRepo({ spinner: true });
     else if (action === 'fetch') runRepoAction('fetch');
     else if (action === 'pull') runRepoAction('pull');
     else if (action === 'push') runRepoAction('push');
     else if (action === 'copy-path') {
-      if (state.repo) copyText(state.repo.path, 'Repository path copied to clipboard');
+      const repoPath = state.repo?.path || (state.activeRepo ? getRepoSummary(state.activeRepo)?.path : null);
+      if (repoPath) copyText(repoPath, 'Repository path copied to clipboard');
     } else if (action === 'open-settings') openSettings();
     else if (action === 'open-worktree') openWorktreeFromChat();
     else if (action === 'clear-files') {

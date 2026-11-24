@@ -586,6 +586,11 @@ body.no-repo .summary-top { display: none; }
   border-color: var(--border);
 }
 .btn.icon-only:disabled { opacity: 0.35; }
+.btn.icon-only[aria-pressed="true"] {
+  color: var(--accent-text);
+  background: var(--accent-soft);
+  border-color: rgba(124, 156, 255, 0.24);
+}
 .status-U { color: var(--red-text); background: rgba(251, 113, 133, 0.12); }
 .repo-loading-overlay {
   position: absolute;

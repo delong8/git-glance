@@ -119,6 +119,39 @@ try {
     throw new Error(`Summary did not switch to the test repository (heading: ${heading})`);
   }
 
+  const titlebarPath = await window.locator('#windowContext .wc-path-text').innerText();
+  if (!titlebarPath.includes(path.basename(repoDir))) {
+    throw new Error(`Title bar did not show the repository path (got “${titlebarPath}”)`);
+  }
+  if (await window.locator('#summaryRoot .path-line').count()) {
+    throw new Error('The repository path is still rendered in the summary header.');
+  }
+
+  const sidebarToggle = window.locator('#sidebarToggle');
+  await sidebarToggle.click();
+  await window.waitForFunction(() => document.querySelector('.app')?.classList.contains('is-sidebar-hidden'), null, { timeout: 5_000 });
+  await window.waitForFunction(() => {
+    const sidebar = document.querySelector('#projectSidebar');
+    if (!sidebar) return false;
+    const box = sidebar.getBoundingClientRect();
+    return box.right <= 1 && box.x < 0;
+  }, null, { timeout: 5_000 });
+  if ((await sidebarToggle.getAttribute('aria-pressed')) !== 'true') {
+    throw new Error('Sidebar toggle did not report its hidden state.');
+  }
+  if (!(await sidebarToggle.getAttribute('title'))?.includes('Show projects')) {
+    throw new Error('Sidebar toggle title did not switch to “Show projects”.');
+  }
+  await sidebarToggle.click();
+  await window.waitForFunction(() => !document.querySelector('.app')?.classList.contains('is-sidebar-hidden'), null, { timeout: 5_000 });
+  await window.waitForFunction(() => {
+    const sidebar = document.querySelector('#projectSidebar');
+    return !!sidebar && Math.round(sidebar.getBoundingClientRect().x) === 0;
+  }, null, { timeout: 5_000 });
+  if ((await sidebarToggle.getAttribute('aria-pressed')) !== 'false') {
+    throw new Error('Sidebar toggle did not report its visible state.');
+  }
+
   const cleanHistory = await window.locator('#historyList .commit-row').count();
   if (cleanHistory < 1) throw new Error('History list did not render the initial commit.');
 

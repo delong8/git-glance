@@ -351,14 +351,20 @@ kbd {
 .window-context { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 12px; }
 .window-context .wc-name { color: var(--text-2); font-weight: 550; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .window-context .wc-slash { color: var(--text-4); }
-.window-context .wc-branch {
+.window-context .wc-path {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
+  min-width: 0;
   font-family: var(--mono);
   font-size: 10.5px;
   color: var(--text-3);
   white-space: nowrap;
+}
+.window-context .wc-path-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .window-context .ico { width: 12px; height: 12px; color: var(--text-4); }
 .titlebar-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
@@ -376,13 +382,13 @@ kbd {
 .user-chip .user-name { font-size: 11.5px; color: var(--text-3); }
 
 /* Workspace */
-.workspace { flex: 1; min-height: 0; display: flex; }
+.workspace { --sidebar-w: 300px; flex: 1; min-height: 0; display: flex; }
 
 /* ============================================================
    Sidebar
    ============================================================ */
 .sidebar {
-  width: 300px;
+  width: var(--sidebar-w);
   flex: none;
   display: flex;
   flex-direction: column;
@@ -391,6 +397,14 @@ kbd {
   border-right: 1px solid var(--border);
   position: relative;
   z-index: 10;
+  transition: margin-left 0.22s cubic-bezier(0.2, 0.7, 0.2, 1), opacity 0.16s ease, visibility 0s;
+}
+.app.is-sidebar-hidden .sidebar {
+  margin-left: calc(var(--sidebar-w) * -1);
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+  transition: margin-left 0.22s cubic-bezier(0.2, 0.7, 0.2, 1), opacity 0.16s ease, visibility 0s linear 0.22s;
 }
 .sidebar-head { padding: 16px 14px 8px; display: flex; flex-direction: column; gap: 14px; }
 .brand-row { display: flex; align-items: center; gap: 9px; padding: 0 4px; }
@@ -665,24 +679,9 @@ kbd {
 }
 .summary-id { grid-area: id; min-width: 0; }
 
-.path-line {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin-bottom: 8px;
-  font-family: var(--mono);
-  font-size: 10.5px;
-  letter-spacing: -0.01em;
-  color: var(--text-4);
-  white-space: nowrap;
-  min-width: 0;
-}
-.path-line .crumb { color: var(--text-4); }
-.path-line .crumb.last { color: var(--text-3); }
-.path-line .path-sep { color: var(--text-4); opacity: 0.55; }
-.copy-btn { width: 22px; height: 22px; border-radius: 5px; display: grid; place-items: center; color: var(--text-4); opacity: 0; transform: translateY(0.5px); transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease; }
+.copy-btn { flex: none; width: 22px; height: 22px; border-radius: 5px; display: grid; place-items: center; color: var(--text-4); opacity: 0; transform: translateY(0.5px); transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease; }
 .copy-btn .ico { width: 11px; height: 11px; }
-.path-line:hover .copy-btn { opacity: 1; }
+.wc-path:hover .copy-btn, .copy-btn:focus-visible { opacity: 1; }
 .copy-btn:hover { background: var(--fill-strong); color: var(--text-2); }
 
 .title-row { display: flex; align-items: center; gap: 10px; min-width: 0; flex-wrap: nowrap; }
@@ -714,8 +713,6 @@ kbd {
   letter-spacing: 0.01em;
 }
 .chip .ico { width: 10px; height: 10px; color: var(--text-4); }
-.lang { flex: none; display: inline-flex; align-items: center; gap: 6px; font-size: 10.5px; color: var(--text-3); }
-.lang-dot { width: 6px; height: 6px; border-radius: 50%; box-shadow: 0 0 6px var(--lang-color, transparent); background: var(--lang-color, var(--accent)); }
 
 .branch-pill {
   flex: none;
@@ -745,7 +742,7 @@ kbd {
 .title-sep { flex: none; width: 1px; height: 16px; margin: 0 2px; background: var(--border); }
 .fetch-time { flex: none; color: var(--text-4); font-size: 10px; white-space: nowrap; }
 
-.summary-actions { grid-area: actions; justify-self: end; display: flex; align-items: center; gap: 7px; padding-top: 15px; flex: none; }
+.summary-actions { grid-area: actions; justify-self: end; display: flex; align-items: center; gap: 7px; padding-top: 0; flex: none; }
 .btn {
   display: inline-flex;
   align-items: center;
@@ -925,6 +922,9 @@ kbd {
   opacity: 0.8;
 }
 .tab.is-active .tab-ai-dot { opacity: 1; }
+.tabs-list { flex: none; display: flex; align-items: center; gap: 2px; min-width: 0; }
+.tabs-bar .btn.sidebar-toggle { flex: none; width: 28px; }
+.tabs-sep { flex: none; width: 1px; height: 18px; background: var(--border); }
 .tabs-spacer { flex: 1; }
 .tabs-tools { display: flex; align-items: center; gap: 8px; padding-bottom: 7px; }
 .tabs-tools .search { width: 216px; }
@@ -3379,10 +3379,9 @@ select.input option { background: var(--bg-option); color: var(--text); }
     grid-template-columns: minmax(0, 1fr) auto;
     column-gap: 18px;
   }
-  .title-row .lang { display: none; }
 }
 @media (max-width: 1280px) {
-  .sidebar { width: 278px; }
+  .workspace { --sidebar-w: 278px; }
   .summary { padding: 19px 22px 0; }
   .tabs-bar { padding-left: 22px; padding-right: 22px; }
   .summary-tiles { grid-template-columns: 1.12fr 1fr 1fr; }
@@ -3401,7 +3400,7 @@ select.input option { background: var(--bg-option); color: var(--text); }
 }
 @media (max-width: 1760px) {
   .tab { padding: 0; font-size: 11px; }
-  .tabs-tools .search { width: 120px; }
+  .tabs-tools .search { width: 112px; }
 }
 @media (max-width: 1420px) {
   .tab-label { display: none; }
@@ -3410,7 +3409,7 @@ select.input option { background: var(--bg-option); color: var(--text); }
 }
 @media (max-width: 1120px) {
   .tab-badge { display: none; }
-  .sidebar { width: 262px; }
+  .workspace { --sidebar-w: 262px; }
   .user-chip .user-name { display: none; }
   .summary-actions { gap: 5px; }
   .title-row .remote { display: none; }
@@ -3434,7 +3433,6 @@ select.input option { background: var(--bg-option); color: var(--text); }
     grid-template-areas: "id" "actions";
     row-gap: 13px;
   }
-  .summary-actions { padding-top: 0; }
 }
 @media (max-width: 900px) {
   .diff-pane { display: none; }
@@ -3450,7 +3448,7 @@ select.input option { background: var(--bg-option); color: var(--text); }
   .chat-welcome { padding: 4px 0; }
 }
 @media (max-width: 860px) {
-  .sidebar { width: 236px; }
+  .workspace { --sidebar-w: 236px; }
   .title-row h1 { font-size: 22px; }
   .summary { padding: 17px 18px 0; }
   .tabs-bar { padding-left: 18px; padding-right: 18px; }
@@ -3503,6 +3501,7 @@ select.input option { background: var(--bg-option); color: var(--text); }
     <symbol id="i-chevron-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></symbol>
     <symbol id="i-branch" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></symbol>
     <symbol id="i-folder" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6.5A2.5 2.5 0 0 1 5.5 4h4l2 2h7A2.5 2.5 0 0 1 21 8.5v9a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5z"/></symbol>
+    <symbol id="i-panel-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16"/><rect x="4.7" y="5.7" width="3" height="12.6" rx="1" fill="currentColor" stroke="none" opacity=".38"/></symbol>
     <symbol id="i-file-code" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="m9.5 12.5-2.5 2.5 2.5 2.5M14.5 12.5l2.5 2.5-2.5 2.5"/></symbol>
     <symbol id="i-git-commit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M3 12h5.5M15.5 12H21"/></symbol>
     <symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
@@ -3545,7 +3544,7 @@ select.input option { background: var(--bg-option); color: var(--text); }
 
   <div class="workspace">
     <!-- ============================== Sidebar ============================== -->
-    <aside class="sidebar">
+    <aside class="sidebar" id="projectSidebar">
       <div class="sidebar-head">
         <div class="brand-row">
           <svg class="brand-logo" width="27" height="27" viewBox="0 0 32 32" fill="none" aria-hidden="true">
@@ -3601,7 +3600,10 @@ select.input option { background: var(--bg-option); color: var(--text); }
     <main class="main">
       <section class="summary" id="summaryRoot"></section>
 
-      <div class="tabs-bar" role="tablist" aria-label="Repository views">
+      <div class="tabs-bar">
+        <button class="btn ghost icon-only sidebar-toggle" id="sidebarToggle" data-action="toggle-sidebar" title="Hide projects" aria-label="Hide projects" aria-pressed="false" aria-controls="projectSidebar"><svg class="ico" aria-hidden="true"><use href="#i-panel-left"/></svg></button>
+        <span class="tabs-sep" aria-hidden="true"></span>
+        <div class="tabs-list" role="tablist" aria-label="Repository views">
         <button class="tab is-active" id="tabChat" data-tab="chat" role="tab" aria-selected="true" aria-controls="chatPanel" title="Chat" aria-label="Chat">
           <svg class="ico" aria-hidden="true"><use href="#i-sparkles"/></svg>
           <span class="tab-label">Chat</span>
@@ -3656,6 +3658,7 @@ select.input option { background: var(--bg-option); color: var(--text); }
           <span class="tab-label">Statistics</span>
           <span class="tab-badge" id="statisticsBadge">0</span>
         </button>
+        </div>
         <div class="tabs-spacer"></div>
         <div class="tabs-tools" id="tabsTools">
           <div class="search" id="tabSearchWrap">

@@ -14,6 +14,8 @@ let observer: MutationObserver | null = null;
 
 const ZH: Record<string, string> = {
   "Projects": "项目",
+  "Hide projects": "隐藏项目",
+  "Show projects": "显示项目",
   "Settings": "设置",
   "Git identity, defaults & signing": "Git 身份、默认值与签名",
   "Fetch": "获取",
@@ -24,7 +26,6 @@ const ZH: Record<string, string> = {
   "File tree": "文件树",
   "History": "历史",
   "Beta": "测试版",
-  "Private": "私有",
   "Local": "本地",
   "Ready": "就绪",
   "I can see": "我能看到",
@@ -706,9 +707,8 @@ const I18N_SKIP_SELECTOR = [
   '.link-target',
   '.link-card h3',
   '.wc-name',
-  '.path-line',
+  '.wc-path-text',
   '.branch-pill',
-  '.lang',
   '.proj-ab',
   '.diff-file',
   '.hash',

@@ -166,5 +166,6 @@ export interface AppState {
   lastFocusRefresh: number;
   themeMode: ThemeMode;
   language: Language;
+  sidebarHidden: boolean;
   appVersion: string;
 }

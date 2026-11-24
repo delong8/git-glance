@@ -467,8 +467,12 @@ your terminal first if a push or pull is rejected.
 
 ## AI chat with Pi
 
-The **Chat** tab is a conversation with the Pi agent about the active
-repository. It is optional: every other feature works without Pi.
+The **Chat** tab is a three-column workspace around the Pi agent. The left
+column shows the commit history graph; the middle column has the changed-file
+tree above the conversation; the right column is a preview of the selected
+changed file (or its diff). The preview starts closed and opens when a file is
+selected, keeping the tree and chat wide until you need it. It is optional:
+every other feature works without Pi.
 
 ![Chat welcome with changed files and preview](./screenshots/workspace.png)
 
@@ -493,7 +497,7 @@ Each prompt includes:
 - changed files with status and line counts;
 - the eight most recent commits;
 - staged and unstaged diffs, clipped to roughly 22 KB each;
-- the file selected in the changed-files sidebar, if any.
+- the file selected in the changed-file tree, if any.
 
 Pi is launched with the `read`, `grep`, `find`, `ls`, and `bash` tools. It can
 run Git and other shell commands when you ask it to, including creating
@@ -510,8 +514,12 @@ discard changes, rewrite history, or use credentials.
 - **New chat** (the **+** button) resets the Pi session for the current
   repository.
 - Conversations are kept per repository for the current app session.
-- The right sidebar lists staged and unstaged files; selecting one previews it
-  in the chat pane. Inline code references to changed files are clickable.
+- The **Changed File Tree** above the composer groups staged and unstaged files
+  into folders. Select a file to open it in the right-hand preview column; the
+  **×** button in the preview header hides the column again. Click a folder to
+  collapse or expand it. Inline code references to changed files are clickable.
+- The left **History** column shows the current branch’s commit graph. Commit
+  hashes are clickable to copy the full SHA.
 - Use the welcome suggestions for a quick summary, review, or commit-message
   draft.
 

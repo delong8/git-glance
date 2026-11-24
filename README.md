@@ -44,7 +44,7 @@ Quick links:
 - **Multi-repository sidebar** with filtering, per-project branch and change counts, and an onboarding screen when no repository is open yet. The panel toggle at the start of the tab bar collapses it.
 - **Repository summary** with the current branch, upstream, ahead/behind counts, and Fetch / Pull / Stash / Branch / Push actions. Stash saves the working tree in one click; Branch opens a picker for switching or creating a branch from any local or remote branch. A compact group at the far right opens the repository folder in the system file manager or a terminal at that path.
 - **Full working-tree file tree**, including folders, symlinks, staged/unstaged/deleted badges, per-file stage toggles, and a filter.
-- **Preview and diff pane** shared by the File Tree and Chat tabs. Select a file to preview it; switch to its staged or unstaged diff.
+- **Preview and diff panes** in the File tree and Chat tabs. Select a file to preview it; switch to its staged or unstaged diff.
 - **Rich previews**
   - Images: PNG, JPEG, GIF, WebP, AVIF, BMP, ICO, SVG.
   - PDF: rendered with PDF.js, with page navigation and zoom.
@@ -61,7 +61,7 @@ Quick links:
 - **LFS tab** with a two-column audit: LFS-tracked files on the left and non-LFS files over 5 MB on the right, with sizes, OIDs, pointer/tracking badges, filtering, and open/reveal/copy actions.
 - **Submodules tab** listing each submodule with URL, expected/checked-out commits, branch, initialization/modified/dirty status, filtering, and update/open/reveal/copy actions.
 - **Statistics tab** with commit, contributor, file, language, activity, repository, and working-tree metrics plus a **Download** action that writes a self-contained HTML report.
-- **AI Chat tab** backed by the Pi agent, with streaming responses, tool activity (including Git and shell commands), stop/new-chat controls, per-repository conversations, and a changed-files sidebar that shares the preview pane.
+- **AI Chat tab** backed by the Pi agent, with a three-column workspace: a commit history graph on the left, a changed-file tree above the chat in the middle, and a preview pane on the right that opens when a changed file is selected. The preview has a hide button, so the tree and chat can use the full width. Streaming responses, tool activity (including Git and shell commands), stop/new-chat controls, and per-repository conversations are included.
 - **Git settings** for identity, default branch, editor, pull strategy, GPG signing, pruning, and app-level auto-fetch behavior.
 - **Appearance** with light, dark, and system-following themes plus interface zoom (50%–500%), applied live and remembered between launches.
 - **Language** with English and Simplified Chinese, applied live to the UI and native menus; repository content, code, and commit messages stay as-is.
@@ -159,13 +159,13 @@ npm run dist:win
 npm run dist:all   # macOS arm64 DMG + Windows x64 installer
 ```
 
-The installer is written to:
+The deliverable is the single installer:
 
 ```text
 release/GitGlance-1.0.0-x64.exe
 ```
 
-It is unsigned, so Windows SmartScreen may warn on first launch; sign it with a Windows code-signing certificate before distributing it. The installer uses the GitGlance icon from `build/icon.ico` and offers an assisted, per-user install with an optional installation directory.
+`dist:win` and `dist:all` remove electron-builder intermediates (`win-unpacked`, blockmaps, update metadata) after the build, so `release/` contains only the installers. It is unsigned, so Windows SmartScreen may warn on first launch; sign it with a Windows code-signing certificate before distributing it. The installer uses the GitGlance icon from `build/icon.ico` and offers an assisted, per-user install with an optional installation directory.
 
 On Apple Silicon, electron-builder’s bundled `makensis` is Intel-only. Install Rosetta 2 (`softwareupdate --install-rosetta --agree-to-license`) or point `ELECTRON_BUILDER_NSIS_DIR` at a native arm64 NSIS bundle with `elevate.exe` and `mac/makensis`. Building on Windows or a Windows CI runner avoids the cross-build requirement entirely. The Windows package is built from the same renderer and Electron main process, but it has not been executed on Windows in this workspace.
 
@@ -178,7 +178,7 @@ The Chat tab keeps one Pi RPC process per repository. Each prompt includes:
 - changed files with status and line counts;
 - the eight most recent commits;
 - staged and unstaged diffs (clipped to about 22 KB each);
-- the file selected in the changed-files sidebar, if any.
+- the file selected in the changed-file tree, if any.
 
 Pi is launched with the `read`, `grep`, `find`, `ls`, and `bash` tools. It can run Git and other shell commands when you ask it to, including creating commits; the system prompt tells it to explain the impact and ask before destructive operations. Shell commands run with the same OS privileges as GitGlance, so review what the agent proposes and treat repository content as untrusted input. Chat state is kept in the renderer per repository, and **New chat** resets the underlying Pi session. **Stop** aborts the current response.
 

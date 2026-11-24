@@ -121,8 +121,10 @@ npm run dist:mac:unsigned  # force an unsigned local build
 The DMG is written to:
 
 ```text
-release/GitGlance-1.0.0-arm64.dmg
+release/GitGlance-[YYMMDD.COMMIT_SHORT_SHA]-arm.dmg
 ```
+
+For example: `release/GitGlance-261124.1776d61-arm.dmg`. The date is the local build date (`YYMMDD`) and the suffix is `git rev-parse --short=7 HEAD`.
 
 Open it and drag **GitGlance** to Applications. Locally built artifacts are not quarantined by macOS, so the unsigned build opens normally on the build machine. Moving an unsigned build to another Mac can trigger a Gatekeeper warning.
 
@@ -162,10 +164,10 @@ npm run dist:all   # macOS arm64 DMG + Windows x64 installer
 The deliverable is the single installer:
 
 ```text
-release/GitGlance-1.0.0-x64.exe
+release/GitGlance-[YYMMDD.COMMIT_SHORT_SHA]-x64.exe
 ```
 
-`dist:win` and `dist:all` remove electron-builder intermediates (`win-unpacked`, blockmaps, update metadata) after the build, so `release/` contains only the installers. It is unsigned, so Windows SmartScreen may warn on first launch; sign it with a Windows code-signing certificate before distributing it. The installer uses the GitGlance icon from `build/icon.ico` and offers an assisted, per-user install with an optional installation directory.
+For example: `release/GitGlance-261124.1776d61-x64.exe`. `dist:win` and `dist:all` rename the freshly built installers with this convention, remove older installers for the built platform(s), and delete electron-builder intermediates (`win-unpacked`, blockmaps, update metadata), so `release/` contains only the current installers. It is unsigned, so Windows SmartScreen may warn on first launch; sign it with a Windows code-signing certificate before distributing it. The installer uses the GitGlance icon from `build/icon.ico` and offers an assisted, per-user install with an optional installation directory.
 
 On Apple Silicon, electron-builder’s bundled `makensis` is Intel-only. Install Rosetta 2 (`softwareupdate --install-rosetta --agree-to-license`) or point `ELECTRON_BUILDER_NSIS_DIR` at a native arm64 NSIS bundle with `elevate.exe` and `mac/makensis`. Building on Windows or a Windows CI runner avoids the cross-build requirement entirely. The Windows package is built from the same renderer and Electron main process, but it has not been executed on Windows in this workspace.
 

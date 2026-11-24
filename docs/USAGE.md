@@ -6,8 +6,8 @@ optionally connects to the [Pi](https://github.com/badlogic/pi-mono) coding
 agent for chat about your working tree.
 
 This guide walks through the everyday workflow: opening repositories, reading
-changes, staging and committing, browsing history, syncing with remotes, and
-talking to Pi about your code.
+changes, staging and committing, the Chat history graph and its commit
+actions, syncing with remotes, and talking to Pi about your code.
 
 ![GitGlance workspace with a repository open](./screenshots/workspace.png)
 
@@ -29,6 +29,7 @@ talking to Pi about your code.
 - [Statistics](#statistics)
 - [Syncing with remotes](#syncing-with-remotes)
 - [AI chat with Pi](#ai-chat-with-pi)
+- [Chat commit actions](#commit-actions)
 - [Settings](#settings)
 - [Appearance and language](#appearance-and-language)
 - [Keyboard shortcuts](#keyboard-shortcuts)
@@ -515,15 +516,16 @@ Right-click any commit in the **History** column for a grouped menu:
 | Action | Behavior |
 | --- | --- |
 | **New Branch** / **New Tag** | Create a local branch or lightweight tag at that commit; a modal asks for the name. The branch is not checked out. |
-| **Cherry Pick Commit** | Apply the commit to the current branch with `git cherry-pick`. Merge commits use their first parent. |
-| **Revert Commit** | Create a revert commit with `git revert --no-edit`. |
+| **Cherry Pick Commit** | Apply the commit to the current branch with `git cherry-pick`. Merge commits use their first parent; commits already in the current branch report that they are already present. |
+| **Revert Commit** | Create a revert commit with `git revert --no-edit`. Merge commits use their first parent. |
 | **Reset <branch> to here** | Choose **Soft**, **Mixed**, or **Hard**. Hard reset discards uncommitted index and working-tree changes. |
-| **Squash into parent** | Rewrite history with an interactive rebase to combine the commit into its parent. Disabled for the root commit. |
+| **Squash into parent** | Rewrite history with an interactive rebase to combine the commit into its parent. Disabled for the root commit; merge commits and commits outside the current branch are rejected. |
 | **Copy Commit SHA** | Copy the full commit hash. |
 
-Reset and squash rewrite history. Cherry-pick, revert, and squash abort and
-restore the previous state if Git reports a conflict, so resolve complex
-histories in a terminal.
+The menu is grouped into Create, Apply, Rewrite, and Copy sections. Reset and
+squash rewrite history. Cherry-pick, revert, and squash abort and restore the
+previous state if Git reports a conflict, so resolve complex histories in a
+terminal.
 
 Prompts and file excerpts are sent to the model endpoint you configure. Git
 operations and previews stay local.
@@ -656,23 +658,29 @@ Environment variables:
 
 ## Limitations
 
-- No merge-conflict editor, rebase, revert, or cherry-pick UI.
+- No merge-conflict editor or general interactive-rebase UI. Cherry-pick,
+  revert, reset, and squash are available from the Chat history menu; conflicting
+  cherry-pick, revert, or squash operations abort so you can resolve them in a
+  terminal.
 - Staging is per file; there is no hunk-level staging.
 - Interactive credential prompts are disabled by design.
 - Office previews depend on LibreOffice and may not reproduce complex layouts.
 - The default macOS build is unsigned, not notarized, and arm64-only.
-- Windows and Linux are not packaged or tested; the Electron main process is
-  written to be cross-platform.
+- Windows x64 NSIS installers can be built from macOS; Windows runtime behavior
+  has not been tested here. Linux is not packaged.
 - AI chat requires Pi and a configured LLM provider. All other features work
   without them.
 
 ## Development
 
 ```bash
-npm run dev        # Vite + Electron with hot reload
-npm run typecheck  # Strict TypeScript for renderer and Electron
-npm run smoke      # Isolated end-to-end smoke test
-npm run pack:mac   # release/mac-arm64/GitGlance.app
+npm run dev                # Vite + Electron with hot reload
+npm run typecheck          # Strict TypeScript for renderer and Electron
+npm run smoke              # Isolated end-to-end smoke test
+npm run pack:mac           # release/mac-arm64/GitGlance.app
+npm run dist:mac:unsigned  # macOS arm64 DMG
+npm run dist:win           # Windows x64 installer
+npm run dist:all           # both installers
 ```
 
-See the [README](../README.md) for architecture, build, and signing details.
+See the [README](../README.md) for architecture, build, and signing details. On Apple Silicon, `dist:win` needs Rosetta 2 or a native `makensis` bundle as described there.

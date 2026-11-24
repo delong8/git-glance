@@ -2,11 +2,16 @@
 
 A local Git desktop client built around the UI in [index.html](./index.html). It runs in Electron, executes the installed Git CLI, talks to the Pi coding agent for AI chat, and previews images, PDFs, Word/Excel/PowerPoint documents, and text files without uploading them anywhere.
 
+**Official links**
+
+- Repository: [github.com/delong8/git-glance](https://github.com/delong8/git-glance)
+- Release downloads: [github.com/delong8/git-glance/releases](https://github.com/delong8/git-glance/releases)
+
 ![GitGlance workspace with a repository open](./docs/screenshots/workspace.png)
 
 ## Documentation
 
-The [usage guide](./docs/USAGE.md) is the end-user walkthrough: opening and switching repositories, reading the summary, browsing the working tree, previewing files, staging and committing, history, worktrees, remotes, branches, tags, stashes, LFS audits, submodules, repository statistics and HTML reports, syncing with remotes, AI chat, settings, and troubleshooting.
+The [usage guide](./docs/USAGE.md) is the end-user walkthrough: opening and switching repositories, reading the summary, browsing the working tree, previewing files, staging and committing, the Chat history graph and its commit actions, worktrees, remotes, branches, tags, stashes, LFS audits, submodules, repository statistics and HTML reports, syncing with remotes, AI chat, settings, and troubleshooting.
 
 Quick links:
 
@@ -24,6 +29,7 @@ Quick links:
 - [Submodules](./docs/USAGE.md#submodules)
 - [Statistics](./docs/USAGE.md#statistics)
 - [AI chat with Pi](./docs/USAGE.md#ai-chat-with-pi)
+- [Chat commit actions](./docs/USAGE.md#commit-actions)
 - [Settings](./docs/USAGE.md#settings)
 - [Keyboard shortcuts](./docs/USAGE.md#keyboard-shortcuts)
 - [Troubleshooting](./docs/USAGE.md#troubleshooting)
@@ -59,7 +65,7 @@ Quick links:
 - **LFS tab** with a two-column audit: LFS-tracked files on the left and non-LFS files over 5 MB on the right, with sizes, OIDs, pointer/tracking badges, filtering, and open/reveal/copy actions.
 - **Submodules tab** listing each submodule with URL, expected/checked-out commits, branch, initialization/modified/dirty status, filtering, and update/open/reveal/copy actions.
 - **Statistics tab** with commit, contributor, file, language, activity, repository, and working-tree metrics plus a **Download** action that writes a self-contained HTML report.
-- **AI Chat tab** backed by the Pi agent, with a three-column workspace: a commit history graph on the left, a changed-file tree above the chat in the middle, and a preview pane on the right that opens when a changed file is selected. The preview has a hide button, so the tree and chat can use the full width. Right-clicking a commit offers New Branch, New Tag, Cherry Pick, Revert, Reset (Soft/Mixed/Hard), Squash into parent, and Copy SHA actions. Streaming responses, tool activity (including Git and shell commands), stop/new-chat controls, and per-repository conversations are included.
+- **AI Chat tab** backed by the Pi agent, with a three-column workspace: an all-refs commit history graph on the left, a changed-file tree above the chat in the middle, and a preview pane on the right that opens when a changed file is selected. The preview has a hide button, so the tree and chat can use the full width. Right-clicking a commit offers New Branch, New Tag, Cherry Pick, Revert, Reset (Soft/Mixed/Hard), Squash into parent, and Copy SHA actions. Streaming responses, tool activity (including Git and shell commands), stop/new-chat controls, and per-repository conversations are included.
 - **Git settings** for identity, default branch, editor, pull strategy, GPG signing, pruning, and app-level auto-fetch behavior.
 - **Appearance** with light, dark, and system-following themes plus interface zoom (50%–500%), applied live and remembered between launches.
 - **Language** with English and Simplified Chinese, applied live to the UI and native menus; repository content, code, and commit messages stay as-is.
@@ -68,14 +74,14 @@ Quick links:
 ## Requirements
 
 - **Node.js 22+** and npm (tested with Node 26) to run from source or build the installer. The packaged app does not require Node.js.
-- **macOS** to build the `.app`/DMG with electron-builder.
+- **macOS** to build the `.app`/DMG locally; the Windows x64 installer can be cross-built as described below.
 - **Git** installed and configured with your credentials. GitGlance uses the `git` on `PATH`; it does not bundle Git.
 - **Pi agent CLI** (`pi`) available on `PATH`, or set `PI_BIN` to its executable. Configure the model endpoint in **Settings → LLM provider**; GitGlance starts Pi with `--mode rpc` and enables the `read`, `grep`, `find`, `ls`, and `bash` tools.
 - **LibreOffice** is optional. Install it only if you want Word/Excel/PowerPoint previews. GitGlance looks for `soffice` in common locations or uses `LIBREOFFICE_BIN`.
 
 The application source is strict TypeScript: the renderer is compiled by Vite, and the Electron main/preload/services are compiled with `tsc` into `dist-electron/`. Build and test scripts remain `.mjs` tooling.
 
-Tested on macOS. The Electron main process is cross-platform, but the Office lookup and window chrome are tuned for macOS/Linux desktops.
+Tested on macOS. The Electron main process is cross-platform and a Windows x64 installer builds successfully, but Windows runtime behavior has not been validated in this workspace.
 
 ## Run it
 
@@ -122,7 +128,7 @@ The DMG is written to:
 release/GitGlance-[YYMMDD.COMMIT_SHORT_SHA]-arm.dmg
 ```
 
-For example: `release/GitGlance-261124.1776d61-arm.dmg`. The date is the local build date (`YYMMDD`) and the suffix is `git rev-parse --short=7 HEAD`.
+For example: `release/GitGlance-261124.a1b2c3d-arm.dmg`. The date is the local build date (`YYMMDD`) and the suffix is `git rev-parse --short=7 HEAD`.
 
 Open it and drag **GitGlance** to Applications. Locally built artifacts are not quarantined by macOS, so the unsigned build opens normally on the build machine. Moving an unsigned build to another Mac can trigger a Gatekeeper warning.
 
@@ -165,7 +171,7 @@ The deliverable is the single installer:
 release/GitGlance-[YYMMDD.COMMIT_SHORT_SHA]-x64.exe
 ```
 
-For example: `release/GitGlance-261124.1776d61-x64.exe`. `dist:win` and `dist:all` rename the freshly built installers with this convention, remove older installers for the built platform(s), and delete electron-builder intermediates (`win-unpacked`, blockmaps, update metadata), so `release/` contains only the current installers. It is unsigned, so Windows SmartScreen may warn on first launch; sign it with a Windows code-signing certificate before distributing it. The installer uses the GitGlance icon from `build/icon.ico` and offers an assisted, per-user install with an optional installation directory.
+For example: `release/GitGlance-261124.a1b2c3d-x64.exe`. `dist:win` and `dist:all` rename the freshly built installers with this convention, remove older installers for the built platform(s), and delete electron-builder intermediates (`win-unpacked`, blockmaps, update metadata), so `release/` contains only the current installers. It is unsigned, so Windows SmartScreen may warn on first launch; sign it with a Windows code-signing certificate before distributing it. The installer uses the GitGlance icon from `build/icon.ico` and offers an assisted, per-user install with an optional installation directory.
 
 On Apple Silicon, electron-builder’s bundled `makensis` is Intel-only. Install Rosetta 2 (`softwareupdate --install-rosetta --agree-to-license`) or point `ELECTRON_BUILDER_NSIS_DIR` at a native arm64 NSIS bundle with `elevate.exe` and `mac/makensis`. Building on Windows or a Windows CI runner avoids the cross-build requirement entirely. The Windows package is built from the same renderer and Electron main process, but it has not been executed on Windows in this workspace.
 
@@ -180,6 +186,10 @@ The Chat tab keeps one Pi RPC process per repository. Each prompt includes:
 - staged and unstaged diffs (clipped to about 22 KB each);
 - the file selected in the changed-file tree, if any.
 
+The Chat left column shows the commit graph across local, remote-tracking, and
+tagged refs. Right-click a commit to create a branch or tag, cherry-pick,
+revert, reset, squash it into its parent, or copy its SHA.
+
 Pi is launched with the `read`, `grep`, `find`, `ls`, and `bash` tools. It can run Git and other shell commands when you ask it to, including creating commits; the system prompt tells it to explain the impact and ask before destructive operations. Shell commands run with the same OS privileges as GitGlance, so review what the agent proposes and treat repository content as untrusted input. Chat state is kept in the renderer per repository, and **New chat** resets the underlying Pi session. **Stop** aborts the current response.
 
 GitGlance configures the model itself. **Settings → LLM provider** stores a provider ID, API protocol (`openai-completions`, `openai-responses`, `anthropic-messages`, `google-generative-ai`, or `google-vertex`), base URL, API key, and model ID in the app config. Before starting Pi, GitGlance writes those values into its own `pi-agent` directory (`models.json` and `settings.json`) and launches Pi with `PI_CODING_AGENT_DIR` pointed at it. The generated settings also set `defaultProjectTrust` to `never`, so neither the user-level `~/.pi` nor a repository-local `.pi` directory is read. Prompts and file excerpts may be sent to the configured model endpoint; Git operations and previews stay local.
@@ -192,12 +202,13 @@ GitGlance runs `git` directly in the repository working directory with `LC_ALL=C
 - commit the staged changes;
 - stash tracked and untracked changes;
 - switch branches and create a local branch from any local or remote branch;
+- create branches and lightweight tags at any commit, cherry-pick, revert, reset (soft/mixed/hard), and squash a commit into its parent from the Chat history menu;
 - fetch (optionally all remotes and with pruning), pull with merge/rebase/ff-only, and push;
 - read diffs, status with rename and symlink information, history, remotes, and upstream tracking state.
 
 Authentication is delegated to your existing Git credential helper or SSH agent. Because terminal prompts are disabled, an operation that needs interactive credentials fails visibly instead of hanging.
 
-Branch switching and creation are supported, including local tracking branches for remote-only refs. There is no merge-conflict editor, rebase, or cherry-pick workflow yet.
+Branch switching and creation are supported, including local tracking branches for remote-only refs. The Chat history menu exposes cherry-pick, revert, reset, and squash; cherry-pick, revert, and squash abort on conflict. There is no merge-conflict editor or general interactive-rebase UI.
 
 ## Settings and local data
 
@@ -273,7 +284,7 @@ npm run typecheck
 npm run smoke
 ```
 
-`npm run typecheck` runs the strict renderer and Electron TypeScript projects. The smoke test builds both, creates a temporary Git repository with a linked worktree, a remote, local/remote branches, lightweight/annotated tags, a stash, LFS-tracked plus large files, and a submodule, along with an Electron profile; it launches GitGlance and checks that the project list, README preview, all ten repository tabs, statistics cards, the worktree, remote, branch, tag, stash, LFS, and submodule filters, the summary Stash action, and branch creation/switching through the branch picker. It does not touch your real configuration or repositories.
+`npm run typecheck` runs the strict renderer and Electron TypeScript projects. The smoke test builds both, creates a temporary Git repository with a linked worktree, a remote, local/remote branches, lightweight/annotated tags, a stash, LFS-tracked plus large files, and a submodule, along with an Electron profile; it launches GitGlance and checks that the project list, README preview, all ten repository tabs, statistics cards, the worktree, remote, branch, tag, stash, LFS, and submodule filters, the summary Stash action, branch creation/switching through the branch picker, and the Chat history right-click actions. It does not touch your real configuration or repositories.
 
 To inspect the packaged rather than source app:
 

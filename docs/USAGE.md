@@ -116,8 +116,15 @@ The summary is the dashboard for the active repository:
 - **Repository name** and a **Remote** or **Local** chip. The local path is in
   the title bar.
 - **Branch, upstream, ahead/behind state**, and the last fetch time.
-- **Fetch**, **Pull**, and **Push** actions. They are disabled when there is no
-  remote, no upstream, or nothing to push.
+- **Fetch**, **Pull**, **Stash**, **Branch**, and **Push** actions. Fetch, Pull,
+  and Push are disabled when there is no remote, no upstream, or nothing to
+  push. Stash is disabled when the working tree is clean; Branch opens the
+  branch picker described below.
+- A two-button group at the far right: **Open folder** opens the repository’s
+  local path in the system file manager, and **Open terminal** opens a terminal
+  window already in that directory. On macOS the terminal is Terminal; on
+  Windows, Command Prompt; on Linux, GitGlance uses the first available terminal
+  emulator.
 
 The tabs below are **Chat**, **File tree**, **History**, **Worktrees**,
 **Remote**, **Branches**, **Tags**, **Stash**, **LFS**, **Submodules**, and
@@ -228,8 +235,8 @@ with a colored commit graph:
 
 ![Commit graph with branches and a merge commit](./screenshots/history.png)
 
-Click a commit hash to copy the full SHA. History is read-only: checkout,
-branch creation, revert, and cherry-pick are not part of the current UI.
+Click a commit hash to copy the full SHA. History is read-only: commit
+checkout, revert, and cherry-pick are not part of the current UI.
 
 ## Worktrees
 
@@ -303,9 +310,17 @@ Each row has two actions:
 | **Checkout** | Runs `git switch` for a local branch. For a remote-tracking branch, switches to the matching local branch or creates it with `--track`. Disabled for the current branch. |
 | **Copy** | Copies the branch name to the clipboard. |
 
+The **Branch** button in the summary header opens the branch picker without
+leaving the current tab. It lists local and remote-tracking branches with the
+same current, remote, and gone badges. Pick any row as the starting point, then
+enter a name under **New branch from** and choose **Create & switch**; this runs
+`git switch -c <name> <base>`. Starting from a remote-tracking branch also sets
+up upstream tracking. Each row has a **Switch** action: remote-only branches are
+checked out as a new local tracking branch. Press `Esc` to close the picker.
+
 Checkout is refused by Git when uncommitted changes would be overwritten; the
-error appears as a toast. Creating, renaming, and deleting branches remain
-terminal operations (`git branch`, `git branch -m`, `git branch -d`).
+error appears as a toast. Renaming and deleting branches remain terminal
+operations (`git branch -m`, `git branch -d`).
 
 ## Tags
 
@@ -331,6 +346,11 @@ error appears as a toast. Creating, signing, and deleting tags remain terminal
 operations (`git tag`, `git tag -d`).
 
 ## Stash
+
+The **Stash** button in the summary header runs `git stash push
+--include-untracked`, saving tracked and untracked changes in one step; it is
+disabled when the working tree is clean. The stash appears in the tab below and
+can be restored with Apply or Pop.
 
 The **Stash** tab lists entries from `git stash list`, newest first. Each row
 shows:
@@ -626,8 +646,7 @@ Environment variables:
 
 ## Limitations
 
-- No branch checkout/creation, merge-conflict editor, rebase, revert, or
-  cherry-pick UI.
+- No merge-conflict editor, rebase, revert, or cherry-pick UI.
 - Staging is per file; there is no hunk-level staging.
 - Interactive credential prompts are disabled by design.
 - Office previews depend on LibreOffice and may not reproduce complex layouts.

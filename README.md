@@ -42,7 +42,7 @@ Quick links:
 ## Features
 
 - **Multi-repository sidebar** with filtering, per-project branch and change counts, and an onboarding screen when no repository is open yet. The panel toggle at the start of the tab bar collapses it.
-- **Repository summary** with the current branch, upstream, ahead/behind counts, and Fetch / Pull / Push actions.
+- **Repository summary** with the current branch, upstream, ahead/behind counts, and Fetch / Pull / Stash / Branch / Push actions. Stash saves the working tree in one click; Branch opens a picker for switching or creating a branch from any local or remote branch. A compact group at the far right opens the repository folder in the system file manager or a terminal at that path.
 - **Full working-tree file tree**, including folders, symlinks, staged/unstaged/deleted badges, per-file stage toggles, and a filter.
 - **Preview and diff pane** shared by the File Tree and Chat tabs. Select a file to preview it; switch to its staged or unstaged diff.
 - **Rich previews**
@@ -55,9 +55,9 @@ Quick links:
 - **History tab** with a commit graph, refs, authors, stats, timestamps, and copyable hashes.
 - **Worktrees tab** listing every linked worktree for the repository, with branch, HEAD, path, main/current/locked/prunable badges, filtering, and open/reveal/copy actions.
 - **Remote tab** listing every configured remote with fetch and push URLs, the default branch, remote-tracking branches, filtering, per-remote fetch, and copy/open actions.
-- **Branches tab** listing local and remote-tracking branches with current/remote/gone badges, upstream and ahead/behind state, latest commit details, filtering, and checkout/copy actions.
+- **Branches tab** listing local and remote-tracking branches with current/remote/gone badges, upstream and ahead/behind state, latest commit details, filtering, and checkout/copy actions, plus a summary-header branch picker for switching or creating branches from any branch.
 - **Tags tab** listing lightweight and annotated tags with type/HEAD badges, annotations, taggers, target commit details, filtering, and checkout/copy actions.
-- **Stash tab** listing stashed work with branch, message, base commit, file stats, filtering, and apply/pop/drop/copy actions.
+- **Stash tab** listing stashed work with branch, message, base commit, file stats, filtering, and apply/pop/drop/copy actions; the summary Stash button saves tracked and untracked changes.
 - **LFS tab** with a two-column audit: LFS-tracked files on the left and non-LFS files over 5 MB on the right, with sizes, OIDs, pointer/tracking badges, filtering, and open/reveal/copy actions.
 - **Submodules tab** listing each submodule with URL, expected/checked-out commits, branch, initialization/modified/dirty status, filtering, and update/open/reveal/copy actions.
 - **Statistics tab** with commit, contributor, file, language, activity, repository, and working-tree metrics plus a **Download** action that writes a self-contained HTML report.
@@ -150,6 +150,25 @@ npx electron-builder --mac --arm64 --config.mac.notarize=true
 
 The packaged app does not bundle Git, Pi, or LibreOffice. It looks for Git on `PATH`, Pi in standard Homebrew/home locations, and LibreOffice in `/Applications` or Homebrew. `PI_BIN` and `LIBREOFFICE_BIN` work when launching from a terminal; for a Finder launch, custom tool paths should be symlinked into a standard location such as `/opt/homebrew/bin` or `/usr/local/bin`.
 
+## Build a Windows installer
+
+electron-builder can cross-build the Windows x64 NSIS installer from macOS:
+
+```bash
+npm run dist:win
+npm run dist:all   # macOS arm64 DMG + Windows x64 installer
+```
+
+The installer is written to:
+
+```text
+release/GitGlance-1.0.0-x64.exe
+```
+
+It is unsigned, so Windows SmartScreen may warn on first launch; sign it with a Windows code-signing certificate before distributing it. The installer uses the GitGlance icon from `build/icon.ico` and offers an assisted, per-user install with an optional installation directory.
+
+On Apple Silicon, electron-builder’s bundled `makensis` is Intel-only. Install Rosetta 2 (`softwareupdate --install-rosetta --agree-to-license`) or point `ELECTRON_BUILDER_NSIS_DIR` at a native arm64 NSIS bundle with `elevate.exe` and `mac/makensis`. Building on Windows or a Windows CI runner avoids the cross-build requirement entirely. The Windows package is built from the same renderer and Electron main process, but it has not been executed on Windows in this workspace.
+
 ## AI chat
 
 The Chat tab keeps one Pi RPC process per repository. Each prompt includes:
@@ -171,12 +190,14 @@ GitGlance runs `git` directly in the repository working directory with `LC_ALL=C
 
 - stage and unstage individual files, stage/unstage all files;
 - commit the staged changes;
+- stash tracked and untracked changes;
+- switch branches and create a local branch from any local or remote branch;
 - fetch (optionally all remotes and with pruning), pull with merge/rebase/ff-only, and push;
 - read diffs, status with rename and symlink information, history, remotes, and upstream tracking state.
 
 Authentication is delegated to your existing Git credential helper or SSH agent. Because terminal prompts are disabled, an operation that needs interactive credentials fails visibly instead of hanging.
 
-Branch display is read-only: there is no branch checkout/create UI, merge-conflict editor, rebase, or cherry-pick workflow yet.
+Branch switching and creation are supported, including local tracking branches for remote-only refs. There is no merge-conflict editor, rebase, or cherry-pick workflow yet.
 
 ## Settings and local data
 
@@ -252,7 +273,7 @@ npm run typecheck
 npm run smoke
 ```
 
-`npm run typecheck` runs the strict renderer and Electron TypeScript projects. The smoke test builds both, creates a temporary Git repository with a linked worktree, a remote, local/remote branches, lightweight/annotated tags, a stash, LFS-tracked plus large files, and a submodule, along with an Electron profile; it launches GitGlance and checks that the project list, README preview, history, all eleven repository tabs, statistics cards, and the worktree, remote, branch, tag, stash, LFS, and submodule filters render. It does not touch your real configuration or repositories.
+`npm run typecheck` runs the strict renderer and Electron TypeScript projects. The smoke test builds both, creates a temporary Git repository with a linked worktree, a remote, local/remote branches, lightweight/annotated tags, a stash, LFS-tracked plus large files, and a submodule, along with an Electron profile; it launches GitGlance and checks that the project list, README preview, history, all eleven repository tabs, statistics cards, the worktree, remote, branch, tag, stash, LFS, and submodule filters, the summary Stash action, and branch creation/switching through the branch picker. It does not touch your real configuration or repositories.
 
 To inspect the packaged rather than source app:
 
@@ -273,7 +294,7 @@ Useful development variables:
 
 ## Limitations
 
-- No interactive credential prompting, branch checkout/creation, merge tool, or conflict resolution UI.
+- No interactive credential prompting, merge tool, or conflict resolution UI.
 - Office previews depend on LibreOffice and may not perfectly reproduce complex layouts.
 - Text previews are capped at 4 MB; very large PDFs, images, and Office files are rejected with a clear message.
 - The default local installer is unsigned and not notarized. Distributing it to other Macs requires a Developer ID certificate and notarization.

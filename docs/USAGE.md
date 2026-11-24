@@ -20,6 +20,14 @@ talking to Pi about your code.
 - [Previewing files](#previewing-files)
 - [Committing changes](#committing-changes)
 - [History](#history)
+- [Worktrees](#worktrees)
+- [Remotes](#remotes)
+- [Branches](#branches)
+- [Tags](#tags)
+- [Stash](#stash)
+- [LFS](#lfs)
+- [Submodules](#submodules)
+- [Statistics](#statistics)
 - [Syncing with remotes](#syncing-with-remotes)
 - [AI chat with Pi](#ai-chat-with-pi)
 - [Settings](#settings)
@@ -97,7 +105,7 @@ The window is split into three persistent regions:
 - **Sidebar** — repositories, filtering, global sync status, and the Settings
   entry. The footer shows how many projects are open and the auto-fetch
   interval.
-- **Main panel** — a summary header shared by all tabs, three tabs, and the
+- **Main panel** — a summary header shared by all tabs, eleven tabs, and the
   commit bar (File tree only).
 
 ### Summary header
@@ -111,8 +119,16 @@ The summary is the dashboard for the active repository:
 - **Fetch**, **Pull**, and **Push** actions. They are disabled when there is no
   remote, no upstream, or nothing to push.
 
-The tabs below are **Chat**, **File tree**, and **History**. Chat is the default
-tab; the File tree badge shows the number of changed files.
+The tabs below are **Chat**, **File tree**, **History**, **Worktrees**,
+**Remote**, **Branches**, **Tags**, **Stash**, **LFS**, **Submodules**, and
+**Statistics**. Chat is the default tab; the File tree badge shows the number
+of changed files, the Worktrees badge shows how many linked worktrees the
+repository has, the Remote badge shows how many remotes are configured, the
+Branches badge shows how many local and remote-tracking branches exist, the
+Tags badge shows how many tags exist, the Stash badge shows how many stashes
+are saved, the LFS badge shows how many LFS-tracked files exist, the Submodules
+badge shows how many submodules are configured, and the Statistics badge shows
+the commit count once the tab has loaded.
 
 ## Browsing files and changes
 
@@ -210,6 +226,201 @@ with a colored commit graph:
 
 Click a commit hash to copy the full SHA. History is read-only: checkout,
 branch creation, revert, and cherry-pick are not part of the current UI.
+
+## Worktrees
+
+The **Worktrees** tab lists every working tree linked to the repository, as
+reported by `git worktree list`. Each row shows the worktree name and path, its
+checked-out branch (or `detached`), the short HEAD hash, and badges for:
+
+- **current** — the worktree GitGlance has open;
+- **main worktree** — the primary working tree that owns `.git`;
+- **locked** — with the lock reason in the tooltip;
+- **prunable** — with Git’s explanation in the tooltip;
+- **bare** — for bare repositories.
+
+The filter above the list searches names, paths, branches, and hashes. The
+refresh button re-runs `git worktree list` without reloading the repository.
+
+Each row has three actions:
+
+| Action | Behavior |
+| --- | --- |
+| **Open** | Adds the linked worktree to the sidebar and switches GitGlance to it. Disabled for the current, prunable, and bare worktrees. |
+| **Reveal** | Shows the worktree folder in Finder. |
+| **Copy** | Copies the worktree path to the clipboard. |
+
+Creating, moving, locking, and pruning worktrees remain terminal operations.
+GitGlance only lists and opens existing worktrees.
+
+## Remotes
+
+The **Remote** tab lists every remote configured for the active repository,
+read from `git remote -v` and `refs/remotes`:
+
+- the remote name and its default branch, when `refs/remotes/<remote>/HEAD` is
+  set;
+- the fetch URL, plus the push URL when it differs;
+- the number of remote-tracking branches, with the branch names shown as
+  chips (up to eight, then a `+N` chip);
+- a **Fetch** action per remote, which runs `git fetch <remote> --prune` using
+  your pruning setting and refreshes ahead/behind counts;
+- copy and open actions for the remote URL. **Open** is shown only for
+  `http(s)` URLs; SSH remotes can be copied instead.
+
+The filter above the list searches remote names, URLs, and tracking branch
+names. The refresh button re-reads the remote configuration without reloading
+the repository.
+
+Adding, renaming, and removing remotes remain terminal operations. Use
+`git remote add`, `git remote rename`, and `git remote remove`; GitGlance
+picks up the change on refresh.
+
+## Branches
+
+The **Branches** tab lists local branches and remote-tracking branches, read
+from `refs/heads` and `refs/remotes`. Each row shows:
+
+- the branch name, with **current** and **remote** badges;
+- the upstream branch and ahead/behind counts, or **up to date** when they
+  match;
+- a **gone** badge when the configured upstream no longer exists;
+- the latest commit subject, author, relative time, and short hash.
+
+Branches are ordered with the current branch first, then local branches by
+latest commit, then remote-tracking branches. The filter searches branch names,
+upstreams, authors, and commit subjects. The refresh button re-reads refs
+without reloading the repository.
+
+Each row has two actions:
+
+| Action | Behavior |
+| --- | --- |
+| **Checkout** | Runs `git switch` for a local branch. For a remote-tracking branch, switches to the matching local branch or creates it with `--track`. Disabled for the current branch. |
+| **Copy** | Copies the branch name to the clipboard. |
+
+Checkout is refused by Git when uncommitted changes would be overwritten; the
+error appears as a toast. Creating, renaming, and deleting branches remain
+terminal operations (`git branch`, `git branch -m`, `git branch -d`).
+
+## Tags
+
+The **Tags** tab lists every tag in `refs/tags`, newest first. Each row shows:
+
+- the tag name and a **lightweight** or **annotated** badge;
+- a **HEAD** badge when the tag points at the current commit;
+- the target commit subject, author, relative time, and short hash;
+- for annotated tags, the annotation subject plus the tagger and tag date.
+
+The filter searches tag names, commit subjects, authors, annotations, and
+taggers. The refresh button re-reads tags without reloading the repository.
+
+Each row has two actions:
+
+| Action | Behavior |
+| --- | --- |
+| **Checkout** | Runs `git switch --detach` at the tag’s commit, leaving the repository in detached HEAD state. Disabled when the tag does not point to a commit. |
+| **Copy** | Copies the tag name to the clipboard. |
+
+Checkout is refused by Git when uncommitted changes would be overwritten; the
+error appears as a toast. Creating, signing, and deleting tags remain terminal
+operations (`git tag`, `git tag -d`).
+
+## Stash
+
+The **Stash** tab lists entries from `git stash list`, newest first. Each row
+shows:
+
+- the `stash@{N}` reference, source branch, and relative time;
+- the stash message (`WIP on …` or the custom `On branch: …` message);
+- the base commit short hash and subject;
+- changed-file stats (`+N −M` and file count, or `binary`).
+
+The filter searches references, commit hashes, branches, stash messages, and
+base commit subjects. The refresh button re-reads the stash list without
+reloading the repository.
+
+Each row has four actions:
+
+| Action | Behavior |
+| --- | --- |
+| **Apply** | Runs `git stash apply`, restoring the changes but keeping the stash. |
+| **Pop** | Runs `git stash pop`, restoring the changes and dropping the stash on success. |
+| **Drop** | Runs `git stash drop` after a confirmation; this cannot be undone. |
+| **Copy** | Copies the `stash@{N}` reference to the clipboard. Click the short hash to copy the stash commit instead. |
+
+Apply and pop are refused by Git when uncommitted changes would be
+overwritten; the error appears as a toast. Creating stashes remains a terminal
+operation (`git stash push`); GitGlance picks up new stashes on refresh.
+
+## LFS
+
+The **LFS** tab is a two-column audit of large files:
+
+- **LFS files** lists tracked files matched by `filter=lfs` in
+  `.gitattributes`, including files reported by `git lfs ls-files`. Each row
+  shows the path, LFS object size, short OID, a **pointer** badge when the
+  working-tree file is still an LFS pointer, and a **missing** badge when the
+  working-tree file is gone.
+- **Large files** lists tracked and untracked (but not ignored) files larger
+  than 5 MB that are **not** LFS-tracked. Each row shows the path, size, a
+  **tracked** or **untracked** badge, and the last-modified time.
+
+Both columns have independent scroll areas. The filter above the columns
+searches both paths. Each row has open, reveal-in-Finder, and copy-path
+actions; missing LFS files disable open and reveal.
+
+Git LFS detection falls back to `.gitattributes` and pointer parsing when the
+`git lfs` command is unavailable. Tracking files with LFS remains a terminal
+operation (`git lfs track`); GitGlance picks up the change on refresh.
+
+## Submodules
+
+The **Submodules** tab lists every entry from `git submodule status` with its
+configuration from `.gitmodules`:
+
+- the submodule path, **up to date** / **modified** / **uninitialized** /
+  **conflicted** status, and a **dirty** badge when its working tree has local
+  changes;
+- the configured or checked-out branch, remote URL, and expected (`index`) and
+  checked-out (`head`) commit hashes;
+- the checked-out commit subject, author, and relative time, or
+  **Not initialized**.
+
+The filter searches paths, URLs, branches, statuses, and commit details. Each
+row has four actions:
+
+| Action | Behavior |
+| --- | --- |
+| **Update** | Runs `git submodule update --init -- <path>`, cloning uninitialized submodules or checking out the recorded commit. |
+| **Open** | Adds the initialized submodule to the sidebar and switches GitGlance to it. Disabled when the submodule is not initialized. |
+| **Reveal** | Shows the submodule folder in Finder. Disabled when it does not exist yet. |
+| **Copy** | Copies the submodule path to the clipboard. Click the short hash to copy the recorded commit instead. |
+
+Adding, removing, and configuring submodules remain terminal operations
+(`git submodule add`, `git submodule deinit`); GitGlance picks up changes on
+refresh.
+
+## Statistics
+
+The **Statistics** tab aggregates repository metrics on demand:
+
+- **Cards** for commits, contributors, tracked files, tracked size, branches,
+  and tags;
+- **Languages** by tracked bytes, with a merged bar per language;
+- **Commit activity** for the last 12 weeks;
+- **Repository** facts: branch, HEAD, upstream, ahead/behind, remotes,
+  worktrees, submodules, stashes, branches, tags, first/last commit, object
+  store size, and last fetch;
+- **Working tree** summary: changed/staged/unstaged files and added/deleted
+  lines;
+- **Contributors** with commit counts.
+
+The tab loads when opened. **Refresh** recomputes the statistics. **Download**
+opens a save dialog and writes a self-contained HTML report containing the
+same cards, language bars, activity chart, repository facts, working-tree
+summary, and contributor table. The report is styled for print or sharing and
+needs no external assets.
 
 ## Syncing with remotes
 

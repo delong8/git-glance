@@ -6,7 +6,7 @@ A local Git desktop client built around the UI in [index.html](./index.html). It
 
 ## Documentation
 
-The [usage guide](./docs/USAGE.md) is the end-user walkthrough: opening and switching repositories, reading the summary, browsing the working tree, previewing files, staging and committing, history, syncing with remotes, AI chat, settings, and troubleshooting.
+The [usage guide](./docs/USAGE.md) is the end-user walkthrough: opening and switching repositories, reading the summary, browsing the working tree, previewing files, staging and committing, history, worktrees, remotes, branches, tags, stashes, LFS audits, submodules, repository statistics and HTML reports, syncing with remotes, AI chat, settings, and troubleshooting.
 
 Quick links:
 
@@ -16,6 +16,14 @@ Quick links:
 - [Previewing files](./docs/USAGE.md#previewing-files)
 - [Committing changes](./docs/USAGE.md#committing-changes)
 - [History](./docs/USAGE.md#history)
+- [Worktrees](./docs/USAGE.md#worktrees)
+- [Remotes](./docs/USAGE.md#remotes)
+- [Branches](./docs/USAGE.md#branches)
+- [Tags](./docs/USAGE.md#tags)
+- [Stash](./docs/USAGE.md#stash)
+- [LFS](./docs/USAGE.md#lfs)
+- [Submodules](./docs/USAGE.md#submodules)
+- [Statistics](./docs/USAGE.md#statistics)
 - [AI chat with Pi](./docs/USAGE.md#ai-chat-with-pi)
 - [Settings](./docs/USAGE.md#settings)
 - [Keyboard shortcuts](./docs/USAGE.md#keyboard-shortcuts)
@@ -45,6 +53,14 @@ Quick links:
   - Deleted files: preview from the HEAD revision.
   - Binary files: a clear fallback instead of garbled content.
 - **History tab** with a commit graph, refs, authors, stats, timestamps, and copyable hashes.
+- **Worktrees tab** listing every linked worktree for the repository, with branch, HEAD, path, main/current/locked/prunable badges, filtering, and open/reveal/copy actions.
+- **Remote tab** listing every configured remote with fetch and push URLs, the default branch, remote-tracking branches, filtering, per-remote fetch, and copy/open actions.
+- **Branches tab** listing local and remote-tracking branches with current/remote/gone badges, upstream and ahead/behind state, latest commit details, filtering, and checkout/copy actions.
+- **Tags tab** listing lightweight and annotated tags with type/HEAD badges, annotations, taggers, target commit details, filtering, and checkout/copy actions.
+- **Stash tab** listing stashed work with branch, message, base commit, file stats, filtering, and apply/pop/drop/copy actions.
+- **LFS tab** with a two-column audit: LFS-tracked files on the left and non-LFS files over 5 MB on the right, with sizes, OIDs, pointer/tracking badges, filtering, and open/reveal/copy actions.
+- **Submodules tab** listing each submodule with URL, expected/checked-out commits, branch, initialization/modified/dirty status, filtering, and update/open/reveal/copy actions.
+- **Statistics tab** with commit, contributor, file, language, activity, repository, and working-tree metrics plus a **Download** action that writes a self-contained HTML report.
 - **AI Chat tab** backed by the Pi agent, with streaming responses, tool activity (including Git and shell commands), stop/new-chat controls, per-repository conversations, and a changed-files sidebar that shares the preview pane.
 - **Git settings** for identity, default branch, editor, pull strategy, GPG signing, pruning, and app-level auto-fetch behavior.
 - **Appearance** with light, dark, and system-following themes plus interface zoom (50%–500%), applied live and remembered between launches.
@@ -236,7 +252,7 @@ npm run typecheck
 npm run smoke
 ```
 
-`npm run typecheck` runs the strict renderer and Electron TypeScript projects. The smoke test builds both, creates a temporary Git repository and Electron profile, launches GitGlance, and checks that the project list, README preview, history, and Chat/History tabs render. It does not touch your real configuration or repositories.
+`npm run typecheck` runs the strict renderer and Electron TypeScript projects. The smoke test builds both, creates a temporary Git repository with a linked worktree, a remote, local/remote branches, lightweight/annotated tags, a stash, LFS-tracked plus large files, and a submodule, along with an Electron profile; it launches GitGlance and checks that the project list, README preview, history, all eleven repository tabs, statistics cards, and the worktree, remote, branch, tag, stash, LFS, and submodule filters render. It does not touch your real configuration or repositories.
 
 To inspect the packaged rather than source app:
 

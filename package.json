@@ -19,9 +19,9 @@
     "smoke": "npm run build && node scripts/smoke.mjs",
     "pack:mac": "npm run build && electron-builder --dir --arm64",
     "dist:mac": "npm run build && electron-builder --mac --arm64",
-    "dist:mac:unsigned": "npm run build && CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac --arm64 && npm run clean:release",
-    "dist:win": "npm run build && electron-builder --win --x64 && npm run clean:release",
-    "dist:all": "npm run build && CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac --arm64 && CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --win --x64 && npm run clean:release",
+    "dist:mac:unsigned": "npm run build && CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac --arm64 && node scripts/rename-release.mjs mac && npm run clean:release",
+    "dist:win": "npm run build && electron-builder --win --x64 && node scripts/rename-release.mjs win && npm run clean:release",
+    "dist:all": "npm run build && CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac --arm64 && CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --win --x64 && node scripts/rename-release.mjs all && npm run clean:release",
     "clean:release": "node scripts/clean-release.mjs"
   },
   "dependencies": {

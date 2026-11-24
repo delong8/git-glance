@@ -37,6 +37,7 @@ import type {
   RepoSnapshot,
   RepoStatistics,
   RepoSummary,
+  ResetMode,
   SettingsInput,
   StashAction,
   SubmoduleStatus,
@@ -3835,13 +3836,13 @@ function renderChatHistory(): void {
   if (!repo || !list) return;
   const commits = repo.history;
   const rows = computeGraph(commits);
-  if (sub) sub.textContent = `${repo.branch} · ${plural(commits.length, 'commit')}`;
+  if (sub) sub.textContent = `all refs · ${plural(commits.length, 'commit')}`;
   if (!commits.length) {
     list.innerHTML = '<div class="chat-history-empty">No commits yet.</div>';
     return;
   }
   list.innerHTML = commits.map((commit, index) => {
-    const isHead = index === 0;
+    const isHead = !!repo.headSha && (commit.sha === repo.headSha || commit.sha.startsWith(repo.headSha));
     const remoteNames = state.remotes.map((remote) => remote.name);
     const refs = (commit.refs || [])
       .filter((ref) => !remoteNames.some((name) => ref.startsWith(`${name}/`)) && !ref.endsWith('/HEAD'))
@@ -3851,7 +3852,8 @@ function renderChatHistory(): void {
     const stats = commit.stats && (commit.stats[0] || commit.stats[1])
       ? `<span class="chat-history-stats"><span class="diff-add">+${commit.stats[0]}</span><span class="diff-del">−${commit.stats[1]}</span></span>`
       : '';
-    return `<div class="chat-history-row${isHead ? ' is-head' : ''}" title="${esc(commit.message)}">
+    const isRoot = commit.parents.length === 0;
+    return `<div class="chat-history-row${isHead ? ' is-head' : ''}" data-commit-sha="${esc(commit.sha)}" data-commit-short="${esc((commit.sha || '').slice(0, 7))}" data-commit-message="${esc(commit.message)}" data-commit-root="${isRoot}" title="${esc(commit.message)}">
       <div class="chat-history-graph">${graphSVG(rows[index], isHead, commit)}</div>
       <div class="chat-history-main">
         <div class="chat-history-msg-line">
@@ -3868,6 +3870,207 @@ function renderChatHistory(): void {
       </div>
     </div>`;
   }).join('');
+}
+
+function commitContextFromRow(row: HTMLElement): CommitContext {
+  const sha = row.dataset.commitSha || '';
+  return {
+    sha,
+    short: row.dataset.commitShort || sha.slice(0, 7),
+    message: row.dataset.commitMessage || '',
+    root: row.dataset.commitRoot === 'true',
+    branch: state.repo?.branch || 'HEAD'
+  };
+}
+
+function openCommitMenu(row: HTMLElement, x: number, y: number): void {
+  const commit = commitContextFromRow(row);
+  contextCommit = commit;
+  $$('.chat-history-row.is-context-target').forEach((element) => element.classList.remove('is-context-target'));
+  row.classList.add('is-context-target');
+  const menu = $('#commitMenu');
+  if (!menu) return;
+  menu.innerHTML = `
+    <button class="context-menu-item" data-commit-action="new-branch">${icon('branch')}<span class="context-menu-label">New Branch</span></button>
+    <button class="context-menu-item" data-commit-action="new-tag">${icon('tag')}<span class="context-menu-label">New Tag</span></button>
+    <div class="context-menu-sep"></div>
+    <button class="context-menu-item" data-commit-action="cherry-pick">${icon('git-commit')}<span class="context-menu-label">Cherry Pick Commit</span></button>
+    <button class="context-menu-item" data-commit-action="revert">${icon('refresh')}<span class="context-menu-label">Revert Commit</span></button>
+    <div class="context-menu-sep"></div>
+    <button class="context-menu-item is-danger" data-commit-action="reset">${icon('alert')}<span class="context-menu-label">Reset ${esc(commit.branch)} to here</span></button>
+    <button class="context-menu-item" data-commit-action="squash"${commit.root ? ' disabled title="The root commit has no parent"' : ''}>${icon('git-merge')}<span class="context-menu-label">Squash into parent</span></button>
+    <div class="context-menu-sep"></div>
+    <button class="context-menu-item" data-commit-action="copy-sha">${icon('copy')}<span class="context-menu-label">Copy Commit SHA</span></button>`;
+  menu.hidden = false;
+  menu.style.left = '0px';
+  menu.style.top = '0px';
+  const rect = menu.getBoundingClientRect();
+  menu.style.left = `${Math.max(8, Math.min(x, window.innerWidth - rect.width - 8))}px`;
+  menu.style.top = `${Math.max(8, Math.min(y, window.innerHeight - rect.height - 8))}px`;
+}
+
+function closeCommitMenu(): void {
+  const menu = $('#commitMenu');
+  if (menu) {
+    menu.hidden = true;
+    menu.innerHTML = '';
+  }
+  $$('.chat-history-row.is-context-target').forEach((element) => element.classList.remove('is-context-target'));
+  contextCommit = null;
+}
+
+function openCommitActionModal(type: 'branch' | 'tag' | 'reset', commit: CommitContext): void {
+  commitAction = { type, ...commit, mode: 'mixed' };
+  commitActionBusy = false;
+  const title = $('#commitActionTitle');
+  const subtitle = $('#commitActionSubtitle');
+  const body = $('#commitActionBody');
+  const confirm = $<HTMLButtonElement>('#commitActionConfirm');
+  const iconWrap = $('#commitActionIcon');
+  if (type === 'branch') {
+    if (title) title.textContent = 'New Branch';
+    if (subtitle) subtitle.textContent = `Create a branch at ${commit.short}`;
+    if (iconWrap) iconWrap.innerHTML = icon('branch');
+    if (body) body.innerHTML = `<div class="field">
+      <span class="field-label">Branch name</span>
+      <input class="input mono-input" id="commitActionInput" placeholder="new-branch-name" autocomplete="off" spellcheck="false" aria-label="Branch name">
+    </div>
+    <p class="commit-action-hint">The branch is created at ${esc(commit.short)} and is not checked out.</p>`;
+    if (confirm) confirm.textContent = 'Create branch';
+  } else if (type === 'tag') {
+    if (title) title.textContent = 'New Tag';
+    if (subtitle) subtitle.textContent = `Create a tag at ${commit.short}`;
+    if (iconWrap) iconWrap.innerHTML = icon('tag');
+    if (body) body.innerHTML = `<div class="field">
+      <span class="field-label">Tag name</span>
+      <input class="input mono-input" id="commitActionInput" placeholder="new-tag-name" autocomplete="off" spellcheck="false" aria-label="Tag name">
+    </div>
+    <p class="commit-action-hint">The tag points at ${esc(commit.short)}.</p>`;
+    if (confirm) confirm.textContent = 'Create tag';
+  } else {
+    if (title) title.textContent = `Reset ${commit.branch} to ${commit.short}`;
+    if (subtitle) subtitle.textContent = 'Move the current branch to this commit';
+    if (iconWrap) iconWrap.innerHTML = icon('alert');
+    if (body) body.innerHTML = `<div class="field">
+      <span class="field-label">Reset type</span>
+      <div class="reset-choices" id="resetModeChoices" role="radiogroup" aria-label="Reset type">
+        <button type="button" class="reset-choice" data-reset-mode="soft" role="radio" aria-checked="false">
+          <span class="reset-choice-name">Soft</span>
+          <span class="reset-choice-desc">Move HEAD only; keep the index and working tree.</span>
+        </button>
+        <button type="button" class="reset-choice is-active" data-reset-mode="mixed" role="radio" aria-checked="true">
+          <span class="reset-choice-name">Mixed</span>
+          <span class="reset-choice-desc">Move HEAD and reset the index; keep the working tree.</span>
+        </button>
+        <button type="button" class="reset-choice" data-reset-mode="hard" role="radio" aria-checked="false">
+          <span class="reset-choice-name">Hard</span>
+          <span class="reset-choice-desc">Move HEAD and discard the index and working tree changes.</span>
+        </button>
+      </div>
+    </div>`;
+    if (confirm) confirm.textContent = 'Reset branch';
+  }
+  const backdrop = $<HTMLElement>('#commitActionBackdrop');
+  backdrop?.classList.add('is-open');
+  backdrop?.setAttribute('aria-hidden', 'false');
+  if (confirm) confirm.disabled = false;
+  setTimeout(() => {
+    const input = $<HTMLInputElement>('#commitActionInput');
+    if (input) input.focus({ preventScroll: true });
+    else $<HTMLButtonElement>('.reset-choice.is-active')?.focus({ preventScroll: true });
+  }, 80);
+}
+
+function closeCommitActionModal(): void {
+  if (commitActionBusy) return;
+  const backdrop = $<HTMLElement>('#commitActionBackdrop');
+  backdrop?.classList.remove('is-open');
+  backdrop?.setAttribute('aria-hidden', 'true');
+  commitAction = null;
+}
+
+async function withCommitAction<T>(
+  task: (repoPath: string) => Promise<T>,
+  onSuccess: (result: T) => string
+): Promise<boolean> {
+  if (!state.repo || state.busyAction || commitActionBusy) return false;
+  const repo = state.repo;
+  commitActionBusy = true;
+  state.busyAction = 'commit';
+  renderSummary();
+  const confirm = $<HTMLButtonElement>('#commitActionConfirm');
+  if (confirm) confirm.disabled = true;
+  let ok = false;
+  try {
+    const result = await task(repo.path);
+    if (state.repo?.path === repo.path) {
+      await refreshRepo({ silent: true });
+      await refreshSummaries();
+      toast(onSuccess(result), 'success');
+    }
+    ok = true;
+  } catch (error) {
+    toast(errorText(error), 'warn');
+  } finally {
+    commitActionBusy = false;
+    if (confirm) confirm.disabled = false;
+    if (state.busyAction === 'commit') state.busyAction = null;
+    renderSummary();
+  }
+  return ok;
+}
+
+async function confirmCommitAction(): Promise<void> {
+  if (!state.repo || !commitAction || commitActionBusy) return;
+  const action = commitAction;
+  if (action.type === 'branch' || action.type === 'tag') {
+    const input = $<HTMLInputElement>('#commitActionInput');
+    const name = input?.value.trim() || '';
+    if (!name) {
+      input?.focus();
+      toast(action.type === 'branch' ? 'Enter a branch name' : 'Enter a tag name', 'warn');
+      return;
+    }
+    const ok = await withCommitAction(
+      (repoPath) => action.type === 'branch'
+        ? api.createBranchAt(repoPath, name, action.sha)
+        : api.createTagAt(repoPath, name, action.sha),
+      () => action.type === 'branch'
+        ? `Created branch '${name}' at ${action.short}`
+        : `Created tag '${name}' at ${action.short}`
+    );
+    if (ok) closeCommitActionModal();
+    return;
+  }
+  const active = $('#resetModeChoices .reset-choice.is-active');
+  const mode = (active?.dataset.resetMode || 'mixed') as ResetMode;
+  const ok = await withCommitAction(
+    (repoPath) => api.resetToCommit(repoPath, action.sha, mode),
+    () => `Reset ${action.branch} to ${action.short} (${mode})`
+  );
+  if (ok) closeCommitActionModal();
+}
+
+async function runCommitHistoryAction(action: 'cherry-pick' | 'revert' | 'squash', commit: CommitContext): Promise<void> {
+  if (!state.repo) return;
+  if (action === 'squash') {
+    const confirmed = window.confirm(isChinese()
+      ? '将此提交压缩到父提交？这会重写历史。'
+      : 'Squash this commit into its parent? This rewrites history.');
+    if (!confirmed) return;
+  }
+  await withCommitAction(
+    (repoPath) => action === 'cherry-pick'
+      ? api.cherryPickCommit(repoPath, commit.sha)
+      : action === 'revert'
+        ? api.revertCommit(repoPath, commit.sha)
+        : api.squashCommit(repoPath, commit.sha),
+    () => action === 'cherry-pick'
+      ? `Cherry-picked ${commit.short}`
+      : action === 'revert'
+        ? `Reverted ${commit.short}`
+        : `Squashed ${commit.short} into its parent`
+  );
 }
 
 function renderChatSide(): void {
@@ -4578,6 +4781,23 @@ function renderAll(): void {
    ============================================================ */
 let lastFocusedElement: HTMLElement | null = null;
 
+interface CommitContext {
+  sha: string;
+  short: string;
+  message: string;
+  root: boolean;
+  branch: string;
+}
+
+interface CommitActionState extends CommitContext {
+  type: 'branch' | 'tag' | 'reset';
+  mode: ResetMode;
+}
+
+let contextCommit: CommitContext | null = null;
+let commitAction: CommitActionState | null = null;
+let commitActionBusy = false;
+
 function populateSettingsForm(): void {
   const settings = state.settings || {};
   $<HTMLInputElement>('#setName')!.value = state.currentUser.name || settings.name || '';
@@ -4983,6 +5203,61 @@ function bindStaticEvents(): void {
     if (row) selectChatFile(row.dataset.chatFile || '');
   });
 
+  $('#chatHistoryList')?.addEventListener('contextmenu', (event) => {
+    const row = eventTarget(event)?.closest<HTMLElement>('[data-commit-sha]');
+    if (!row) return;
+    event.preventDefault();
+    openCommitMenu(row, event.clientX, event.clientY);
+  });
+
+  $('#commitMenu')?.addEventListener('click', (event) => {
+    const item = eventTarget(event)?.closest<HTMLButtonElement>('[data-commit-action]');
+    if (!item || item.disabled) return;
+    const commit = contextCommit;
+    const action = item.dataset.commitAction;
+    closeCommitMenu();
+    if (!commit) return;
+    if (action === 'copy-sha') {
+      copyText(commit.sha, `Copied ${commit.short} to clipboard`);
+    } else if (action === 'new-branch' || action === 'new-tag' || action === 'reset') {
+      openCommitActionModal(action === 'new-branch' ? 'branch' : action === 'new-tag' ? 'tag' : 'reset', commit);
+    } else if (action === 'cherry-pick' || action === 'revert' || action === 'squash') {
+      void runCommitHistoryAction(action, commit);
+    }
+  });
+
+  document.addEventListener('click', (event) => {
+    if (!eventTarget(event)?.closest('#commitMenu')) closeCommitMenu();
+  });
+  document.addEventListener('contextmenu', (event) => {
+    if (!eventTarget(event)?.closest('#chatHistoryList')) closeCommitMenu();
+  });
+  $('#chatHistoryList')?.addEventListener('scroll', closeCommitMenu, true);
+  window.addEventListener('resize', closeCommitMenu);
+
+  $('#commitActionClose')?.addEventListener('click', closeCommitActionModal);
+  $('#commitActionCancel')?.addEventListener('click', closeCommitActionModal);
+  $('#commitActionConfirm')?.addEventListener('click', () => { void confirmCommitAction(); });
+  $<HTMLElement>('#commitActionBackdrop')!?.addEventListener('click', (event) => {
+    if (event.target === $<HTMLElement>('#commitActionBackdrop')!) closeCommitActionModal();
+  });
+  $('#commitActionBody')?.addEventListener('click', (event) => {
+    const choice = eventTarget(event)?.closest<HTMLElement>('[data-reset-mode]');
+    if (!choice) return;
+    $$('#resetModeChoices .reset-choice').forEach((button) => {
+      const active = button === choice;
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-checked', String(active));
+    });
+    if (commitAction) commitAction.mode = (choice.dataset.resetMode || 'mixed') as ResetMode;
+  });
+  $('#commitActionBody')?.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' && (event.target as HTMLElement | null)?.id === 'commitActionInput') {
+      event.preventDefault();
+      void confirmCommitAction();
+    }
+  });
+
   $('#chatThread')?.addEventListener('click', (event) => {
     const link = eventTarget(event)?.closest<HTMLElement>('a[href]');
     if (link) {
@@ -5357,7 +5632,20 @@ function bindStaticEvents(): void {
   document.addEventListener('keydown', (event) => {
     const modalOpen = $<HTMLElement>('#settingsBackdrop')!?.classList.contains('is-open');
     const branchOpen = $<HTMLElement>('#branchBackdrop')!?.classList.contains('is-open');
+    const actionOpen = $<HTMLElement>('#commitActionBackdrop')!?.classList.contains('is-open');
+    const menu = $<HTMLElement>('#commitMenu');
+    const menuOpen = !!menu && !menu.hidden;
     if (event.key === 'Escape') {
+      if (menuOpen) {
+        event.preventDefault();
+        closeCommitMenu();
+        return;
+      }
+      if (actionOpen) {
+        event.preventDefault();
+        closeCommitActionModal();
+        return;
+      }
       if (branchOpen) {
         event.preventDefault();
         closeBranchModal();
@@ -5370,7 +5658,10 @@ function bindStaticEvents(): void {
       }
     }
     if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
-      if (branchOpen) {
+      if (actionOpen) {
+        event.preventDefault();
+        void confirmCommitAction();
+      } else if (branchOpen) {
         event.preventDefault();
         void createBranchFromModal();
       } else if (modalOpen) {

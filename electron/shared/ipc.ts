@@ -24,6 +24,7 @@ import type {
   PullStrategy,
   RepoSnapshot,
   RepoSummary,
+  ResetMode,
   SettingsInput,
   ThemeMode,
   Language,
@@ -85,6 +86,12 @@ export interface GitGlanceApi {
   getBranches: (repoPath: string) => Promise<GitBranchInfo[]>;
   checkoutBranch: (repoPath: string, branchName: string) => Promise<GitCheckoutResult>;
   createBranch: (repoPath: string, branchName: string, startPoint: string) => Promise<GitCheckoutResult>;
+  createBranchAt: (repoPath: string, branchName: string, commitSha: string) => Promise<string>;
+  createTagAt: (repoPath: string, tagName: string, commitSha: string) => Promise<string>;
+  cherryPickCommit: (repoPath: string, commitSha: string) => Promise<string>;
+  revertCommit: (repoPath: string, commitSha: string) => Promise<string>;
+  resetToCommit: (repoPath: string, commitSha: string, mode: ResetMode) => Promise<string>;
+  squashCommit: (repoPath: string, commitSha: string) => Promise<string>;
   stashChanges: (repoPath: string) => Promise<string>;
   getTags: (repoPath: string) => Promise<GitTagInfo[]>;
   checkoutTag: (repoPath: string, tagName: string) => Promise<GitTagCheckoutResult>;

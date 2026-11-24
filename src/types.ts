@@ -24,7 +24,7 @@ export type { PreviewData, ThemeMode, Language } from '../electron/shared/models
 export type Tab = 'chat' | 'files' | 'worktrees' | 'remotes' | 'branches' | 'tags' | 'stashes' | 'lfs' | 'submodules' | 'statistics';
 export type PaneMode = 'preview' | 'diff';
 export type DetailScope = 'main' | 'chat';
-export type BusyAction = 'refresh' | 'fetch' | 'pull' | 'push' | 'checkout' | 'stash' | 'submodule';
+export type BusyAction = 'refresh' | 'fetch' | 'pull' | 'push' | 'checkout' | 'stash' | 'submodule' | 'commit';
 
 export interface RepoEntry extends GitTreeNode {
   change: GitStatusFile | null;

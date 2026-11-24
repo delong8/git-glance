@@ -390,6 +390,62 @@ try {
   await window.locator('#tabStashes').click();
   await window.waitForFunction(() => document.querySelectorAll('#stashesList .stash-row').length === 2, null, { timeout: 10_000 });
 
+  // Commit context menu in the Chat history column.
+  await window.locator('#tabChat').click();
+  await window.waitForSelector('#chatHistoryList .chat-history-row', { timeout: 10_000 });
+  const targetCommit = window.locator('#chatHistoryList .chat-history-row[data-commit-message="Add submodule"]');
+  await targetCommit.click({ button: 'right' });
+  await window.waitForSelector('#commitMenu:not([hidden])', { timeout: 5_000 });
+  const commitMenuLabels = await window.locator('#commitMenu .context-menu-label').allInnerTexts();
+  for (const label of ['New Branch', 'New Tag', 'Cherry Pick Commit', 'Revert Commit', 'Squash into parent', 'Copy Commit SHA']) {
+    if (!commitMenuLabels.includes(label)) throw new Error(`Commit menu is missing “${label}”.`);
+  }
+  if (!commitMenuLabels.some((label) => label.startsWith('Reset ') && label.endsWith(' to here'))) {
+    throw new Error('Commit menu is missing the Reset action.');
+  }
+  if (await window.locator('#commitMenu .context-menu-sep').count() !== 3) {
+    throw new Error('Commit menu groups are not separated into four sections.');
+  }
+  const targetSha = await targetCommit.getAttribute('data-commit-sha');
+  await window.locator('[data-commit-action="new-branch"]').click();
+  await window.waitForSelector('#commitActionBackdrop.is-open', { timeout: 5_000 });
+  await window.locator('#commitActionInput').fill('smoke-context');
+  await window.locator('#commitActionConfirm').click();
+  await window.waitForFunction(() => !document.querySelector('#commitActionBackdrop')?.classList.contains('is-open'), null, { timeout: 15_000 });
+  if (git(['branch', '--list', 'smoke-context']) !== 'smoke-context') throw new Error('Commit menu did not create a branch.');
+  if (git(['rev-parse', 'smoke-context']) !== targetSha) throw new Error('Commit menu created the branch at the wrong commit.');
+
+  const tagCommit = window.locator('#chatHistoryList .chat-history-row[data-commit-message="Configure LFS"]');
+  const tagSha = await tagCommit.getAttribute('data-commit-sha');
+  await tagCommit.click({ button: 'right' });
+  await window.waitForSelector('#commitMenu:not([hidden])', { timeout: 5_000 });
+  await window.locator('[data-commit-action="new-tag"]').click();
+  await window.waitForSelector('#commitActionBackdrop.is-open', { timeout: 5_000 });
+  await window.locator('#commitActionInput').fill('smoke-context-tag');
+  await window.locator('#commitActionConfirm').click();
+  await window.waitForFunction(() => !document.querySelector('#commitActionBackdrop')?.classList.contains('is-open'), null, { timeout: 15_000 });
+  if (git(['tag', '--list', 'smoke-context-tag']) !== 'smoke-context-tag') throw new Error('Commit menu did not create a tag.');
+  if (git(['rev-parse', 'smoke-context-tag^{commit}']) !== tagSha) throw new Error('Commit menu created the tag at the wrong commit.');
+
+  await targetCommit.click({ button: 'right' });
+  await window.waitForSelector('#commitMenu:not([hidden])', { timeout: 5_000 });
+  await window.locator('[data-commit-action="reset"]').click();
+  await window.waitForSelector('#commitActionBackdrop.is-open', { timeout: 5_000 });
+  const resetTitle = await window.locator('#commitActionTitle').innerText();
+  if (!resetTitle.includes('remote-only')) throw new Error(`Reset modal is missing the branch name: ${resetTitle}`);
+  if (await window.locator('.reset-choice').count() !== 3) throw new Error('Reset modal is missing Soft/Mixed/Hard.');
+  await window.locator('#commitActionCancel').click();
+  await window.waitForFunction(() => !document.querySelector('#commitActionBackdrop')?.classList.contains('is-open'), null, { timeout: 5_000 });
+
+  const rootCommit = window.locator('#chatHistoryList .chat-history-row').last();
+  await rootCommit.click({ button: 'right' });
+  await window.waitForSelector('#commitMenu:not([hidden])', { timeout: 5_000 });
+  if (!(await window.locator('[data-commit-action="squash"]').isDisabled())) {
+    throw new Error('Squash is enabled for the root commit.');
+  }
+  await window.keyboard.press('Escape');
+  await window.waitForFunction(() => document.querySelector('#commitMenu')?.hidden === true, null, { timeout: 5_000 });
+
   if (pageErrors.length) throw new Error(`Renderer error: ${pageErrors.join(' | ')}`);
 
   passed = true;
@@ -407,6 +463,7 @@ try {
   console.log(`  statistics: ${statCards} cards`);
   console.log('  default tab: Chat');
   console.log(`  chat: ${chatHistoryRows} history commits, ${chatTreeFiles} changed files in the tree`);
+  console.log('  commit menu: branch, tag, reset and squash guard verified');
   console.log('  project actions: open folder + open terminal');
   console.log('  tabs: Chat, Files, Worktrees, Remote, Branches, Tags, Stash, LFS, Submodules, Statistics');
 } finally {

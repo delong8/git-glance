@@ -2744,6 +2744,7 @@ kbd {
   transition: background 0.1s ease;
 }
 .chat-history-row:hover { background: var(--fill); }
+.chat-history-row.is-context-target { background: var(--fill-strong); }
 .chat-history-graph { width: 48px; height: 44px; flex: none; display: flex; align-items: center; }
 .chat-history-graph svg { width: 100%; height: 100%; overflow: visible; }
 .chat-history-main { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 2px; }
@@ -3363,6 +3364,68 @@ select.input option { background: var(--bg-option); color: var(--text); }
 .branch-create-row .btn { flex: none; height: 32px; font-size: 10.5px; }
 .branch-create-hint { margin: 0; font-size: 9px; line-height: 1.45; color: var(--text-4); }
 
+/* Commit context menu */
+.context-menu {
+  position: fixed;
+  z-index: 260;
+  min-width: 244px;
+  max-width: min(320px, calc(100vw - 16px));
+  padding: 5px;
+  border: 1px solid var(--border-strong);
+  border-radius: 9px;
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow-modal), var(--card-inset);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.context-menu[hidden] { display: none; }
+.context-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 29px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-2);
+  font-size: 11px;
+  font-weight: 500;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.context-menu-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.context-menu-item .ico { width: 13px; height: 13px; flex: none; color: var(--text-4); }
+.context-menu-item:hover:not(:disabled) { background: var(--fill-strong); color: var(--text); }
+.context-menu-item:hover:not(:disabled) .ico { color: var(--text-2); }
+.context-menu-item:disabled { opacity: 0.45; cursor: default; }
+.context-menu-sep { height: 1px; margin: 4px 6px; background: var(--border); }
+
+.commit-action-modal { width: min(470px, calc(100vw - 40px)); }
+.commit-action-modal .modal-body { gap: 10px; }
+.commit-action-hint { margin: 0; font-size: 9.5px; line-height: 1.5; color: var(--text-4); }
+.commit-action-hint strong { color: var(--text-2); font-weight: 550; }
+.reset-choices { display: flex; flex-direction: column; gap: 5px; }
+.reset-choice {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: var(--fill-soft);
+  text-align: left;
+  cursor: pointer;
+}
+.reset-choice:hover { background: var(--fill-hover); }
+.reset-choice.is-active { border-color: var(--accent-line); background: var(--accent-soft); }
+.reset-choice-name { font-size: 11px; font-weight: 600; color: var(--text); }
+.reset-choice-desc { font-size: 9.5px; color: var(--text-4); }
+.reset-choice.is-active .reset-choice-desc { color: var(--text-3); }
+
 /* ============================================================
    Toasts
    ============================================================ */
@@ -3922,6 +3985,30 @@ select.input option { background: var(--bg-option); color: var(--text); }
 </div>
 
 <!-- ============================================================
+     Commit action modal
+     ============================================================ -->
+<div class="backdrop" id="commitActionBackdrop" aria-hidden="true">
+  <div class="modal commit-action-modal" role="dialog" aria-modal="true" aria-labelledby="commitActionTitle">
+    <header class="modal-head">
+      <div class="modal-icon" id="commitActionIcon"><svg class="ico"><use href="#i-branch"/></svg></div>
+      <div class="modal-title">
+        <h2 id="commitActionTitle">New Branch</h2>
+        <p id="commitActionSubtitle"></p>
+      </div>
+      <button class="icon-btn modal-close" id="commitActionClose" aria-label="Close">
+        <svg class="ico"><use href="#i-x"/></svg>
+      </button>
+    </header>
+    <div class="modal-body" id="commitActionBody"></div>
+    <footer class="modal-foot">
+      <span class="spacer"></span>
+      <button class="btn ghost" id="commitActionCancel">Cancel</button>
+      <button class="btn primary" id="commitActionConfirm">Create</button>
+    </footer>
+  </div>
+</div>
+
+<!-- ============================================================
      Branch picker modal
      ============================================================ -->
 <div class="backdrop" id="branchBackdrop" aria-hidden="true">
@@ -4161,6 +4248,7 @@ select.input option { background: var(--bg-option); color: var(--text); }
   </div>
 </div>
 
+<div class="context-menu" id="commitMenu" role="menu" hidden></div>
 <div class="toast-stack" id="toastStack" aria-live="polite"></div>
 
 <div class="boot-splash" id="bootSplash">

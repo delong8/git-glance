@@ -1,5 +1,6 @@
 import { execFile } from 'node:child_process';
 import * as fs from 'node:fs/promises';
+import * as os from 'node:os';
 import path from 'node:path';
 import type {
   BranchInfo,
@@ -30,6 +31,7 @@ import type {
   RepoSnapshot,
   RepoStatistics,
   RepoSummary,
+  ResetMode,
   StashAction,
   SubmoduleStatus
 } from '../shared/models.js';
@@ -393,6 +395,153 @@ export async function stashChanges(repoPath: string): Promise<string> {
   if (!status.stdout.trim()) throw new Error('Working tree is clean — nothing to stash');
   const result = await runGit(repoPath, ['stash', 'push', '--include-untracked'], { timeout: 60_000 });
   return `${result.stdout || ''}${result.stderr || ''}`.trim();
+}
+
+
+const COMMIT_SHA_PATTERN = /^[0-9a-f]{4,64}$/i;
+
+async function resolveCommit(repoPath: string, commitSha: string): Promise<string> {
+  const sha = String(commitSha || '').trim();
+  if (!COMMIT_SHA_PATTERN.test(sha)) throw new Error('Invalid commit SHA');
+  const result = await runGit(repoPath, ['rev-parse', '--verify', `${sha}^{commit}`], { allowFailure: true });
+  if (result.failed || !result.stdout.trim()) throw new Error(`Unknown commit: ${sha}`);
+  return result.stdout.trim();
+}
+
+async function commitParents(repoPath: string, sha: string): Promise<string[]> {
+  const result = await runGit(repoPath, ['rev-list', '--parents', '-n', '1', sha]);
+  return result.stdout.trim().split(/\s+/).slice(1);
+}
+
+/** Create a local branch at an existing commit without checking it out. */
+export async function createBranchAt(repoPath: string, branchName: string, commitSha: string): Promise<string> {
+  const name = branchName.trim();
+  if (!name) throw new Error('Enter a branch name');
+  const check = await runGit(repoPath, ['check-ref-format', '--branch', name], { allowFailure: true });
+  if (check.failed) throw new Error(`Invalid branch name: ${name}`);
+  const sha = await resolveCommit(repoPath, commitSha);
+  const branches = await getBranches(repoPath);
+  if (branches.some((entry) => !entry.remote && entry.name === name)) {
+    throw new Error(`A local branch named ${name} already exists`);
+  }
+  await runGit(repoPath, ['branch', name, sha], { timeout: 60_000 });
+  return name;
+}
+
+/** Create a lightweight tag at an existing commit. */
+export async function createTagAt(repoPath: string, tagName: string, commitSha: string): Promise<string> {
+  const name = tagName.trim();
+  if (!name) throw new Error('Enter a tag name');
+  const check = await runGit(repoPath, ['check-ref-format', `refs/tags/${name}`], { allowFailure: true });
+  if (check.failed) throw new Error(`Invalid tag name: ${name}`);
+  const sha = await resolveCommit(repoPath, commitSha);
+  const existing = await runGit(repoPath, ['show-ref', '--verify', '--quiet', `refs/tags/${name}`], { allowFailure: true });
+  if (!existing.failed) throw new Error(`A tag named ${name} already exists`);
+  await runGit(repoPath, ['tag', name, sha], { timeout: 60_000 });
+  return name;
+}
+
+export async function cherryPickCommit(repoPath: string, commitSha: string): Promise<string> {
+  const sha = await resolveCommit(repoPath, commitSha);
+  const parents = await commitParents(repoPath, sha);
+  const args = ['cherry-pick', '--no-edit'];
+  if (parents.length > 1) args.push('-m', '1');
+  args.push(sha);
+  try {
+    const result = await runGit(repoPath, args, { timeout: 180_000 });
+    return `${result.stdout || ''}${result.stderr || ''}`.trim();
+  } catch (error) {
+    await runGit(repoPath, ['cherry-pick', '--abort'], { allowFailure: true });
+    const message = error instanceof Error ? error.message : String(error);
+    if (/previous cherry-pick is now empty|nothing to commit/i.test(message)) {
+      throw new Error('That commit is already part of the current branch');
+    }
+    throw error;
+  }
+}
+
+export async function revertCommit(repoPath: string, commitSha: string): Promise<string> {
+  const sha = await resolveCommit(repoPath, commitSha);
+  const parents = await commitParents(repoPath, sha);
+  const args = ['revert', '--no-edit'];
+  if (parents.length > 1) args.push('-m', '1');
+  args.push(sha);
+  try {
+    const result = await runGit(repoPath, args, { timeout: 180_000 });
+    return `${result.stdout || ''}${result.stderr || ''}`.trim();
+  } catch (error) {
+    await runGit(repoPath, ['revert', '--abort'], { allowFailure: true });
+    throw error;
+  }
+}
+
+const RESET_MODES: readonly ResetMode[] = ['soft', 'mixed', 'hard'];
+
+export async function resetToCommit(repoPath: string, commitSha: string, mode: ResetMode): Promise<string> {
+  if (!RESET_MODES.includes(mode)) throw new Error('Unknown reset mode');
+  const sha = await resolveCommit(repoPath, commitSha);
+  const result = await runGit(repoPath, ['reset', `--${mode}`, sha], { timeout: 120_000 });
+  return `${result.stdout || ''}${result.stderr || ''}`.trim();
+}
+
+function shellQuote(value: string): string {
+  return `"${value.replace(/"/g, '\\"')}"`;
+}
+
+/** Squash a commit into its parent with an interactive rebase driven by a temp editor. */
+export async function squashCommit(repoPath: string, commitSha: string): Promise<string> {
+  const sha = await resolveCommit(repoPath, commitSha);
+  const parents = await commitParents(repoPath, sha);
+  if (!parents.length) throw new Error('The root commit has no parent to squash into');
+  if (parents.length > 1) throw new Error('Merge commits cannot be squashed into a single parent');
+  const ancestor = await runGit(repoPath, ['merge-base', '--is-ancestor', sha, 'HEAD'], { allowFailure: true });
+  if (ancestor.failed) throw new Error('That commit is not on the current branch');
+
+  const parent = parents[0];
+  const grandparent = await runGit(repoPath, ['rev-parse', '--verify', `${parent}^`], { allowFailure: true });
+  const base = grandparent.failed ? null : grandparent.stdout.trim();
+  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'gitglance-squash-'));
+  const sequenceEditor = path.join(tempDir, 'sequence-editor.cjs');
+  const noopEditor = path.join(tempDir, 'noop-editor.cjs');
+  await fs.writeFile(sequenceEditor, String.raw`const fs = require('node:fs');
+const file = process.argv[2];
+const target = process.env.GITGLANCE_SQUASH_SHA || '';
+const lines = fs.readFileSync(file, 'utf8').split('\n');
+let changed = false;
+const output = lines.map((line) => {
+  if (changed) return line;
+  const match = line.match(/^pick\s+([0-9a-f]+)\s/);
+  if (!match) return line;
+  const picked = match[1];
+  if (!(target.startsWith(picked) || picked.startsWith(target))) return line;
+  changed = true;
+  return line.replace(/^pick\s/, 'squash ');
+});
+if (!changed) process.exit(2);
+fs.writeFileSync(file, output.join('\n'));
+`);
+  await fs.writeFile(noopEditor, 'process.exit(0);\n');
+
+  const editor = `${shellQuote(process.execPath)} ${shellQuote(sequenceEditor)}`;
+  const noop = `${shellQuote(process.execPath)} ${shellQuote(noopEditor)}`;
+  const args = ['rebase', '-i', '--rebase-merges', ...(base ? [base] : ['--root'])];
+  try {
+    const result = await runGit(repoPath, args, {
+      timeout: 300_000,
+      env: {
+        ELECTRON_RUN_AS_NODE: '1',
+        GIT_SEQUENCE_EDITOR: editor,
+        GIT_EDITOR: noop,
+        GITGLANCE_SQUASH_SHA: sha
+      }
+    });
+    return `${result.stdout || ''}${result.stderr || ''}`.trim();
+  } catch (error) {
+    await runGit(repoPath, ['rebase', '--abort'], { allowFailure: true });
+    throw error;
+  } finally {
+    await fs.rm(tempDir, { recursive: true, force: true }).catch(() => {});
+  }
 }
 
 const TAG_REF_FORMAT = [
@@ -1251,10 +1400,11 @@ function parseStatLine(line: string): [number, number] | null {
   return [insertions ? Number(insertions[1]) : 0, deletions ? Number(deletions[1]) : 0];
 }
 
-export async function getHistory(repoPath: string, limit = 80): Promise<GitCommit[]> {
+export async function getHistory(repoPath: string, limit = 80, allRefs = false): Promise<GitCommit[]> {
   const format = '%H%x1f%P%x1f%an%x1f%ae%x1f%ar%x1f%at%x1f%D%x1f%s';
   const result = await runGit(repoPath, [
     'log',
+    ...(allRefs ? ['--branches', '--remotes', '--tags'] : []),
     '--topo-order',
     '--decorate=short',
     '--date=relative',
@@ -1407,7 +1557,7 @@ export async function getSnapshot(
     getBranchInfo(root),
     getStatusFiles(root),
     getTree(root),
-    getHistory(root, historyLimit)
+    getHistory(root, historyLimit, true)
   ]);
   return {
     path: root,

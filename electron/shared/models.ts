@@ -72,6 +72,9 @@ export interface GitTagCheckoutResult {
 
 export type StashAction = 'apply' | 'pop' | 'drop';
 
+/** How `git reset` moves the current branch. */
+export type ResetMode = 'soft' | 'mixed' | 'hard';
+
 /** A stash entry with its base commit and changed-file stats. */
 export interface GitStashInfo {
   index: number;

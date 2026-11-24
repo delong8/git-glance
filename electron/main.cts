@@ -31,6 +31,7 @@ import type {
   RepoSnapshot,
   RepoStatistics,
   RepoSummary,
+  ResetMode,
   SettingsInput,
   StashAction,
   ThemeMode,
@@ -422,6 +423,36 @@ function registerIpc(): void {
   ipcMain.handle('git:create-branch', wrapHandler(async (repoPath: unknown, branchName: unknown, startPoint: unknown): Promise<GitCheckoutResult> => {
     const known = assertKnownRepo(repoPath);
     return git.createBranch(known, String(branchName || ''), String(startPoint || ''));
+  }));
+
+  ipcMain.handle('git:create-branch-at', wrapHandler(async (repoPath: unknown, branchName: unknown, commitSha: unknown): Promise<string> => {
+    const known = assertKnownRepo(repoPath);
+    return git.createBranchAt(known, String(branchName || ''), String(commitSha || ''));
+  }));
+
+  ipcMain.handle('git:create-tag-at', wrapHandler(async (repoPath: unknown, tagName: unknown, commitSha: unknown): Promise<string> => {
+    const known = assertKnownRepo(repoPath);
+    return git.createTagAt(known, String(tagName || ''), String(commitSha || ''));
+  }));
+
+  ipcMain.handle('git:cherry-pick', wrapHandler(async (repoPath: unknown, commitSha: unknown): Promise<string> => {
+    const known = assertKnownRepo(repoPath);
+    return git.cherryPickCommit(known, String(commitSha || ''));
+  }));
+
+  ipcMain.handle('git:revert-commit', wrapHandler(async (repoPath: unknown, commitSha: unknown): Promise<string> => {
+    const known = assertKnownRepo(repoPath);
+    return git.revertCommit(known, String(commitSha || ''));
+  }));
+
+  ipcMain.handle('git:reset-to', wrapHandler(async (repoPath: unknown, commitSha: unknown, mode: unknown): Promise<string> => {
+    const known = assertKnownRepo(repoPath);
+    return git.resetToCommit(known, String(commitSha || ''), mode as ResetMode);
+  }));
+
+  ipcMain.handle('git:squash-commit', wrapHandler(async (repoPath: unknown, commitSha: unknown): Promise<string> => {
+    const known = assertKnownRepo(repoPath);
+    return git.squashCommit(known, String(commitSha || ''));
   }));
 
   ipcMain.handle('git:stash-changes', wrapHandler(async (repoPath: unknown): Promise<string> => {

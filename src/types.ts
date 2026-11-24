@@ -142,6 +142,8 @@ export interface AppState {
   chatPaneMode: PaneMode;
   selectedFile: string | null;
   chatSelectedFile: string | null;
+  chatTreeCollapsed: Set<string>;
+  chatPreviewOpen: boolean;
   fileQuery: string;
   historyQuery: string;
   projectQuery: string;

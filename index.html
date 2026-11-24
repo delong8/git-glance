@@ -948,8 +948,14 @@ kbd {
 
 .tab-content { position: relative; z-index: 1; flex: 1; min-height: 0; display: flex; }
 .panel { flex: 1; min-width: 0; min-height: 0; display: none; }
-#chatPanel { flex-direction: row; overflow: hidden; }
-#chatPanel.is-active { display: flex; }
+#chatPanel { overflow: hidden; }
+#chatPanel.is-active {
+  display: grid;
+  grid-template-columns: minmax(230px, 0.82fr) minmax(360px, 1.2fr) minmax(320px, 1fr);
+}
+#chatPanel.is-preview-closed { grid-template-columns: minmax(230px, 0.82fr) minmax(360px, 1.2fr); }
+#chatPanel.is-preview-closed .chat-detail { display: none; }
+#chatPanel.is-preview-closed .chat-center { border-right: 0; }
 #filesPanel { flex-direction: column; }
 #filesPanel.is-active { display: flex; }
 #historyPanel { overflow-y: auto; }
@@ -2773,18 +2779,98 @@ kbd {
 /* ============================================================
    Chat tab
    ============================================================ */
-.chat-column {
-  width: 44%;
-  min-width: 340px;
-  flex: none;
+.chat-history {
+  min-width: 0;
   min-height: 0;
   display: flex;
   flex-direction: column;
   border-right: 1px solid var(--border);
+  background: var(--fill-soft);
+}
+.chat-history-head {
+  flex: none;
+  padding: 12px 14px 10px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-glass-soft);
+}
+.chat-history-title { display: flex; align-items: center; gap: 7px; min-width: 0; }
+.chat-history-sub {
+  min-width: 0;
+  font-size: 9px;
+  color: var(--text-4);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.chat-history-list { flex: 1; min-height: 0; overflow-y: auto; padding: 6px 6px 12px; }
+.chat-history-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 46px;
+  padding: 1px 6px 1px 1px;
+  border-radius: 7px;
+  transition: background 0.1s ease;
+}
+.chat-history-row:hover { background: var(--fill); }
+.chat-history-graph { width: 48px; height: 44px; flex: none; display: flex; align-items: center; }
+.chat-history-graph svg { width: 100%; height: 100%; overflow: visible; }
+.chat-history-main { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.chat-history-msg-line { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.chat-history-msg {
+  min-width: 0;
+  font-size: 10.5px;
+  color: var(--text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.chat-history-meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  font-size: 8.5px;
+  color: var(--text-4);
+  white-space: nowrap;
+}
+.chat-history-author { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.chat-history-when { flex: none; }
+.chat-history-stats { display: flex; gap: 3px; flex: none; font-family: var(--mono); font-size: 8px; }
+.chat-history-hash {
+  margin-left: auto;
+  flex: none;
+  padding: 1px 4px;
+  border-radius: 3px;
+  color: var(--text-3);
+  font-family: var(--mono);
+  font-size: 8.5px;
+}
+.chat-history-hash:hover { background: var(--fill-strong); color: var(--text-2); }
+.chat-history .ref-pill { max-width: 96px; height: 15px; padding: 0 4px; font-size: 8px; overflow: hidden; text-overflow: ellipsis; }
+.chat-history-empty { padding: 34px 16px; text-align: center; font-size: 9.5px; color: var(--text-4); }
+
+.chat-center {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--border);
+}
+.chat-column {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--border);
   background:
     radial-gradient(520px 280px at 10% -4%, var(--chat-glow), transparent 66%),
     linear-gradient(180deg, var(--fill-soft), transparent 48%);
 }
+.chat-center .chat-head { padding: 10px 14px; }
+.chat-center .chat-thread { padding: 14px 14px 8px; }
+.chat-center .chat-composer { padding: 9px 14px 10px; }
 .chat-head {
   flex: none;
   display: flex;
@@ -3055,16 +3141,18 @@ kbd {
 
 /* Chat — workspace changes context */
 .chat-side {
-  flex: 1;
+  flex: 0 0 38%;
   min-width: 0;
-  min-height: 0;
+  min-height: 170px;
+  max-height: 46%;
   display: flex;
   flex-direction: column;
+  border-bottom: 1px solid var(--border);
   background: var(--fill-soft);
 }
 .chat-side-head {
   flex: none;
-  padding: 12px 15px 10px;
+  padding: 11px 13px 9px;
   border-bottom: 1px solid var(--border);
   background: var(--bg-glass-soft);
 }
@@ -3104,47 +3192,28 @@ kbd {
 .chat-stage-bar { height: 2px; margin-top: 8px; border-radius: 99px; overflow: hidden; background: var(--fill-strong); }
 .chat-stage-bar i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--accent), #b79bff); transition: width 0.2s ease; }
 .chat-changes {
-  flex: 0 1 auto;
+  flex: 1;
   min-height: 0;
-  max-height: 260px;
+  max-height: none;
   overflow-y: auto;
-  padding: 2px 0 4px;
-  border-bottom: 1px solid var(--border);
+  padding: 3px 0 8px;
   background: var(--fill-soft);
 }
-.chat-changes .group { padding-top: 1px; }
-.chat-changes .group-head { padding: 6px 12px 3px; }
-.chat-changes .group-action { font-size: 9px; }
-.chat-change-row {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  height: 26px;
-  margin: 0 6px;
-  padding: 0 8px;
-  border-radius: 6px;
-  cursor: pointer;
-  user-select: none;
-  transition: background 0.1s ease, box-shadow 0.1s ease;
+.chat-changes .tree-row {
+  height: 25px;
+  margin: 0 4px;
+  padding: 0 6px 0 calc(6px + var(--depth, 0) * 12px);
+  gap: 5px;
 }
-.chat-change-row:hover { background: var(--fill-hover); }
-.chat-change-row.is-selected { background: rgba(124, 156, 255, 0.1); box-shadow: inset 0 0 0 1px rgba(124, 156, 255, 0.15); }
-.chat-change-row .stage-check { width: 14px; height: 14px; border-radius: 4px; }
-.chat-file-path {
-  flex: 1;
-  min-width: 0;
-  font-family: var(--mono);
-  font-size: 10.5px;
-  letter-spacing: -0.015em;
-  color: var(--text-2);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.chat-file-path .dir { color: var(--text-4); }
-.chat-change-row.is-selected .chat-file-path { color: var(--text); }
-.chat-change-row .file-diff { font-size: 9px; }
-.chat-detail { flex: 1; min-height: 0; display: flex; flex-direction: column; background: var(--bg-code); }
+.chat-changes .tree-row.folder .tree-label { font-size: 10.5px; }
+.chat-changes .tree-label { font-size: 10.5px; }
+.chat-changes .caret { width: 10px; height: 10px; }
+.chat-changes .folder-ico { width: 12px; height: 12px; }
+.chat-changes .stage-check { width: 13px; height: 13px; border-radius: 3px; }
+.chat-changes .status-badge { width: 14px; height: 14px; font-size: 8px; }
+.chat-changes .file-diff { font-size: 8.5px; gap: 4px; }
+.chat-changes .folder-change { font-size: 8.5px; }
+.chat-detail { min-width: 0; min-height: 0; overflow: hidden; display: flex; flex-direction: column; background: var(--bg-code); }
 .chat-detail .diff-head { padding: 9px 12px; }
 .chat-detail .diff-file { font-size: 10.5px; }
 .chat-detail .diff-meta { padding: 6px 12px; gap: 6px; }
@@ -3161,8 +3230,7 @@ kbd {
 .chat-detail .diff-line .sign { width: 13px; }
 .chat-detail .diff-line .code { padding-right: 18px; }
 .chat-detail .diff-hunk { height: 23px; font-size: 8.5px; }
-.chat-side.is-empty .chat-changes { flex: 1; max-height: none; display: flex; align-items: center; justify-content: center; border-bottom: 0; }
-.chat-side.is-empty .chat-detail { display: none; }
+.chat-side.is-empty .chat-changes { flex: 1; max-height: none; display: flex; align-items: center; justify-content: center; }
 .chat-side-empty { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 32px 22px; gap: 7px; }
 .chat-side-empty .e-icon { width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center; color: var(--green); background: var(--green-soft); border: 1px solid rgba(74, 222, 128, 0.2); margin-bottom: 3px; }
 .chat-side-empty .e-icon .ico { width: 15px; height: 15px; }
@@ -3432,7 +3500,6 @@ select.input option { background: var(--bg-option); color: var(--text); }
   .tile { padding: 12px 13px 11px; }
   .tile-commit .avatar { width: 26px; height: 26px; }
   .summary-actions { gap: 6px; }
-  .chat-column { width: 45%; }
 }
 @media (max-width: 1200px) {
   .diff-meta .meta-context { display: none; }
@@ -3464,7 +3531,6 @@ select.input option { background: var(--bg-option); color: var(--text); }
   .tile { padding: 12px 12px 11px; }
   .tabs-tools .search { width: 190px; }
   .commit-target { display: none; }
-  .chat-column { width: 46%; min-width: 320px; }
   .chat-disclaimer { display: none; }
 }
 @media (max-width: 1040px) {
@@ -3476,19 +3542,23 @@ select.input option { background: var(--bg-option); color: var(--text); }
   .summary-tiles { grid-template-columns: 1fr 1fr; }
   .tile:nth-child(3) { display: none; }
   .tabs-tools .search { width: 120px; }
-  .chat-column { width: 50%; min-width: 310px; }
   .chat-detail .diff-kind { display: none; }
+}
+@media (max-width: 1240px) {
+  #chatPanel.is-active { grid-template-columns: minmax(340px, 1.1fr) minmax(320px, 1fr); }
+  #chatPanel.is-preview-closed { grid-template-columns: minmax(0, 1fr); }
+  .chat-history { display: none; }
 }
 @media (max-width: 900px) {
   .diff-pane { display: none; }
   .changes-pane { width: 100%; max-width: none; border-right: 0; }
-  .chat-side { display: none; }
-  .chat-column { width: 100%; min-width: 0; border-right: 0; }
+  #chatPanel.is-active { grid-template-columns: minmax(0, 1fr); }
+  .chat-detail { display: none; }
+  .chat-center { border-right: 0; }
   .lfs-split { flex-direction: column; }
   .lfs-column + .lfs-column { border-left: 0; border-top: 1px solid var(--border); }
 }
 @media (max-height: 820px) {
-  .chat-changes { max-height: 200px; }
   .chat-thread { padding-top: 14px; }
   .chat-welcome { padding: 4px 0; }
 }
@@ -3719,41 +3789,55 @@ select.input option { background: var(--bg-option); color: var(--text); }
 
       <div class="tab-content">
         <div class="panel chat-panel is-active" id="chatPanel" role="tabpanel" aria-labelledby="tabChat">
-          <div class="chat-column">
-            <header class="chat-head">
-              <span class="ai-orb"><svg class="ico" aria-hidden="true"><use href="#i-sparkles"/></svg></span>
-              <div class="chat-head-copy">
-                <div class="chat-title-row">
-                  <h2>GitGlance AI</h2>
-                  <span class="chat-beta">Beta</span>
-                </div>
-                <div class="chat-subtitle" id="chatContextLabel"></div>
+          <aside class="chat-history" id="chatHistory" aria-label="Git history">
+            <header class="chat-history-head">
+              <div class="chat-history-title">
+                <span class="eyebrow">History</span>
+                <span class="chat-history-sub" id="chatHistorySub"></span>
               </div>
-              <button class="icon-btn" id="chatNew" title="New chat" aria-label="Start a new chat">
-                <svg class="ico" aria-hidden="true"><use href="#i-plus"/></svg>
-              </button>
             </header>
-            <div class="chat-thread" id="chatThread"></div>
-            <div class="chat-composer">
-              <div class="chat-context-row" id="chatContextRow"></div>
-              <div class="chat-input-row">
-                <textarea id="chatInput" rows="1" placeholder="Ask about your changes…" aria-label="Message GitGlance AI" spellcheck="false"></textarea>
-                <button class="chat-send" id="chatSend" title="Send message" aria-label="Send message">
-                  <svg class="ico" aria-hidden="true"><use href="#i-send"/></svg>
+            <div class="chat-history-list" id="chatHistoryList"></div>
+          </aside>
+
+          <div class="chat-center">
+            <section class="chat-side" id="chatSide" aria-label="Changed files">
+              <div class="chat-side-head" id="chatSideHead"></div>
+              <div class="chat-changes" id="chatChanges"></div>
+            </section>
+
+            <section class="chat-column" aria-label="AI chat">
+              <header class="chat-head">
+                <span class="ai-orb"><svg class="ico" aria-hidden="true"><use href="#i-sparkles"/></svg></span>
+                <div class="chat-head-copy">
+                  <div class="chat-title-row">
+                    <h2>GitGlance AI</h2>
+                    <span class="chat-beta">Beta</span>
+                  </div>
+                  <div class="chat-subtitle" id="chatContextLabel"></div>
+                </div>
+                <button class="icon-btn" id="chatNew" title="New chat" aria-label="Start a new chat">
+                  <svg class="ico" aria-hidden="true"><use href="#i-plus"/></svg>
                 </button>
+              </header>
+              <div class="chat-thread" id="chatThread"></div>
+              <div class="chat-composer">
+                <div class="chat-context-row" id="chatContextRow"></div>
+                <div class="chat-input-row">
+                  <textarea id="chatInput" rows="1" placeholder="Ask about your changes…" aria-label="Message GitGlance AI" spellcheck="false"></textarea>
+                  <button class="chat-send" id="chatSend" title="Send message" aria-label="Send message">
+                    <svg class="ico" aria-hidden="true"><use href="#i-send"/></svg>
+                  </button>
+                </div>
+                <div class="chat-hint">
+                  <span><kbd>↵</kbd> send</span>
+                  <span><kbd>⇧↵</kbd> newline</span>
+                  <span class="chat-disclaimer">AI can make mistakes</span>
+                </div>
               </div>
-              <div class="chat-hint">
-                <span><kbd>↵</kbd> send</span>
-                <span><kbd>⇧↵</kbd> newline</span>
-                <span class="chat-disclaimer">AI can make mistakes</span>
-              </div>
-            </div>
+            </section>
           </div>
-          <div class="chat-side" id="chatSide">
-            <div class="chat-side-head" id="chatSideHead"></div>
-            <div class="chat-changes" id="chatChanges"></div>
-            <div class="chat-detail" id="chatDetail" data-detail-scope="chat"></div>
-          </div>
+
+          <section class="chat-detail" id="chatDetail" data-detail-scope="chat" aria-label="File preview"></section>
         </div>
 
         <div class="panel" id="filesPanel" role="tabpanel" aria-labelledby="tabFiles">

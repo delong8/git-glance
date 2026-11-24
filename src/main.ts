@@ -340,6 +340,8 @@ const state: AppState = {
   chatPaneMode: 'preview',
   selectedFile: null,
   chatSelectedFile: null,
+  chatTreeCollapsed: new Set<string>(),
+  chatPreviewOpen: false,
   fileQuery: '',
   historyQuery: '',
   projectQuery: '',
@@ -689,9 +691,21 @@ function pickTreeFile(repo: RepoState): string | null {
   return (changedRoot || readme || anyRootFile || anyFile || entries[0])?.path || null;
 }
 
+function firstChangedTreeFile(nodes: RepoTreeNode[]): string | null {
+  for (const node of nodes) {
+    if (node.type === 'folder') {
+      const found = firstChangedTreeFile(node.children);
+      if (found) return found;
+    } else if (node.change) {
+      return node.path;
+    }
+  }
+  return null;
+}
+
 function pickChatFile(repo: RepoState | null): string | null {
-  const files = repo?.files || [];
-  return (files.find((file) => file.staged) || files[0] || null)?.path || null;
+  if (!repo) return null;
+  return firstChangedTreeFile(buildRepoTree(repoEntries(repo).filter((entry) => entry.change), false));
 }
 
 function ancestorsOf(filePath: string | null): string[] {
@@ -886,6 +900,8 @@ async function loadRepo(repoPath: string | null | undefined, { initial = false }
     state.selectedFile = pickTreeFile(state.repo);
     state.paneMode = 'preview';
     state.treeExpanded = new Set<string>();
+    state.chatTreeCollapsed = new Set<string>();
+    state.chatPreviewOpen = false;
     expandTreeAncestors(state.selectedFile);
     state.chatSelectedFile = pickChatFile(state.repo);
     state.chatPaneMode = 'preview';
@@ -942,7 +958,7 @@ async function loadRepo(repoPath: string | null | undefined, { initial = false }
     void loadSubmodules(state.repo.path);
     if (state.activeTab === 'statistics') void loadStatistics(state.repo.path);
 
-    if (state.activeTab === 'chat' && state.chatSelectedFile) renderDetail('chat');
+    if (state.activeTab === 'chat' && state.chatSelectedFile && state.chatPreviewOpen) renderDetail('chat');
     hideRepoLoading();
     hideSplash();
   } catch (error) {
@@ -1923,6 +1939,7 @@ async function loadRemotes(repoPath: string, { silent = false }: { silent?: bool
     if (requestId === remotesSeq) {
       state.remotesLoading = false;
       renderRemotes();
+      if (state.activeTab === 'chat') renderChatHistory();
     }
   }
 }
@@ -3660,6 +3677,7 @@ function renderChat(): void {
   if (!state.repo) return;
   renderChatHead();
   renderChatThread();
+  renderChatHistory();
   renderChatSide();
   syncChatInput();
 }
@@ -3848,66 +3866,112 @@ function resetChat(): void {
 /* ============================================================
    Chat side: changed files + selected preview
    ============================================================ */
-function chatChangeRow(file: GitStatusFile): string {
-  const slash = file.path.lastIndexOf('/');
-  const dir = slash >= 0 ? file.path.slice(0, slash + 1) : '';
-  const base = slash >= 0 ? file.path.slice(slash + 1) : file.path;
-  const selected = state.chatSelectedFile === file.path;
-  return `<div class="chat-change-row${selected ? ' is-selected' : ''}" data-chat-file="${esc(file.path)}" title="${esc(file.path)}">
-    <button class="stage-check${file.staged ? ' checked' : ''}" data-stage="${esc(file.path)}" aria-pressed="${file.staged}" aria-label="${file.staged ? 'Unstage' : 'Stage'} ${esc(file.path)}" title="${file.staged ? 'Unstage file' : 'Stage file'}">${icon('check')}</button>
-    <span class="status-badge status-${file.status}${file.staged ? ' is-staged' : ''}" title="${statusName(file.status)}${file.staged ? ' · staged' : ''}">${file.status}</span>
-    <span class="chat-file-path"><span class="dir">${esc(dir)}</span>${esc(base)}</span>
-    <span class="file-diff">${file.binary
+function chatTreeNodes(nodes: RepoTreeNode[], depth = 0): string {
+  return nodes.map((node) => {
+    if (node.type === 'folder') {
+      const open = !state.chatTreeCollapsed.has(node.path);
+      const badge = node.changed
+        ? `<span class="folder-change${node.staged === node.changed ? ' all-staged' : ''}" title="${plural(node.changed, 'changed file')} · ${node.staged} staged"><i></i>${node.changed}</span>`
+        : '';
+      return `<div class="tree-row folder" data-chat-folder="${esc(node.path)}" style="--depth:${depth}" title="${esc(node.path)}">
+        ${icon('chevron-right', `caret${open ? ' open' : ''}`)}
+        ${icon('folder', 'folder-ico')}
+        <span class="tree-label">${esc(node.name)}</span>
+        ${badge}
+      </div>` + (open ? chatTreeNodes(node.children, depth + 1) : '');
+    }
+    const change = node.change;
+    if (!change) return '';
+    const selected = state.chatPreviewOpen && state.chatSelectedFile === node.path;
+    const [base, ext] = splitFileExt(node.name);
+    const stats = change.binary
       ? '<span class="diff-del">binary</span>'
-      : `${file.add ? `<span class="diff-add">+${file.add}</span>` : ''}${file.del ? `<span class="diff-del">−${file.del}</span>` : ''}`}</span>
-  </div>`;
+      : `${change.add ? `<span class="diff-add">+${change.add}</span>` : ''}${change.del ? `<span class="diff-del">−${change.del}</span>` : ''}`;
+    return `<div class="tree-row file${selected ? ' is-selected' : ''}" data-chat-file="${esc(node.path)}" data-kind="file" style="--depth:${depth}" title="${esc(node.path)} — click to preview">
+      <button class="stage-check${change.staged ? ' checked' : ''}" data-stage="${esc(node.path)}" aria-pressed="${change.staged}" aria-label="${change.staged ? 'Unstage' : 'Stage'} ${esc(node.path)}" title="${change.staged ? 'Unstage file' : 'Stage file'}">${icon('check')}</button>
+      <span class="status-badge status-${change.status}${change.staged ? ' is-staged' : ''}" title="${statusName(change.status)}${change.staged ? ' · staged' : ''}">${change.status}</span>
+      <span class="tree-label">${esc(base)}<span class="ext">${esc(ext)}</span></span>
+      <span class="file-diff">${stats}</span>
+    </div>`;
+  }).join('');
 }
 
-function chatGroupHTML(label: string, kind: 'staged' | 'unstaged', files: GitStatusFile[]): string {
-  if (!files.length) return '';
-  return `<div class="group">
-    <div class="group-head">
-      <span class="g-dot ${kind}"></span>
-      <span class="group-title">${label}</span>
-      <span class="group-count">${files.length}</span>
-      <button class="group-action" data-stage-group="${kind}">${kind === 'staged' ? 'Unstage all' : 'Stage all'}</button>
-    </div>
-    ${files.map(chatChangeRow).join('')}
-  </div>`;
+function renderChatHistory(): void {
+  const repo = state.repo;
+  const list = $('#chatHistoryList');
+  const sub = $('#chatHistorySub');
+  if (!repo || !list) return;
+  const commits = repo.history;
+  const rows = computeGraph(commits);
+  if (sub) sub.textContent = `${repo.branch} · ${plural(commits.length, 'commit')}`;
+  if (!commits.length) {
+    list.innerHTML = '<div class="chat-history-empty">No commits yet.</div>';
+    return;
+  }
+  list.innerHTML = commits.map((commit, index) => {
+    const isHead = index === 0;
+    const remoteNames = state.remotes.map((remote) => remote.name);
+    const refs = (commit.refs || [])
+      .filter((ref) => !remoteNames.some((name) => ref.startsWith(`${name}/`)) && !ref.endsWith('/HEAD'))
+      .slice(0, 2)
+      .map(refPill)
+      .join('');
+    const stats = commit.stats && (commit.stats[0] || commit.stats[1])
+      ? `<span class="chat-history-stats"><span class="diff-add">+${commit.stats[0]}</span><span class="diff-del">−${commit.stats[1]}</span></span>`
+      : '';
+    return `<div class="chat-history-row${isHead ? ' is-head' : ''}" title="${esc(commit.message)}">
+      <div class="chat-history-graph">${graphSVG(rows[index], isHead, commit)}</div>
+      <div class="chat-history-main">
+        <div class="chat-history-msg-line">
+          ${refs ? `<span class="refs">${refs}</span>` : ''}
+          <span class="chat-history-msg">${esc(commit.message)}</span>
+        </div>
+        <div class="chat-history-meta">
+          <span class="chat-history-author">${esc(commit.author)}</span>
+          <span>·</span>
+          <span class="chat-history-when">${esc(commit.when)}</span>
+          ${stats}
+          <button class="chat-history-hash" data-copy-sha="${esc(commit.sha)}" title="Copy commit SHA">${esc((commit.sha || '').slice(0, 7))}</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 function renderChatSide(): void {
   if (!state.repo) return;
   const repo = state.repo;
   const files = repo.files;
-  const staged = files.filter((file) => file.staged).sort((a, b) => a.path.localeCompare(b.path));
-  const unstaged = files.filter((file) => !file.staged).sort((a, b) => a.path.localeCompare(b.path));
+  const staged = files.filter((file) => file.staged).length;
   const side = $('#chatSide');
   const head = $('#chatSideHead');
   const changes = $('#chatChanges');
-  const detail = $('#chatDetail');
+  const panel = $('#chatPanel');
   if (!side || !head || !changes) return;
+  panel?.classList.toggle('is-preview-closed', !state.chatPreviewOpen);
   const previousScroll = changes.scrollTop;
-  const pct = files.length ? Math.round((staged.length / files.length) * 100) : 0;
+  const pct = files.length ? Math.round((staged / files.length) * 100) : 0;
 
   head.innerHTML = `<div class="csh-row">
-    <div class="csh-title">${icon('git-commit')}<span class="eyebrow">Changed content</span><span class="csh-count">${files.length}</span></div>
+    <div class="csh-title">${icon('folder')}<span class="eyebrow">Changed File Tree</span><span class="csh-count">${files.length}</span></div>
     <div class="csh-actions">
       <button class="csh-open" data-action="open-worktree" title="Open full worktree">${icon('folder')}Worktree</button>
     </div>
   </div>
-  <div class="csh-meta"><span class="g-dot staged"></span>${staged.length} staged<span class="g-dot unstaged"></span>${unstaged.length} unstaged</div>
+  <div class="csh-meta"><span class="g-dot staged"></span>${staged} staged<span class="g-dot unstaged"></span>${files.length - staged} unstaged</div>
   <div class="chat-stage-bar"><i style="width:${pct}%"></i></div>`;
 
   side.classList.toggle('is-empty', files.length === 0);
   if (!files.length) {
     state.chatSelectedFile = null;
+    state.chatPreviewOpen = false;
+    panel?.classList.add('is-preview-closed');
     changes.innerHTML = `<div class="chat-side-empty">
       <span class="e-icon">${icon('check')}</span>
       <h4>Working tree clean</h4>
       <p>There are no staged or unstaged files in ${esc(repo.name)} right now.</p>
     </div>`;
-    if (detail) detail.innerHTML = '';
+    clearDetail('chat');
     return;
   }
 
@@ -3916,11 +3980,26 @@ function renderChatSide(): void {
     state.chatPaneMode = 'preview';
   }
 
-  changes.innerHTML = chatGroupHTML('Staged', 'staged', staged) + chatGroupHTML('Changes', 'unstaged', unstaged);
+  changes.innerHTML = chatTreeNodes(buildRepoTree(repoEntries(repo).filter((entry) => entry.change), false), 0);
   changes.scrollTop = previousScroll;
+  if (state.chatPreviewOpen) {
+    const selectedRow = changes.querySelector<HTMLElement>('.tree-row.file.is-selected');
+    if (selectedRow) {
+      const rowRect = selectedRow.getBoundingClientRect();
+      const boxRect = changes.getBoundingClientRect();
+      if (rowRect.top < boxRect.top) changes.scrollTop -= boxRect.top - rowRect.top;
+      else if (rowRect.bottom > boxRect.bottom) changes.scrollTop += rowRect.bottom - boxRect.bottom;
+    }
+  }
   renderChatHead();
 
-  if (state.activeTab === 'chat') renderDetail('chat');
+  if (state.activeTab === 'chat' && state.chatPreviewOpen) renderDetail('chat');
+}
+
+function hideChatPreview(): void {
+  if (!state.chatPreviewOpen) return;
+  state.chatPreviewOpen = false;
+  renderChatSide();
 }
 
 function selectChatFile(filePath: string): void {
@@ -3931,7 +4010,8 @@ function selectChatFile(filePath: string): void {
   }
   state.chatSelectedFile = filePath;
   state.chatPaneMode = 'preview';
-  expandTreeAncestors(filePath);
+  state.chatPreviewOpen = true;
+  for (const folder of ancestorsOf(filePath)) state.chatTreeCollapsed.delete(folder);
   renderChatSide();
 }
 
@@ -3999,7 +4079,7 @@ function fileStatsHTML(change: GitStatusFile | null): string {
   return `<span class="diff-head-stats"><span class="diff-add">+${change.add || 0}</span><span class="diff-del">−${change.del || 0}</span></span>`;
 }
 
-function detailHeadHTML(entry: RepoEntry, change: GitStatusFile | null): string {
+function detailHeadHTML(entry: RepoEntry, change: GitStatusFile | null, showClose = false): string {
   const path = entry.path;
   const slash = path.lastIndexOf('/');
   const dir = slash >= 0 ? path.slice(0, slash + 1) : '';
@@ -4018,13 +4098,14 @@ function detailHeadHTML(entry: RepoEntry, change: GitStatusFile | null): string 
     ${fileStatsHTML(change)}
     <span class="diff-actions">
       <button class="icon-btn" data-copy-path="${esc(path)}" title="Copy file path" aria-label="Copy file path">${icon('copy')}</button>
+      ${showClose ? `<button class="icon-btn" data-action="hide-chat-preview" title="Hide preview" aria-label="Hide preview">${icon('x')}</button>` : ''}
     </span>
   </div>`;
 }
 
-function linkDetailHTML(entry: RepoEntry, change: GitStatusFile | null): string {
+function linkDetailHTML(entry: RepoEntry, change: GitStatusFile | null, showClose = false): string {
   const path = entry.path;
-  return `${detailHeadHTML(entry, change)}
+  return `${detailHeadHTML(entry, change, showClose)}
     <div class="diff-meta">
       <span class="diff-mode">Symlink</span>
       <span class="meta-context">tracked symbolic link</span>
@@ -4043,7 +4124,7 @@ function linkDetailHTML(entry: RepoEntry, change: GitStatusFile | null): string 
     </div>`;
 }
 
-function detailShellHTML(entry: RepoEntry, change: GitStatusFile | null, mode: PaneMode): string {
+function detailShellHTML(entry: RepoEntry, change: GitStatusFile | null, mode: PaneMode, showClose = false): string {
   const canDiff = canDiffEntry(entry, change);
   const safeMode = mode === 'diff' && canDiff ? 'diff' : 'preview';
   const modeChip = change ? (change.staged ? 'Staged' : 'Working tree') : 'Clean';
@@ -4053,7 +4134,7 @@ function detailShellHTML(entry: RepoEntry, change: GitStatusFile | null, mode: P
     <button type="button" data-pane-mode="preview" class="${safeMode === 'preview' ? 'is-active' : ''}" aria-pressed="${safeMode === 'preview'}">${icon('file-code')}Preview</button>
     <button type="button" data-pane-mode="diff" class="${safeMode === 'diff' ? 'is-active' : ''}" aria-pressed="${safeMode === 'diff'}"${canDiff ? '' : ' disabled title="No text diff available for this file"'}>${icon('git-commit')}Changes</button>
   </div>`;
-  return `${detailHeadHTML(entry, change)}
+  return `${detailHeadHTML(entry, change, showClose)}
     <div class="diff-meta">
       ${switchHTML}
       <span class="diff-mode">${modeChip}</span>
@@ -4104,11 +4185,11 @@ function renderDetail(scope: DetailScope, { force = false }: { force?: boolean }
   state.detail[scope].key = key;
 
   if (entry.kind === 'link') {
-    container.innerHTML = linkDetailHTML(entry, change);
+    container.innerHTML = linkDetailHTML(entry, change, scope === 'chat');
     return;
   }
 
-  container.innerHTML = detailShellHTML(entry, change, activeMode);
+  container.innerHTML = detailShellHTML(entry, change, activeMode, scope === 'chat');
   const slot = container.querySelector<HTMLElement>('[data-preview-slot]');
   const kindEl = container.querySelector<HTMLElement>('[data-detail-kind]');
   const loader = previewLoaderText(path, activeMode);
@@ -4756,7 +4837,7 @@ function switchTab(tab: Tab): void {
     renderChatThread();
     renderChatSide();
     syncChatInput();
-    renderDetail('chat');
+    if (state.chatPreviewOpen) renderDetail('chat');
   } else if (tab === 'worktrees') {
     renderWorktrees();
     if (!state.worktrees.length && !state.worktreesLoading && !state.worktreesError) {
@@ -4956,6 +5037,14 @@ function bindStaticEvents(): void {
     const groupAction = eventTarget(event)?.closest<HTMLElement>('[data-stage-group]');
     if (groupAction) {
       stageAllGroup(groupAction.dataset.stageGroup as 'staged' | 'unstaged');
+      return;
+    }
+    const folder = eventTarget(event)?.closest<HTMLElement>('[data-chat-folder]');
+    if (folder) {
+      const folderPath = folder.dataset.chatFolder || '';
+      if (state.chatTreeCollapsed.has(folderPath)) state.chatTreeCollapsed.delete(folderPath);
+      else state.chatTreeCollapsed.add(folderPath);
+      renderChatSide();
       return;
     }
     const row = eventTarget(event)?.closest<HTMLElement>('[data-chat-file]');
@@ -5274,6 +5363,7 @@ function bindStaticEvents(): void {
     else if (action === 'create-branch') void createBranchFromModal();
     else if (action === 'open-folder') void openRepoFolder();
     else if (action === 'open-terminal') void openRepoTerminal();
+    else if (action === 'hide-chat-preview') hideChatPreview();
     else if (action === 'copy-path') {
       const repoPath = state.repo?.path || (state.activeRepo ? getRepoSummary(state.activeRepo)?.path : null);
       if (repoPath) copyText(repoPath, 'Repository path copied to clipboard');

@@ -998,8 +998,14 @@ kbd {
 
 .tab-content { position: relative; z-index: 1; flex: 1; min-height: 0; display: flex; }
 .panel { flex: 1; min-width: 0; min-height: 0; display: none; }
-#chatPanel { flex-direction: row; overflow: hidden; }
-#chatPanel.is-active { display: flex; }
+#chatPanel { overflow: hidden; }
+#chatPanel.is-active {
+  display: grid;
+  grid-template-columns: minmax(230px, 0.82fr) minmax(360px, 1.2fr) minmax(320px, 1fr);
+}
+#chatPanel.is-preview-closed { grid-template-columns: minmax(230px, 0.82fr) minmax(360px, 1.2fr); }
+#chatPanel.is-preview-closed .chat-detail { display: none; }
+#chatPanel.is-preview-closed .chat-center { border-right: 0; }
 #filesPanel { flex-direction: column; }
 #filesPanel.is-active { display: flex; }
 #historyPanel { overflow-y: auto; }
@@ -2813,18 +2819,98 @@ kbd {
 /* ============================================================
    Chat tab
    ============================================================ */
-.chat-column {
-  width: 44%;
-  min-width: 340px;
-  flex: none;
+.chat-history {
+  min-width: 0;
   min-height: 0;
   display: flex;
   flex-direction: column;
   border-right: 1px solid var(--border);
+  background: var(--fill-soft);
+}
+.chat-history-head {
+  flex: none;
+  padding: 12px 14px 10px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-glass-soft);
+}
+.chat-history-title { display: flex; align-items: center; gap: 7px; min-width: 0; }
+.chat-history-sub {
+  min-width: 0;
+  font-size: 9px;
+  color: var(--text-4);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.chat-history-list { flex: 1; min-height: 0; overflow-y: auto; padding: 6px 6px 12px; }
+.chat-history-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 46px;
+  padding: 1px 6px 1px 1px;
+  border-radius: 7px;
+  transition: background 0.1s ease;
+}
+.chat-history-row:hover { background: var(--fill); }
+.chat-history-graph { width: 48px; height: 44px; flex: none; display: flex; align-items: center; }
+.chat-history-graph svg { width: 100%; height: 100%; overflow: visible; }
+.chat-history-main { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.chat-history-msg-line { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.chat-history-msg {
+  min-width: 0;
+  font-size: 10.5px;
+  color: var(--text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.chat-history-meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  font-size: 8.5px;
+  color: var(--text-4);
+  white-space: nowrap;
+}
+.chat-history-author { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.chat-history-when { flex: none; }
+.chat-history-stats { display: flex; gap: 3px; flex: none; font-family: var(--mono); font-size: 8px; }
+.chat-history-hash {
+  margin-left: auto;
+  flex: none;
+  padding: 1px 4px;
+  border-radius: 3px;
+  color: var(--text-3);
+  font-family: var(--mono);
+  font-size: 8.5px;
+}
+.chat-history-hash:hover { background: var(--fill-strong); color: var(--text-2); }
+.chat-history .ref-pill { max-width: 96px; height: 15px; padding: 0 4px; font-size: 8px; overflow: hidden; text-overflow: ellipsis; }
+.chat-history-empty { padding: 34px 16px; text-align: center; font-size: 9.5px; color: var(--text-4); }
+
+.chat-center {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--border);
+}
+.chat-column {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--border);
   background:
     radial-gradient(520px 280px at 10% -4%, var(--chat-glow), transparent 66%),
     linear-gradient(180deg, var(--fill-soft), transparent 48%);
 }
+.chat-center .chat-head { padding: 10px 14px; }
+.chat-center .chat-thread { padding: 14px 14px 8px; }
+.chat-center .chat-composer { padding: 9px 14px 10px; }
 .chat-head {
   flex: none;
   display: flex;
@@ -3095,16 +3181,18 @@ kbd {
 
 /* Chat — workspace changes context */
 .chat-side {
-  flex: 1;
+  flex: 0 0 38%;
   min-width: 0;
-  min-height: 0;
+  min-height: 170px;
+  max-height: 46%;
   display: flex;
   flex-direction: column;
+  border-bottom: 1px solid var(--border);
   background: var(--fill-soft);
 }
 .chat-side-head {
   flex: none;
-  padding: 12px 15px 10px;
+  padding: 11px 13px 9px;
   border-bottom: 1px solid var(--border);
   background: var(--bg-glass-soft);
 }
@@ -3144,47 +3232,28 @@ kbd {
 .chat-stage-bar { height: 2px; margin-top: 8px; border-radius: 99px; overflow: hidden; background: var(--fill-strong); }
 .chat-stage-bar i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--accent), #b79bff); transition: width 0.2s ease; }
 .chat-changes {
-  flex: 0 1 auto;
+  flex: 1;
   min-height: 0;
-  max-height: 260px;
+  max-height: none;
   overflow-y: auto;
-  padding: 2px 0 4px;
-  border-bottom: 1px solid var(--border);
+  padding: 3px 0 8px;
   background: var(--fill-soft);
 }
-.chat-changes .group { padding-top: 1px; }
-.chat-changes .group-head { padding: 6px 12px 3px; }
-.chat-changes .group-action { font-size: 9px; }
-.chat-change-row {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  height: 26px;
-  margin: 0 6px;
-  padding: 0 8px;
-  border-radius: 6px;
-  cursor: pointer;
-  user-select: none;
-  transition: background 0.1s ease, box-shadow 0.1s ease;
+.chat-changes .tree-row {
+  height: 25px;
+  margin: 0 4px;
+  padding: 0 6px 0 calc(6px + var(--depth, 0) * 12px);
+  gap: 5px;
 }
-.chat-change-row:hover { background: var(--fill-hover); }
-.chat-change-row.is-selected { background: rgba(124, 156, 255, 0.1); box-shadow: inset 0 0 0 1px rgba(124, 156, 255, 0.15); }
-.chat-change-row .stage-check { width: 14px; height: 14px; border-radius: 4px; }
-.chat-file-path {
-  flex: 1;
-  min-width: 0;
-  font-family: var(--mono);
-  font-size: 10.5px;
-  letter-spacing: -0.015em;
-  color: var(--text-2);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.chat-file-path .dir { color: var(--text-4); }
-.chat-change-row.is-selected .chat-file-path { color: var(--text); }
-.chat-change-row .file-diff { font-size: 9px; }
-.chat-detail { flex: 1; min-height: 0; display: flex; flex-direction: column; background: var(--bg-code); }
+.chat-changes .tree-row.folder .tree-label { font-size: 10.5px; }
+.chat-changes .tree-label { font-size: 10.5px; }
+.chat-changes .caret { width: 10px; height: 10px; }
+.chat-changes .folder-ico { width: 12px; height: 12px; }
+.chat-changes .stage-check { width: 13px; height: 13px; border-radius: 3px; }
+.chat-changes .status-badge { width: 14px; height: 14px; font-size: 8px; }
+.chat-changes .file-diff { font-size: 8.5px; gap: 4px; }
+.chat-changes .folder-change { font-size: 8.5px; }
+.chat-detail { min-width: 0; min-height: 0; overflow: hidden; display: flex; flex-direction: column; background: var(--bg-code); }
 .chat-detail .diff-head { padding: 9px 12px; }
 .chat-detail .diff-file { font-size: 10.5px; }
 .chat-detail .diff-meta { padding: 6px 12px; gap: 6px; }
@@ -3201,8 +3270,7 @@ kbd {
 .chat-detail .diff-line .sign { width: 13px; }
 .chat-detail .diff-line .code { padding-right: 18px; }
 .chat-detail .diff-hunk { height: 23px; font-size: 8.5px; }
-.chat-side.is-empty .chat-changes { flex: 1; max-height: none; display: flex; align-items: center; justify-content: center; border-bottom: 0; }
-.chat-side.is-empty .chat-detail { display: none; }
+.chat-side.is-empty .chat-changes { flex: 1; max-height: none; display: flex; align-items: center; justify-content: center; }
 .chat-side-empty { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 32px 22px; gap: 7px; }
 .chat-side-empty .e-icon { width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center; color: var(--green); background: var(--green-soft); border: 1px solid rgba(74, 222, 128, 0.2); margin-bottom: 3px; }
 .chat-side-empty .e-icon .ico { width: 15px; height: 15px; }
@@ -3472,7 +3540,6 @@ select.input option { background: var(--bg-option); color: var(--text); }
   .tile { padding: 12px 13px 11px; }
   .tile-commit .avatar { width: 26px; height: 26px; }
   .summary-actions { gap: 6px; }
-  .chat-column { width: 45%; }
 }
 @media (max-width: 1200px) {
   .diff-meta .meta-context { display: none; }
@@ -3504,7 +3571,6 @@ select.input option { background: var(--bg-option); color: var(--text); }
   .tile { padding: 12px 12px 11px; }
   .tabs-tools .search { width: 190px; }
   .commit-target { display: none; }
-  .chat-column { width: 46%; min-width: 320px; }
   .chat-disclaimer { display: none; }
 }
 @media (max-width: 1040px) {
@@ -3516,19 +3582,23 @@ select.input option { background: var(--bg-option); color: var(--text); }
   .summary-tiles { grid-template-columns: 1fr 1fr; }
   .tile:nth-child(3) { display: none; }
   .tabs-tools .search { width: 120px; }
-  .chat-column { width: 50%; min-width: 310px; }
   .chat-detail .diff-kind { display: none; }
+}
+@media (max-width: 1240px) {
+  #chatPanel.is-active { grid-template-columns: minmax(340px, 1.1fr) minmax(320px, 1fr); }
+  #chatPanel.is-preview-closed { grid-template-columns: minmax(0, 1fr); }
+  .chat-history { display: none; }
 }
 @media (max-width: 900px) {
   .diff-pane { display: none; }
   .changes-pane { width: 100%; max-width: none; border-right: 0; }
-  .chat-side { display: none; }
-  .chat-column { width: 100%; min-width: 0; border-right: 0; }
+  #chatPanel.is-active { grid-template-columns: minmax(0, 1fr); }
+  .chat-detail { display: none; }
+  .chat-center { border-right: 0; }
   .lfs-split { flex-direction: column; }
   .lfs-column + .lfs-column { border-left: 0; border-top: 1px solid var(--border); }
 }
 @media (max-height: 820px) {
-  .chat-changes { max-height: 200px; }
   .chat-thread { padding-top: 14px; }
   .chat-welcome { padding: 4px 0; }
 }
@@ -3759,41 +3829,55 @@ select.input option { background: var(--bg-option); color: var(--text); }
 
       <div class="tab-content">
         <div class="panel chat-panel is-active" id="chatPanel" role="tabpanel" aria-labelledby="tabChat">
-          <div class="chat-column">
-            <header class="chat-head">
-              <span class="ai-orb"><svg class="ico" aria-hidden="true"><use href="#i-sparkles"/></svg></span>
-              <div class="chat-head-copy">
-                <div class="chat-title-row">
-                  <h2>GitGlance AI</h2>
-                  <span class="chat-beta">Beta</span>
-                </div>
-                <div class="chat-subtitle" id="chatContextLabel"></div>
+          <aside class="chat-history" id="chatHistory" aria-label="Git history">
+            <header class="chat-history-head">
+              <div class="chat-history-title">
+                <span class="eyebrow">History</span>
+                <span class="chat-history-sub" id="chatHistorySub"></span>
               </div>
-              <button class="icon-btn" id="chatNew" title="New chat" aria-label="Start a new chat">
-                <svg class="ico" aria-hidden="true"><use href="#i-plus"/></svg>
-              </button>
             </header>
-            <div class="chat-thread" id="chatThread"></div>
-            <div class="chat-composer">
-              <div class="chat-context-row" id="chatContextRow"></div>
-              <div class="chat-input-row">
-                <textarea id="chatInput" rows="1" placeholder="Ask about your changes…" aria-label="Message GitGlance AI" spellcheck="false"></textarea>
-                <button class="chat-send" id="chatSend" title="Send message" aria-label="Send message">
-                  <svg class="ico" aria-hidden="true"><use href="#i-send"/></svg>
+            <div class="chat-history-list" id="chatHistoryList"></div>
+          </aside>
+
+          <div class="chat-center">
+            <section class="chat-side" id="chatSide" aria-label="Changed files">
+              <div class="chat-side-head" id="chatSideHead"></div>
+              <div class="chat-changes" id="chatChanges"></div>
+            </section>
+
+            <section class="chat-column" aria-label="AI chat">
+              <header class="chat-head">
+                <span class="ai-orb"><svg class="ico" aria-hidden="true"><use href="#i-sparkles"/></svg></span>
+                <div class="chat-head-copy">
+                  <div class="chat-title-row">
+                    <h2>GitGlance AI</h2>
+                    <span class="chat-beta">Beta</span>
+                  </div>
+                  <div class="chat-subtitle" id="chatContextLabel"></div>
+                </div>
+                <button class="icon-btn" id="chatNew" title="New chat" aria-label="Start a new chat">
+                  <svg class="ico" aria-hidden="true"><use href="#i-plus"/></svg>
                 </button>
+              </header>
+              <div class="chat-thread" id="chatThread"></div>
+              <div class="chat-composer">
+                <div class="chat-context-row" id="chatContextRow"></div>
+                <div class="chat-input-row">
+                  <textarea id="chatInput" rows="1" placeholder="Ask about your changes…" aria-label="Message GitGlance AI" spellcheck="false"></textarea>
+                  <button class="chat-send" id="chatSend" title="Send message" aria-label="Send message">
+                    <svg class="ico" aria-hidden="true"><use href="#i-send"/></svg>
+                  </button>
+                </div>
+                <div class="chat-hint">
+                  <span><kbd>↵</kbd> send</span>
+                  <span><kbd>⇧↵</kbd> newline</span>
+                  <span class="chat-disclaimer">AI can make mistakes</span>
+                </div>
               </div>
-              <div class="chat-hint">
-                <span><kbd>↵</kbd> send</span>
-                <span><kbd>⇧↵</kbd> newline</span>
-                <span class="chat-disclaimer">AI can make mistakes</span>
-              </div>
-            </div>
+            </section>
           </div>
-          <div class="chat-side" id="chatSide">
-            <div class="chat-side-head" id="chatSideHead"></div>
-            <div class="chat-changes" id="chatChanges"></div>
-            <div class="chat-detail" id="chatDetail" data-detail-scope="chat"></div>
-          </div>
+
+          <section class="chat-detail" id="chatDetail" data-detail-scope="chat" aria-label="File preview"></section>
         </div>
 
         <div class="panel" id="filesPanel" role="tabpanel" aria-labelledby="tabFiles">
@@ -5858,6 +5942,8 @@ const state = {
   chatPaneMode: "preview",
   selectedFile: null,
   chatSelectedFile: null,
+  chatTreeCollapsed: new Set(),
+  chatPreviewOpen: false,
   fileQuery: "",
   historyQuery: "",
   worktreesQuery: "",
@@ -6237,7 +6323,8 @@ const ZH = {
   "send": "发送",
   "newline": "换行",
   "AI can make mistakes": "AI 可能会出错",
-  "Changed content": "更改内容",
+  "Changed File Tree": "更改文件树",
+  "Hide preview": "隐藏预览",
   "Worktree": "工作区",
   "Staged": "已暂存",
   "Changes": "更改",
@@ -6455,6 +6542,7 @@ const ZH_PATTERNS = [
   [/^(\d+) submodules? · (.*)$/, (m) => `${m[1]} 个子模块 · ${m[2]}`],
   [/^(\d+) submodules?$/, (m) => `${m[1]} 个子模块`],
   [/^(\d+) commits?$/, (m) => `${m[1]} 个提交`],
+  [/^(.+) · (\d+) commits?$/, (m) => `${m[1]} · ${m[2]} 个提交`],
   [/^(\d+) contributors?$/, (m) => `${m[1]} 个贡献者`],
   [/^(\d+) languages?$/, (m) => `${m[1]} 种语言`],
   [/^(\d+) local · (\d+) remote$/, (m) => `${m[1]} 本地 · ${m[2]} 远程`],
@@ -6594,6 +6682,9 @@ const I18N_SKIP_SELECTOR = [
   ".proj-name",
   ".proj-path",
   ".tree-label",
+  ".chat-history-msg",
+  ".chat-history-author",
+  ".chat-history-hash",
   ".ref-pill",
   ".link-target",
   ".wc-name",
@@ -6610,7 +6701,6 @@ const I18N_SKIP_SELECTOR = [
   ".diff-del",
   ".avatar",
   ".proj-avatar",
-  ".chat-file-path",
   ".pdf-page",
   ".pdf-page-meta",
   ".theme-swatch",
@@ -7240,14 +7330,23 @@ function pickTreeFile(project) {
   return (changedRoot || readme || anyRootFile || anyFile || entries[0] || {}).path || null;
 }
 
-function pickChatFile(project) {
-  const staged = project.files.find((file) => file.staged);
-  return (staged || project.files[0] || {}).path || null;
+function firstChangedTreeFile(nodes) {
+  for (const node of nodes) {
+    if (node.type === "folder") {
+      const found = firstChangedTreeFile(node.children);
+      if (found) return found;
+    } else if (node.change) {
+      return node.path;
+    }
+  }
+  return null;
 }
 
-function buildRepoTree(project, query = "") {
-  const q = query.trim().toLowerCase();
-  const entries = repoEntries(project).filter((entry) => !q || entry.path.toLowerCase().includes(q));
+function pickChatFile(project) {
+  return firstChangedTreeFile(buildChangedTree(project));
+}
+
+function buildTreeFromEntries(entries) {
   const root = { children: new Map() };
 
   entries.forEach((entry) => {
@@ -7295,6 +7394,15 @@ function buildRepoTree(project, query = "") {
   const decoratedRoots = sortNodes(root.children);
   decoratedRoots.forEach(decorateRepoFolder);
   return decoratedRoots;
+}
+
+function buildRepoTree(project, query = "") {
+  const q = query.trim().toLowerCase();
+  return buildTreeFromEntries(repoEntries(project).filter((entry) => !q || entry.path.toLowerCase().includes(q)));
+}
+
+function buildChangedTree(project) {
+  return buildTreeFromEntries(repoEntries(project).filter((entry) => entry.change));
 }
 
 function decorateRepoFolder(node) {
@@ -7491,7 +7599,7 @@ function previewUnavailableHTML(path) {
   </div>`;
 }
 
-function fileDetailHTML(project, entry, mode) {
+function fileDetailHTML(project, entry, mode, showClose = false) {
   const change = entry.change || null;
   const isLink = entry.kind === "link";
   const safeMode = !isLink && change && change.diff && mode === "diff" ? "diff" : "preview";
@@ -7522,6 +7630,7 @@ function fileDetailHTML(project, entry, mode) {
     ${stats}
     <span class="diff-actions">
       <button class="icon-btn" data-copy-path="${esc(path)}" title="Copy file path" aria-label="Copy file path">${icon("copy")}</button>
+      ${showClose ? `<button class="icon-btn" data-action="hide-chat-preview" title="Hide preview" aria-label="Hide preview">${icon("x")}</button>` : ""}
     </span>
   </div>`;
 
@@ -9071,30 +9180,75 @@ function syncChatComposer() {
   send.disabled = chat.pending || !input.value.trim();
 }
 
-function chatChangeRow(file) {
-  const slash = file.path.lastIndexOf("/");
-  const dir = slash >= 0 ? file.path.slice(0, slash + 1) : "";
-  const base = slash >= 0 ? file.path.slice(slash + 1) : file.path;
-  const selected = state.chatSelectedFile === file.path;
-  return `<div class="chat-change-row${selected ? " is-selected" : ""}" data-chat-file="${esc(file.path)}" title="${esc(file.path)}">
-    <button class="stage-check${file.staged ? " checked" : ""}" data-stage="${esc(file.path)}" aria-pressed="${file.staged}" aria-label="${file.staged ? "Unstage" : "Stage"} ${esc(file.path)}" title="${file.staged ? "Unstage file" : "Stage file"}">${icon("check")}</button>
-    <span class="status-badge status-${file.status}${file.staged ? " is-staged" : ""}" title="${statusName(file.status)}${file.staged ? " · staged" : ""}">${file.status}</span>
-    <span class="chat-file-path"><span class="dir">${esc(dir)}</span>${esc(base)}</span>
-    <span class="file-diff">${file.add ? `<span class="diff-add">+${file.add}</span>` : ""}${file.del ? `<span class="diff-del">−${file.del}</span>` : ""}</span>
-  </div>`;
+function chatTreeNodes(nodes, depth = 0) {
+  return nodes.map((node) => {
+    if (node.type === "folder") {
+      const open = !state.chatTreeCollapsed.has(node.path);
+      const badge = node.changed
+        ? `<span class="folder-change${node.staged === node.changed ? " all-staged" : ""}" title="${plural(node.changed, "changed file")} · ${node.staged} staged"><i></i>${node.changed}</span>`
+        : "";
+      return `<div class="tree-row folder" data-chat-folder="${esc(node.path)}" style="--depth:${depth}" title="${esc(node.path)}">
+        ${icon("chevron-right", "caret" + (open ? " open" : ""))}
+        ${icon("folder", "folder-ico")}
+        <span class="tree-label">${esc(node.name)}</span>
+        ${badge}
+      </div>` + (open ? chatTreeNodes(node.children, depth + 1) : "");
+    }
+    const change = node.change;
+    if (!change) return "";
+    const selected = state.chatPreviewOpen && state.chatSelectedFile === node.path;
+    const [base, ext] = splitName(node.name);
+    const stats = change.binary
+      ? `<span class="diff-del">binary</span>`
+      : `${change.add ? `<span class="diff-add">+${change.add}</span>` : ""}${change.del ? `<span class="diff-del">−${change.del}</span>` : ""}`;
+    return `<div class="tree-row file${selected ? " is-selected" : ""}" data-chat-file="${esc(node.path)}" data-kind="file" style="--depth:${depth}" title="${esc(node.path)} — click to preview">
+      <button class="stage-check${change.staged ? " checked" : ""}" data-stage="${esc(node.path)}" aria-pressed="${change.staged}" aria-label="${change.staged ? "Unstage" : "Stage"} ${esc(node.path)}" title="${change.staged ? "Unstage file" : "Stage file"}">${icon("check")}</button>
+      <span class="status-badge status-${change.status}${change.staged ? " is-staged" : ""}" title="${statusName(change.status)}${change.staged ? " · staged" : ""}">${change.status}</span>
+      <span class="tree-label">${esc(base)}<span class="ext">${esc(ext)}</span></span>
+      <span class="file-diff">${stats}</span>
+    </div>`;
+  }).join("");
 }
 
-function chatGroupHTML(label, kind, files) {
-  if (!files.length) return "";
-  return `<div class="group">
-    <div class="group-head">
-      <span class="g-dot ${kind}"></span>
-      <span class="group-title">${label}</span>
-      <span class="group-count">${files.length}</span>
-      <button class="group-action" data-stage-group="${kind}">${kind === "staged" ? "Unstage all" : "Stage all"}</button>
-    </div>
-    ${files.map(chatChangeRow).join("")}
-  </div>`;
+function renderChatHistory() {
+  const project = getProject();
+  const list = $("#chatHistoryList");
+  const sub = $("#chatHistorySub");
+  if (!list) return;
+  const rows = computeGraph(project.history);
+  if (sub) sub.textContent = `${project.branch} · ${plural(project.history.length, "commit")}`;
+  if (!project.history.length) {
+    list.innerHTML = `<div class="chat-history-empty">No commits yet.</div>`;
+    return;
+  }
+  list.innerHTML = project.history.map((commit, index) => {
+    const isHead = index === 0;
+    const remoteNames = getProjectRemotes().map((remote) => remote.name);
+    const refs = (commit.refs || [])
+      .filter((ref) => !remoteNames.some((name) => ref.startsWith(`${name}/`)) && !ref.endsWith("/HEAD"))
+      .slice(0, 2)
+      .map(refPill)
+      .join("");
+    const stats = commit.stats && (commit.stats[0] || commit.stats[1])
+      ? `<span class="chat-history-stats"><span class="diff-add">+${commit.stats[0]}</span><span class="diff-del">−${commit.stats[1]}</span></span>`
+      : "";
+    return `<div class="chat-history-row${isHead ? " is-head" : ""}" title="${esc(commit.message)}">
+      <div class="chat-history-graph">${graphSVG(rows[index], isHead, commit)}</div>
+      <div class="chat-history-main">
+        <div class="chat-history-msg-line">
+          ${refs ? `<span class="refs">${refs}</span>` : ""}
+          <span class="chat-history-msg">${esc(commit.message)}</span>
+        </div>
+        <div class="chat-history-meta">
+          <span class="chat-history-author">${esc(commit.author)}</span>
+          <span>·</span>
+          <span class="chat-history-when">${esc(commit.when)}</span>
+          ${stats}
+          <button class="chat-history-hash" data-copy-sha="${esc(commit.sha)}" title="Copy commit SHA">${esc((commit.sha || "").slice(0, 7))}</button>
+        </div>
+      </div>
+    </div>`;
+  }).join("");
 }
 
 function renderChatDetail() {
@@ -9106,7 +9260,7 @@ function renderChatDetail() {
     return;
   }
   if (state.chatPaneMode === "diff" && !file.diff) state.chatPaneMode = "preview";
-  pane.innerHTML = fileDetailHTML(project, { path: file.path, kind: "file", change: file }, state.chatPaneMode);
+  pane.innerHTML = fileDetailHTML(project, { path: file.path, kind: "file", change: file }, state.chatPaneMode, true);
 }
 
 function renderChatSide() {
@@ -9115,11 +9269,14 @@ function renderChatSide() {
   const side = $("#chatSide");
   const head = $("#chatSideHead");
   const changes = $("#chatChanges");
+  const panel = $("#chatPanel");
+  if (!side || !head || !changes) return;
+  if (panel) panel.classList.toggle("is-preview-closed", !state.chatPreviewOpen);
   const previousScroll = changes.scrollTop;
   const pct = stats.total ? Math.round((stats.staged / stats.total) * 100) : 0;
 
   head.innerHTML = `<div class="csh-row">
-    <div class="csh-title">${icon("git-commit")}<span class="eyebrow">Changed content</span><span class="csh-count">${stats.total}</span></div>
+    <div class="csh-title">${icon("folder")}<span class="eyebrow">Changed File Tree</span><span class="csh-count">${stats.total}</span></div>
     <div class="csh-actions">
       <button class="csh-open" data-action="open-worktree" title="Open full worktree">${icon("folder")}Worktree</button>
     </div>
@@ -9130,6 +9287,8 @@ function renderChatSide() {
   side.classList.toggle("is-empty", !stats.total);
   if (!stats.total) {
     state.chatSelectedFile = null;
+    state.chatPreviewOpen = false;
+    if (panel) panel.classList.add("is-preview-closed");
     changes.innerHTML = `<div class="chat-side-empty">
       <span class="e-icon">${icon("check")}</span>
       <h4>Working tree clean</h4>
@@ -9144,16 +9303,30 @@ function renderChatSide() {
     state.chatPaneMode = "preview";
   }
 
-  const staged = project.files.filter((file) => file.staged).sort((a, b) => a.path.localeCompare(b.path));
-  const unstaged = project.files.filter((file) => !file.staged).sort((a, b) => a.path.localeCompare(b.path));
-  changes.innerHTML = chatGroupHTML("Staged", "staged", staged) + chatGroupHTML("Changes", "unstaged", unstaged);
+  changes.innerHTML = chatTreeNodes(buildChangedTree(project), 0);
   changes.scrollTop = previousScroll;
-  renderChatDetail();
+  if (state.chatPreviewOpen) {
+    const selectedRow = changes.querySelector(".tree-row.file.is-selected");
+    if (selectedRow) {
+      const rowRect = selectedRow.getBoundingClientRect();
+      const boxRect = changes.getBoundingClientRect();
+      if (rowRect.top < boxRect.top) changes.scrollTop -= boxRect.top - rowRect.top;
+      else if (rowRect.bottom > boxRect.bottom) changes.scrollTop += rowRect.bottom - boxRect.bottom;
+    }
+    renderChatDetail();
+  }
+}
+
+function hideChatPreview() {
+  if (!state.chatPreviewOpen) return;
+  state.chatPreviewOpen = false;
+  renderChatSide();
 }
 
 function renderChat() {
   renderChatHead();
   renderChatThread();
+  renderChatHistory();
   renderChatSide();
   syncChatInput();
 }
@@ -9213,7 +9386,8 @@ function selectChatFile(path) {
   }
   state.chatSelectedFile = path;
   state.chatPaneMode = "preview";
-  expandTreeAncestors(path);
+  state.chatPreviewOpen = true;
+  ancestorsOf(path).forEach((folder) => state.chatTreeCollapsed.delete(folder));
   renderChatSide();
 }
 
@@ -9253,10 +9427,12 @@ function selectProject(id) {
   state.lfsQuery = "";
   state.submodulesQuery = "";
   state.treeExpanded = new Set();
+  state.chatTreeCollapsed = new Set();
   const p = getProject();
   state.selectedFile = pickTreeFile(p);
   state.paneMode = "preview";
   state.chatSelectedFile = pickChatFile(p);
+  state.chatPreviewOpen = false;
   state.chatPaneMode = "preview";
   $("#commitMessage").value = p.commitDraft || "";
   renderAll();
@@ -9759,9 +9935,12 @@ function init() {
       toggleStage(stageEl.dataset.stage);
       return;
     }
-    const groupAction = e.target.closest("[data-stage-group]");
-    if (groupAction) {
-      stageAllGroup(groupAction.dataset.stageGroup);
+    const folder = e.target.closest("[data-chat-folder]");
+    if (folder) {
+      const path = folder.dataset.chatFolder;
+      if (state.chatTreeCollapsed.has(path)) state.chatTreeCollapsed.delete(path);
+      else state.chatTreeCollapsed.add(path);
+      renderChatSide();
       return;
     }
     const row = e.target.closest("[data-chat-file]");
@@ -9933,6 +10112,7 @@ function init() {
     else if (action === "create-branch") createBranchFromModal();
     else if (action === "open-folder") openProjectFolder();
     else if (action === "open-terminal") openProjectTerminal();
+    else if (action === "hide-chat-preview") hideChatPreview();
     else if (action === "copy-path") copyText(getProject().path, "Repository path copied to clipboard");
     else if (action === "open-worktree") {
       state.fileQuery = "";

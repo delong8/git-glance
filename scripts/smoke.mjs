@@ -78,6 +78,9 @@ try {
   git(['tag', '-a', 'v1.1.0', '-m', 'Smoke release']);
   await fs.appendFile(path.join(repoDir, 'README.md'), '\nStash me.\n');
   git(['stash', 'push', '-m', 'Smoke stash']);
+  await fs.mkdir(path.join(repoDir, 'docs'), { recursive: true });
+  await fs.writeFile(path.join(repoDir, 'docs', 'notes.txt'), '# Notes\n\nChanged for the chat tree.\n');
+  await fs.writeFile(path.join(repoDir, 'src', 'notes.ts'), 'export const notes = true;\n');
   git(['worktree', 'add', '-b', 'smoke-worktree', worktreeDir]);
   git(['remote', 'add', 'origin', 'https://example.com/acme/console.git']);
   git(['update-ref', 'refs/remotes/origin/main', git(['rev-parse', 'HEAD'])]);
@@ -168,6 +171,34 @@ try {
   if (cleanHistory < 1) throw new Error('History list did not render the initial commit.');
 
   await window.waitForSelector('#chatPanel.is-active .chat-welcome', { timeout: 10_000 });
+  await window.waitForSelector('#chatHistoryList .chat-history-row', { timeout: 10_000 });
+  const chatHistoryRows = await window.locator('#chatHistoryList .chat-history-row').count();
+  if (chatHistoryRows < 3) throw new Error(`Chat history column rendered ${chatHistoryRows} commits.`);
+  const chatTreeFolders = await window.locator('#chatChanges .tree-row.folder').count();
+  const chatTreeFiles = await window.locator('#chatChanges .tree-row.file').count();
+  if (chatTreeFolders < 2 || chatTreeFiles < 2) {
+    throw new Error(`Changed file tree rendered ${chatTreeFolders} folders and ${chatTreeFiles} files.`);
+  }
+  if (!(await window.locator('#chatPanel').evaluate((panel) => panel.classList.contains('is-preview-closed')))) {
+    throw new Error('Chat preview did not start closed.');
+  }
+  if (await window.locator('#chatDetail').isVisible()) throw new Error('Closed chat preview is still visible.');
+  if (await window.locator('#chatChanges .tree-row.file.is-selected').count()) {
+    throw new Error('A changed file is highlighted before the preview is opened.');
+  }
+  await window.locator('#chatChanges [data-chat-file="docs/notes.txt"]').click();
+  await window.waitForFunction(() => !document.querySelector('#chatPanel')?.classList.contains('is-preview-closed'), null, { timeout: 10_000 });
+  await window.waitForSelector('#chatDetail .diff-file', { timeout: 15_000 });
+  const initialChatPreview = (await window.locator('#chatDetail .diff-file').innerText()).replace(/\s+/g, '');
+  if (!initialChatPreview.includes('docs/notes.txt')) {
+    throw new Error(`Chat preview did not open the clicked file (got “${initialChatPreview}”).`);
+  }
+  await window.locator('[data-action="hide-chat-preview"]').click();
+  await window.waitForFunction(() => document.querySelector('#chatPanel')?.classList.contains('is-preview-closed'), null, { timeout: 10_000 });
+  if (await window.locator('#chatDetail').isVisible()) throw new Error('Chat preview did not hide.');
+  await window.locator('#chatChanges [data-chat-file="src/notes.ts"]').click();
+  await window.waitForFunction(() => !document.querySelector('#chatPanel')?.classList.contains('is-preview-closed'), null, { timeout: 10_000 });
+  await window.waitForFunction(() => document.querySelector('#chatDetail .diff-file')?.textContent?.includes('src/notes.ts'), null, { timeout: 10_000 });
 
   await window.locator('#tabFiles').click();
   await window.waitForSelector('#filesPanel.is-active', { timeout: 10_000 });
@@ -349,7 +380,10 @@ try {
   await window.locator('[data-action="refresh"]').click();
   await window.waitForFunction(() => document.querySelector('#filesBadge') && !document.querySelector('#filesBadge').hidden, null, { timeout: 15_000 });
   const stashButton = window.locator('[data-action="stash"]');
-  if (await stashButton.isDisabled()) throw new Error('Stash button stayed disabled with working-tree changes.');
+  await window.waitForFunction(() => {
+    const button = document.querySelector('[data-action="stash"]');
+    return button && !button.disabled;
+  }, null, { timeout: 15_000 });
   await stashButton.click();
   await window.waitForFunction(() => document.querySelector('#filesBadge')?.hidden === true, null, { timeout: 15_000 });
   const stashEntries = git(['stash', 'list']).split('\n').filter(Boolean);
@@ -379,6 +413,7 @@ try {
   console.log(`  submodules: ${submoduleCount} listed`);
   console.log(`  statistics: ${statCards} cards`);
   console.log('  default tab: Chat');
+  console.log(`  chat: ${chatHistoryRows} history commits, ${chatTreeFiles} changed files in the tree`);
   console.log('  project actions: open folder + open terminal');
   console.log('  tabs: Chat, Files, History, Worktrees, Remote, Branches, Tags, Stash, LFS, Submodules, Statistics');
 } finally {

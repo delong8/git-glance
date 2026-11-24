@@ -958,8 +958,6 @@ kbd {
 #chatPanel.is-preview-closed .chat-center { border-right: 0; }
 #filesPanel { flex-direction: column; }
 #filesPanel.is-active { display: flex; }
-#historyPanel { overflow-y: auto; }
-#historyPanel.is-active { display: block; }
 #worktreesPanel { overflow-y: auto; }
 #worktreesPanel.is-active { display: block; }
 #remotesPanel { overflow-y: auto; }
@@ -1516,42 +1514,7 @@ kbd {
 .link-card p { margin: 9px 0 0; font-size: 9.5px; line-height: 1.5; color: var(--text-4); }
 .link-card .btn { margin-top: 12px; }
 
-/* ============================================================
-   History
-   ============================================================ */
-#historyPanel { padding: 0 16px 22px; }
-.history-head {
-  position: sticky;
-  top: 0;
-  z-index: 4;
-  display: grid;
-  grid-template-columns: 64px minmax(0, 1fr) 76px 92px 70px;
-  gap: 10px;
-  align-items: center;
-  padding: 10px 10px 8px;
-  border-bottom: 1px solid var(--border);
-  background: linear-gradient(180deg, var(--bg-sticky) 65%, var(--bg-sticky-soft));
-  backdrop-filter: blur(10px);
-}
-.history-head span { font-size: 9px; font-weight: 650; letter-spacing: 0.13em; text-transform: uppercase; color: var(--text-3); }
-.history-head .h-changes { text-align: right; }
-.history-head .h-when { text-align: right; }
-.history-list { padding-top: 3px; }
-.commit-row {
-  display: grid;
-  grid-template-columns: 64px minmax(0, 1fr) 76px 92px 70px;
-  gap: 10px;
-  align-items: center;
-  min-height: 58px;
-  padding: 0 10px;
-  border-radius: 8px;
-  transition: background 0.12s ease;
-}
-.commit-row:hover { background: var(--fill); }
-.graph-cell { width: 64px; display: flex; align-items: center; justify-content: flex-start; align-self: stretch; }
-.graph-cell svg { height: 58px; width: 64px; overflow: visible; }
-.commit-main { min-width: 0; padding: 8px 0; }
-.commit-msg-line { display: flex; align-items: center; gap: 6px; min-width: 0; }
+/* Branch and tag pills used by the Chat history column */
 .refs { display: flex; align-items: center; gap: 4px; flex: none; }
 .ref-pill {
   display: inline-flex;
@@ -1568,38 +1531,6 @@ kbd {
 .ref-branch { color: var(--accent-text); background: rgba(124, 156, 255, 0.13); border-color: rgba(124, 156, 255, 0.22); }
 .ref-remote { color: var(--text-3); background: var(--fill); border-color: var(--border); }
 .ref-tag { color: var(--amber); background: var(--amber-soft); border-color: rgba(245, 185, 85, 0.19); }
-.commit-msg {
-  font-size: 12.5px;
-  font-weight: 520;
-  color: var(--text);
-  letter-spacing: -0.003em;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  min-width: 0;
-}
-.commit-meta-line { display: flex; align-items: center; gap: 6px; margin-top: 4px; min-width: 0; font-size: 10px; color: var(--text-4); }
-.avatar-xs.avatar { flex: none; }
-.commit-author { color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.commit-meta-line .sep { opacity: 0.55; }
-.merge-badge { display: inline-flex; align-items: center; gap: 3px; color: var(--violet); font-size: 9.5px; }
-.merge-badge .ico { width: 10px; height: 10px; }
-.commit-hash {
-  justify-self: start;
-  padding: 3px 5px;
-  margin-left: -5px;
-  border-radius: 4px;
-  color: var(--text-3);
-  font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: -0.01em;
-  transition: background 0.13s ease, color 0.13s ease;
-}
-.commit-hash:hover { background: var(--fill-strong); color: var(--text-2); }
-.commit-stats { display: flex; justify-content: flex-end; gap: 6px; font-family: var(--mono); font-size: 10px; white-space: nowrap; }
-.commit-stats .none { color: var(--text-4); }
-.commit-when { text-align: right; font-size: 10px; color: var(--text-4); white-space: nowrap; }
-.history-empty { padding-top: 54px; }
 
 /* ============================================================
    Worktrees
@@ -3572,12 +3503,6 @@ select.input option { background: var(--bg-option); color: var(--text); }
   .summary-tiles { grid-template-columns: 1fr; }
   .tile:nth-child(2) { border-left: 0; border-top: 1px solid var(--border); }
   .tile:nth-child(3) { display: none; }
-  .history-head { grid-template-columns: 52px minmax(0, 1fr) 70px 64px; }
-  .history-head span:nth-child(4) { display: none; }
-  .commit-row { grid-template-columns: 52px minmax(0, 1fr) 70px 64px; }
-  .commit-stats { display: none; }
-  .graph-cell, .graph-cell svg { width: 52px; }
-  .ref-pill { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
@@ -3730,10 +3655,6 @@ select.input option { background: var(--bg-option); color: var(--text); }
           <span class="tab-label">File tree</span>
           <span class="tab-badge" id="filesBadge">0</span>
         </button>
-        <button class="tab" id="tabHistory" data-tab="history" role="tab" aria-selected="false" aria-controls="historyPanel" title="History" aria-label="History">
-          <svg class="ico" aria-hidden="true"><use href="#i-clock"/></svg>
-          <span class="tab-label">History</span>
-        </button>
         <button class="tab" id="tabWorktrees" data-tab="worktrees" role="tab" aria-selected="false" aria-controls="worktreesPanel" title="Worktrees" aria-label="Worktrees">
           <svg class="ico" aria-hidden="true"><use href="#i-branch"/></svg>
           <span class="tab-label">Worktrees</span>
@@ -3858,17 +3779,6 @@ select.input option { background: var(--bg-option); color: var(--text); }
               <span id="commitBtnLabel">Commit</span>
             </button>
           </div>
-        </div>
-
-        <div class="panel" id="historyPanel" role="tabpanel" aria-labelledby="tabHistory">
-          <div class="history-head">
-            <span></span>
-            <span>Commit</span>
-            <span>Hash</span>
-            <span class="h-changes">Changes</span>
-            <span class="h-when">When</span>
-          </div>
-          <div class="history-list" id="historyList"></div>
         </div>
 
         <div class="panel" id="worktreesPanel" role="tabpanel" aria-labelledby="tabWorktrees">

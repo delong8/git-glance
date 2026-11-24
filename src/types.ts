@@ -21,7 +21,7 @@ import type {
 
 export type { PreviewData, ThemeMode, Language } from '../electron/shared/models';
 
-export type Tab = 'chat' | 'files' | 'history' | 'worktrees' | 'remotes' | 'branches' | 'tags' | 'stashes' | 'lfs' | 'submodules' | 'statistics';
+export type Tab = 'chat' | 'files' | 'worktrees' | 'remotes' | 'branches' | 'tags' | 'stashes' | 'lfs' | 'submodules' | 'statistics';
 export type PaneMode = 'preview' | 'diff';
 export type DetailScope = 'main' | 'chat';
 export type BusyAction = 'refresh' | 'fetch' | 'pull' | 'push' | 'checkout' | 'stash' | 'submodule';
@@ -145,7 +145,6 @@ export interface AppState {
   chatTreeCollapsed: Set<string>;
   chatPreviewOpen: boolean;
   fileQuery: string;
-  historyQuery: string;
   projectQuery: string;
   treeExpanded: Set<string>;
   settings: AppSettings;

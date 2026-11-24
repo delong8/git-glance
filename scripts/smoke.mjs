@@ -2,8 +2,8 @@
  * End-to-end smoke test against the built Electron app.
  *
  * It creates a temporary Git repository and a throwaway Electron profile,
- * launches GitGlance, then verifies the project list, file preview, history,
- * and AI chat shell. Nothing in your real config or repositories is touched.
+ * launches GitGlance, then verifies the project list, file preview, and the
+ * three-column chat workspace. Nothing in your real config or repositories is touched.
  */
 import { _electron as electron } from 'playwright-core';
 import { execFileSync } from 'node:child_process';
@@ -167,9 +167,6 @@ try {
     throw new Error('Sidebar toggle did not report its visible state.');
   }
 
-  const cleanHistory = await window.locator('#historyList .commit-row').count();
-  if (cleanHistory < 1) throw new Error('History list did not render the initial commit.');
-
   await window.waitForSelector('#chatPanel.is-active .chat-welcome', { timeout: 10_000 });
   await window.waitForSelector('#chatHistoryList .chat-history-row', { timeout: 10_000 });
   const chatHistoryRows = await window.locator('#chatHistoryList .chat-history-row').count();
@@ -209,9 +206,6 @@ try {
 
   await window.locator('#tabChat').click();
   await window.waitForSelector('#chatPanel.is-active .chat-welcome', { timeout: 10_000 });
-  await window.locator('#tabHistory').click();
-  await window.waitForSelector('#historyPanel.is-active .commit-row', { timeout: 10_000 });
-
   await window.locator('#tabWorktrees').click();
   await window.waitForSelector('#worktreesPanel.is-active .worktree-row', { timeout: 10_000 });
   const worktreeCount = await window.locator('#worktreesList .worktree-row').count();
@@ -403,7 +397,6 @@ try {
   console.log(`  repository: ${path.basename(repoDir)}`);
   console.log(`  project list: ${projectCount} entry`);
   console.log(`  preview: ${previewText.split('\n')[0]}`);
-  console.log(`  history: ${cleanHistory} commit`);
   console.log(`  worktrees: ${worktreeCount} linked`);
   console.log(`  remotes: ${remoteCount} configured`);
   console.log(`  branches: ${branchCount} listed, modal create + remote switch verified`);
@@ -415,7 +408,7 @@ try {
   console.log('  default tab: Chat');
   console.log(`  chat: ${chatHistoryRows} history commits, ${chatTreeFiles} changed files in the tree`);
   console.log('  project actions: open folder + open terminal');
-  console.log('  tabs: Chat, Files, History, Worktrees, Remote, Branches, Tags, Stash, LFS, Submodules, Statistics');
+  console.log('  tabs: Chat, Files, Worktrees, Remote, Branches, Tags, Stash, LFS, Submodules, Statistics');
 } finally {
   if (app) await app.close().catch(() => {});
   await fs.rm(worktreeDir, { recursive: true, force: true }).catch(() => {});

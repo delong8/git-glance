@@ -343,7 +343,6 @@ const state: AppState = {
   chatTreeCollapsed: new Set<string>(),
   chatPreviewOpen: false,
   fileQuery: '',
-  historyQuery: '',
   projectQuery: '',
   treeExpanded: new Set<string>(),
   settings: {
@@ -906,7 +905,6 @@ async function loadRepo(repoPath: string | null | undefined, { initial = false }
     state.chatSelectedFile = pickChatFile(state.repo);
     state.chatPaneMode = 'preview';
     state.fileQuery = '';
-    state.historyQuery = '';
     state.worktrees = [];
     state.worktreesError = null;
     state.worktreesQuery = '';
@@ -1221,7 +1219,6 @@ function renderTabChrome() {
   });
   $('#chatPanel')?.classList.toggle('is-active', state.activeTab === 'chat');
   $('#filesPanel')?.classList.toggle('is-active', state.activeTab === 'files');
-  $('#historyPanel')?.classList.toggle('is-active', state.activeTab === 'history');
   $('#worktreesPanel')?.classList.toggle('is-active', state.activeTab === 'worktrees');
   $('#remotesPanel')?.classList.toggle('is-active', state.activeTab === 'remotes');
   $('#branchesPanel')?.classList.toggle('is-active', state.activeTab === 'branches');
@@ -1238,7 +1235,6 @@ function renderTabChrome() {
     const search = $<HTMLInputElement>('#tabSearch');
     if (search) {
       const filesActive = state.activeTab === 'files';
-      const historyActive = state.activeTab === 'history';
       const worktreesActive = state.activeTab === 'worktrees';
       const branchesActive = state.activeTab === 'branches';
       const tagsActive = state.activeTab === 'tags';
@@ -1247,55 +1243,49 @@ function renderTabChrome() {
       const submodulesActive = state.activeTab === 'submodules';
       search.value = filesActive
         ? state.fileQuery
-        : historyActive
-          ? state.historyQuery
-          : worktreesActive
-            ? state.worktreesQuery
-            : branchesActive
-              ? state.branchesQuery
-              : tagsActive
-                ? state.tagsQuery
-                : stashesActive
-                  ? state.stashesQuery
-                  : lfsActive
-                    ? state.lfsQuery
-                    : submodulesActive
-                      ? state.submodulesQuery
-                      : state.remotesQuery;
+        : worktreesActive
+          ? state.worktreesQuery
+          : branchesActive
+            ? state.branchesQuery
+            : tagsActive
+              ? state.tagsQuery
+              : stashesActive
+                ? state.stashesQuery
+                : lfsActive
+                  ? state.lfsQuery
+                  : submodulesActive
+                    ? state.submodulesQuery
+                    : state.remotesQuery;
       search.placeholder = filesActive
         ? 'Filter files…'
-        : historyActive
-          ? 'Search commits, authors…'
-          : worktreesActive
-            ? 'Filter worktrees…'
-            : branchesActive
-              ? 'Filter branches…'
-              : tagsActive
-                ? 'Filter tags…'
-                : stashesActive
-                  ? 'Filter stashes…'
-                  : lfsActive
-                    ? 'Filter LFS and large files…'
-                    : submodulesActive
-                      ? 'Filter submodules…'
-                      : 'Filter remotes…';
+        : worktreesActive
+          ? 'Filter worktrees…'
+          : branchesActive
+            ? 'Filter branches…'
+            : tagsActive
+              ? 'Filter tags…'
+              : stashesActive
+                ? 'Filter stashes…'
+                : lfsActive
+                  ? 'Filter LFS and large files…'
+                  : submodulesActive
+                    ? 'Filter submodules…'
+                    : 'Filter remotes…';
       search.setAttribute('aria-label', filesActive
         ? 'Filter files'
-        : historyActive
-          ? 'Search commits and authors'
-          : worktreesActive
-            ? 'Filter worktrees'
-            : branchesActive
-              ? 'Filter branches'
-              : tagsActive
-                ? 'Filter tags'
-                : stashesActive
-                  ? 'Filter stashes'
-                  : lfsActive
-                    ? 'Filter LFS and large files'
-                    : submodulesActive
-                      ? 'Filter submodules'
-                      : 'Filter remotes');
+        : worktreesActive
+          ? 'Filter worktrees'
+          : branchesActive
+            ? 'Filter branches'
+            : tagsActive
+              ? 'Filter tags'
+              : stashesActive
+                ? 'Filter stashes'
+                : lfsActive
+                  ? 'Filter LFS and large files'
+                  : submodulesActive
+                    ? 'Filter submodules'
+                    : 'Filter remotes');
       syncSearchUI($('#tabSearchWrap'), search);
     }
   }
@@ -1627,7 +1617,7 @@ function renderFileTree() {
 }
 
 /* ============================================================
-   History
+   Commit graph (Chat history)
    ============================================================ */
 function computeGraph(commits: GitCommit[]): GraphRow[] {
   const lanes: (string | null)[] = [];
@@ -1708,67 +1698,9 @@ function graphSVG(row: GraphRow, isHead: boolean, commit: GitCommit, simple = fa
 }
 
 function refPill(ref: string): string {
-  let cls = 'ref-branch';
-  if (ref.startsWith('origin/') || ref.includes('/')) cls = 'ref-remote';
-  if (/^v\d/i.test(ref)) cls = 'ref-tag';
+  const remote = state.remotes.some((entry) => ref.startsWith(`${entry.name}/`));
+  const cls = /^v\d/i.test(ref) ? 'ref-tag' : remote ? 'ref-remote' : 'ref-branch';
   return `<span class="ref-pill ${cls}">${esc(ref)}</span>`;
-}
-
-function renderHistory(): void {
-  if (!state.repo) return;
-  const repo = state.repo;
-  const list = $('#historyList');
-  if (!list) return;
-  const rows = computeGraph(repo.history);
-  const query = state.historyQuery.trim().toLowerCase();
-  const items = repo.history.map((commit, index) => ({ commit, row: rows[index] })).filter(({ commit }) => {
-    if (!query) return true;
-    return `${commit.message} ${commit.author} ${commit.sha || ''}`.toLowerCase().includes(query);
-  });
-
-  if (!repo.history.length) {
-    list.innerHTML = `<div class="empty-list history-empty">
-      <span class="e-icon">${icon('git-commit')}</span>
-      <h4>No commits yet</h4>
-      <p>Make the first commit in this repository and its history will appear here.</p>
-    </div>`;
-    return;
-  }
-  if (!items.length) {
-    list.innerHTML = `<div class="empty-list history-empty">
-      <span class="e-icon">${icon('search')}</span>
-      <h4>No commits found</h4>
-      <p>Nothing matches “${esc(state.historyQuery.trim())}” in this repository.</p>
-      <button class="btn ghost sm" data-action="clear-history">Clear search</button>
-    </div>`;
-    return;
-  }
-
-  list.innerHTML = items.map(({ commit, row }) => {
-    const head = commit === repo.history[0];
-    const refs = (commit.refs || []).map(refPill).join('');
-    const [add, del] = commit.stats || [0, 0];
-    const stats = add || del
-      ? `<span class="add">+${add}</span><span class="del">−${del}</span>`
-      : '<span class="none">—</span>';
-    return `<div class="commit-row">
-      <div class="graph-cell">${graphSVG(row, head, commit, !!query)}</div>
-      <div class="commit-main">
-        <div class="commit-msg-line">
-          ${refs ? `<span class="refs">${refs}</span>` : ''}
-          <span class="commit-msg" title="${esc(commit.message)}">${esc(commit.message)}</span>
-        </div>
-        <div class="commit-meta-line">
-          ${avatarHTML(commit.author, 'avatar-xs')}
-          <span class="commit-author">${esc(commit.author)}</span>
-          ${commit.merge ? `<span class="sep">·</span><span class="merge-badge">${icon('git-merge')}merge</span>` : ''}
-        </div>
-      </div>
-      <button class="commit-hash" data-copy-sha="${esc(commit.sha)}" title="Copy commit SHA">${esc((commit.sha || '').slice(0, 7))}</button>
-      <div class="commit-stats">${stats}</div>
-      <div class="commit-when" title="${esc(commit.when || '')}">${esc(commit.when || '')}</div>
-    </div>`;
-  }).join('');
 }
 
 /* ============================================================
@@ -4629,7 +4561,6 @@ function renderAll(): void {
   renderSidebarMeta();
   renderTabChrome();
   renderFileTree();
-  renderHistory();
   renderWorktrees();
   renderRemotes();
   renderBranches();
@@ -4938,9 +4869,6 @@ function bindStaticEvents(): void {
     if (state.activeTab === 'files') {
       state.fileQuery = tabSearch.value;
       renderFileTree();
-    } else if (state.activeTab === 'history') {
-      state.historyQuery = tabSearch.value;
-      renderHistory();
     } else if (state.activeTab === 'worktrees') {
       state.worktreesQuery = tabSearch.value;
       renderWorktrees();
@@ -4970,9 +4898,6 @@ function bindStaticEvents(): void {
     if (state.activeTab === 'files') {
       state.fileQuery = '';
       renderFileTree();
-    } else if (state.activeTab === 'history') {
-      state.historyQuery = '';
-      renderHistory();
     } else if (state.activeTab === 'worktrees') {
       state.worktreesQuery = '';
       renderWorktrees();
@@ -5024,6 +4949,13 @@ function bindStaticEvents(): void {
     }
     const row = eventTarget(event)?.closest<HTMLElement>('[data-file]');
     if (row) selectFile(row.dataset.file || '');
+  });
+
+  $('#chatHistoryList')?.addEventListener('click', (event) => {
+    const hash = eventTarget(event)?.closest<HTMLElement>('[data-copy-sha]');
+    if (!hash) return;
+    const sha = hash.dataset.copySha;
+    if (sha) copyText(sha, `Copied ${sha.slice(0, 7)} to clipboard`);
   });
 
   $('#chatChanges')?.addEventListener('click', (event) => {
@@ -5100,14 +5032,6 @@ function bindStaticEvents(): void {
     state.commitDrafts.set(state.repo.path, commitInput.value);
   });
   $('#commitBtn')?.addEventListener('click', commitChanges);
-
-  $('#historyList')?.addEventListener('click', (event) => {
-    const hash = eventTarget(event)?.closest<HTMLElement>('[data-copy-sha]');
-    if (hash) {
-      const sha = hash.dataset.copySha;
-      if (sha) copyText(sha, `Copied ${sha.slice(0, 7)} to clipboard`);
-    }
-  });
 
   $('#worktreesList')?.addEventListener('click', (event) => {
     const target = eventTarget(event);
@@ -5374,11 +5298,6 @@ function bindStaticEvents(): void {
       if ($<HTMLInputElement>('#tabSearch')) $<HTMLInputElement>('#tabSearch')!.value = '';
       syncSearchUI($('#tabSearchWrap'), $<HTMLInputElement>('#tabSearch'));
       renderFileTree();
-    } else if (action === 'clear-history') {
-      state.historyQuery = '';
-      if ($<HTMLInputElement>('#tabSearch')) $<HTMLInputElement>('#tabSearch')!.value = '';
-      syncSearchUI($('#tabSearchWrap'), $<HTMLInputElement>('#tabSearch'));
-      renderHistory();
     } else if (action === 'refresh-worktrees') {
       if (state.repo) void loadWorktrees(state.repo.path);
     } else if (action === 'clear-worktrees') {

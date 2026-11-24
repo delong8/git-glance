@@ -100,8 +100,9 @@ branch when an upstream is configured.
 
 The window is split into three persistent regions:
 
-- **Title bar** — the active repository and branch, plus your Git identity chip
-  on the right. Clicking the identity chip opens Settings.
+- **Title bar** — the active repository and its local path, plus your Git
+  identity chip on the right. Hovering the path reveals a copy button. Clicking
+  the identity chip opens Settings.
 - **Sidebar** — repositories, filtering, global sync status, and the Settings
   entry. The footer shows how many projects are open and the auto-fetch
   interval.
@@ -112,9 +113,8 @@ The window is split into three persistent regions:
 
 The summary is the dashboard for the active repository:
 
-- **Breadcrumb path** with a copy button, repository name, and a **Remote** or
-  **Local** chip.
-- **Dominant language** detected from tracked files.
+- **Repository name** and a **Remote** or **Local** chip. The local path is in
+  the title bar.
 - **Branch, upstream, ahead/behind state**, and the last fetch time.
 - **Fetch**, **Pull**, and **Push** actions. They are disabled when there is no
   remote, no upstream, or nothing to push.
@@ -129,6 +129,10 @@ Tags badge shows how many tags exist, the Stash badge shows how many stashes
 are saved, the LFS badge shows how many LFS-tracked files exist, the Submodules
 badge shows how many submodules are configured, and the Statistics badge shows
 the commit count once the tab has loaded.
+
+The **panel toggle** at the start of the tab bar hides the sidebar so the main
+panel can use the full window width. Click it again to bring the project list
+back.
 
 ## Browsing files and changes
 
@@ -559,8 +563,8 @@ commit messages, and file paths are never translated.
 | <kbd>⌘+</kbd> / <kbd>⌘−</kbd> / <kbd>⌘0</kbd> | Zoom in / out / actual size |
 
 Clicking a file row previews it; clicking a commit hash copies the SHA; the
-copy buttons next to the repository path and file path put the path on the
-clipboard.
+copy buttons next to the repository path in the title bar and next to the file
+path put the path on the clipboard.
 
 ## Where your data lives
 

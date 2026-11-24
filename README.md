@@ -41,7 +41,7 @@ Quick links:
 
 ## Features
 
-- **Multi-repository sidebar** with filtering, per-project branch and change counts, and an onboarding screen when no repository is open yet.
+- **Multi-repository sidebar** with filtering, per-project branch and change counts, and an onboarding screen when no repository is open yet. The panel toggle at the start of the tab bar collapses it.
 - **Repository summary** with the current branch, upstream, ahead/behind counts, and Fetch / Pull / Push actions.
 - **Full working-tree file tree**, including folders, symlinks, staged/unstaged/deleted badges, per-file stage toggles, and a filter.
 - **Preview and diff pane** shared by the File Tree and Chat tabs. Select a file to preview it; switch to its staged or unstaged diff.

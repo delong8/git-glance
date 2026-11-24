@@ -58,6 +58,7 @@
     ],
     "asar": true,
     "npmRebuild": false,
+    "afterPack": "scripts/after-pack.mjs",
     "mac": {
       "category": "public.app-category.developer-tools",
       "icon": "build/icon.icns",

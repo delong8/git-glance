@@ -1,7 +1,9 @@
 import { app, BrowserWindow, dialog, ipcMain, Menu, nativeTheme, protocol, shell } from 'electron';
 import type { IpcMainInvokeEvent, MenuItemConstructorOptions } from 'electron';
+import { execFile, spawn } from 'node:child_process';
 import * as fs from 'node:fs/promises';
 import path from 'node:path';
+import { promisify } from 'node:util';
 import { ConfigStore, isLanguage, isThemeMode, normalizeLlmSettings, normalizeZoom } from './lib/config.cjs';
 import * as git from './lib/git.cjs';
 import { PreviewService } from './lib/preview.cjs';
@@ -302,6 +304,40 @@ User request:
 ${message}`;
 }
 
+const execFileAsync = promisify(execFile);
+
+async function openTerminal(repoPath: string): Promise<void> {
+  if (process.platform === 'darwin') {
+    await execFileAsync('open', ['-a', 'Terminal', repoPath], { timeout: 15_000 });
+    return;
+  }
+  if (process.platform === 'win32') {
+    await execFileAsync('cmd.exe', ['/c', 'start', '', 'cmd.exe'], {
+      cwd: repoPath,
+      timeout: 15_000,
+      windowsHide: false
+    });
+    return;
+  }
+  const terminals = ['x-terminal-emulator', 'gnome-terminal', 'konsole', 'xfce4-terminal', 'xterm'];
+  for (const terminal of terminals) {
+    try {
+      await new Promise<void>((resolve, reject) => {
+        const child = spawn(terminal, [], { cwd: repoPath, detached: true, stdio: 'ignore' });
+        child.once('error', reject);
+        child.once('spawn', () => {
+          child.unref();
+          resolve();
+        });
+      });
+      return;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+    }
+  }
+  throw new Error('No terminal emulator was found');
+}
+
 function registerIpc(): void {
   ipcMain.handle('app:bootstrap', wrapHandler(async (): Promise<Bootstrap> => getBootstrap()));
 
@@ -381,6 +417,16 @@ function registerIpc(): void {
   ipcMain.handle('git:checkout-branch', wrapHandler(async (repoPath: unknown, branchName: unknown): Promise<GitCheckoutResult> => {
     const known = assertKnownRepo(repoPath);
     return git.checkoutBranch(known, String(branchName || ''));
+  }));
+
+  ipcMain.handle('git:create-branch', wrapHandler(async (repoPath: unknown, branchName: unknown, startPoint: unknown): Promise<GitCheckoutResult> => {
+    const known = assertKnownRepo(repoPath);
+    return git.createBranch(known, String(branchName || ''), String(startPoint || ''));
+  }));
+
+  ipcMain.handle('git:stash-changes', wrapHandler(async (repoPath: unknown): Promise<string> => {
+    const known = assertKnownRepo(repoPath);
+    return git.stashChanges(known);
   }));
 
   ipcMain.handle('repo:tags', wrapHandler(async (repoPath: unknown): Promise<GitTagInfo[]> => {
@@ -498,6 +544,17 @@ function registerIpc(): void {
   ipcMain.handle('preview:file', wrapHandler(async (repoPath: unknown, filePath: unknown): Promise<PreviewData> => {
     const known = assertKnownRepo(repoPath);
     return previewService.previewFile(known, String(filePath));
+  }));
+  ipcMain.handle('app:open-repo-folder', wrapHandler(async (repoPath: unknown): Promise<true> => {
+    const known = assertKnownRepo(repoPath);
+    const result = await shell.openPath(known);
+    if (result) throw new Error(result);
+    return true;
+  }));
+  ipcMain.handle('app:open-repo-terminal', wrapHandler(async (repoPath: unknown): Promise<true> => {
+    const known = assertKnownRepo(repoPath);
+    await openTerminal(known);
+    return true;
   }));
   ipcMain.handle('preview:open', wrapHandler(async (repoPath: unknown, filePath: unknown): Promise<true> => {
     const known = assertKnownRepo(repoPath);

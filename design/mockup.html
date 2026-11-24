@@ -779,6 +779,20 @@ kbd {
 .fetch-time { flex: none; color: var(--text-4); font-size: 10px; white-space: nowrap; }
 
 .summary-actions { grid-area: actions; justify-self: end; display: flex; align-items: center; gap: 7px; padding-top: 0; flex: none; }
+.summary-group {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  height: 32px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--fill-hover);
+  box-shadow: var(--card-inset);
+  overflow: hidden;
+}
+.summary-group .btn.icon-only { width: 30px; height: 30px; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+.summary-group .btn.icon-only + .btn.icon-only { border-left: 1px solid var(--border); }
+.summary-group .btn.icon-only:hover { background: var(--fill-strong); color: var(--text); }
 .btn {
   display: inline-flex;
   align-items: center;
@@ -3360,6 +3374,36 @@ select.input option { background: var(--bg-option); color: var(--text); }
 .modal-foot .btn { height: 33px; font-size: 11px; border-radius: 8px; }
 .modal-foot .btn.primary { padding: 0 15px; }
 
+/* Branch picker modal */
+.branch-modal { width: min(620px, calc(100vw - 40px)); }
+.branch-modal .modal-body { gap: 0; padding: 0; overflow: hidden; }
+.branch-swap-head { display: flex; align-items: center; gap: 8px; padding: 14px 20px 10px; }
+.branch-swap-head .input { width: 100%; }
+.branch-pick-list { display: flex; flex-direction: column; gap: 2px; overflow-y: auto; max-height: min(50vh, 380px); padding: 0 12px 12px; }
+.branch-pick-row { display: flex; align-items: center; gap: 4px; padding: 2px; border-radius: 8px; border: 1px solid transparent; }
+.branch-pick-row:hover { background: var(--fill); }
+.branch-pick-row.is-selected { background: var(--accent-soft); border-color: rgba(124, 156, 255, 0.22); }
+.branch-pick-select { flex: 1; min-width: 0; display: flex; align-items: center; gap: 9px; padding: 7px 8px; border: 0; background: none; color: inherit; text-align: left; cursor: pointer; border-radius: 6px; }
+.branch-pick-radio { flex: none; width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid var(--border-strong); position: relative; transition: border-color 0.13s ease; }
+.branch-pick-row.is-selected .branch-pick-radio { border-color: var(--accent); }
+.branch-pick-row.is-selected .branch-pick-radio::after { content: ""; position: absolute; inset: 3px; border-radius: 50%; background: var(--accent); }
+.branch-pick-main { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.branch-pick-name-line { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.branch-pick-name { font-family: var(--mono); font-size: 10.5px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.branch-pick-subject { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 9.5px; color: var(--text-4); }
+.branch-pick-subject .dot { opacity: 0.5; }
+.branch-pick-switch { flex: none; height: 26px; padding: 0 9px; border-radius: 6px; border: 1px solid var(--border); background: var(--fill-hover); color: var(--text-2); font-size: 9.5px; font-weight: 560; white-space: nowrap; cursor: pointer; }
+.branch-pick-switch:hover:not(:disabled) { background: var(--fill-strong); color: var(--text); }
+.branch-pick-switch:disabled { opacity: 0.45; cursor: default; }
+.branch-pick-empty { padding: 24px 12px; text-align: center; font-size: 10px; color: var(--text-4); }
+.branch-create { margin: 0 20px; padding: 12px 0 14px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 7px; }
+.branch-create-label { display: flex; align-items: center; gap: 4px; min-width: 0; font-size: 10.5px; color: var(--text-3); }
+.branch-create-label strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--mono); font-size: 10px; font-weight: 550; color: var(--text-2); }
+.branch-create-row { display: flex; gap: 7px; }
+.branch-create-row .input { flex: 1; min-width: 0; }
+.branch-create-row .btn { flex: none; height: 32px; font-size: 10.5px; }
+.branch-create-hint { margin: 0; font-size: 9px; line-height: 1.45; color: var(--text-4); }
+
 /* ============================================================
    Toasts
    ============================================================ */
@@ -3411,7 +3455,7 @@ select.input option { background: var(--bg-option); color: var(--text); }
 /* ============================================================
    Responsive
    ============================================================ */
-@media (max-width: 1400px) {
+@media (max-width: 1500px) {
   .title-row .fetch-time { display: none; }
 }
 @media (max-width: 1360px) {
@@ -3432,6 +3476,8 @@ select.input option { background: var(--bg-option); color: var(--text); }
 }
 @media (max-width: 1200px) {
   .diff-meta .meta-context { display: none; }
+  .title-row .chip { display: none; }
+  .title-row .remote { display: none; }
   .summary-top {
     grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas: "id actions";
@@ -3446,13 +3492,14 @@ select.input option { background: var(--bg-option); color: var(--text); }
   .tab-label { display: none; }
   .tab { padding: 0 12px; }
   .tabs-tools .search { width: 190px; }
+  .summary-actions .summary-compact { width: 32px; padding: 0; justify-content: center; }
+  .summary-actions .summary-compact .btn-label { display: none; }
 }
 @media (max-width: 1120px) {
   .tab-badge { display: none; }
   .workspace { --sidebar-w: 262px; }
   .user-chip .user-name { display: none; }
   .summary-actions { gap: 5px; }
-  .title-row .remote { display: none; }
   .summary-tiles { grid-template-columns: 1.1fr 1fr 1fr; }
   .tile { padding: 12px 12px 11px; }
   .tabs-tools .search { width: 190px; }
@@ -3461,18 +3508,16 @@ select.input option { background: var(--bg-option); color: var(--text); }
   .chat-disclaimer { display: none; }
 }
 @media (max-width: 1040px) {
-  .summary-tiles { grid-template-columns: 1fr 1fr; }
-  .tile:nth-child(3) { display: none; }
-  .tabs-tools .search { width: 120px; }
-  .chat-column { width: 50%; min-width: 310px; }
-  .chat-detail .diff-kind { display: none; }
-}
-@media (max-width: 980px) {
   .summary-top {
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas: "id" "actions";
     row-gap: 13px;
   }
+  .summary-tiles { grid-template-columns: 1fr 1fr; }
+  .tile:nth-child(3) { display: none; }
+  .tabs-tools .search { width: 120px; }
+  .chat-column { width: 50%; min-width: 310px; }
+  .chat-detail .diff-kind { display: none; }
 }
 @media (max-width: 900px) {
   .diff-pane { display: none; }
@@ -3548,6 +3593,7 @@ select.input option { background: var(--bg-option); color: var(--text); }
     <symbol id="i-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></symbol>
     <symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></symbol>
     <symbol id="i-upload" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3"/><path d="m7 8 5-5 5 5"/><path d="M5 21h14"/></symbol>
+    <symbol id="i-archive" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="4.5" rx="1.2"/><path d="M5 8.5V18a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8.5"/><path d="M10 12.5h4"/></symbol>
     <symbol id="i-arrow-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></symbol>
     <symbol id="i-arrow-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m5 12 7 7 7-7"/></symbol>
     <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></symbol>
@@ -3566,6 +3612,7 @@ select.input option { background: var(--bg-option); color: var(--text); }
     <symbol id="i-send" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></symbol>
     <symbol id="i-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
     <symbol id="i-file" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></symbol>
+    <symbol id="i-terminal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="m7 9 3 3-3 3"/><path d="M13 15h4"/></symbol>
   </defs>
 </svg>
 
@@ -3917,6 +3964,38 @@ select.input option { background: var(--bg-option); color: var(--text); }
         </div>
       </div>
     </main>
+  </div>
+</div>
+
+<!-- ============================================================
+     Branch picker modal
+     ============================================================ -->
+<div class="backdrop" id="branchBackdrop" aria-hidden="true">
+  <div class="modal branch-modal" role="dialog" aria-modal="true" aria-labelledby="branchModalTitle">
+    <header class="modal-head">
+      <div class="modal-icon"><svg class="ico"><use href="#i-branch"/></svg></div>
+      <div class="modal-title">
+        <h2 id="branchModalTitle">Branches</h2>
+        <p>Switch branches or start a new one from any branch</p>
+      </div>
+      <button class="icon-btn modal-close" id="branchClose" aria-label="Close branches">
+        <svg class="ico"><use href="#i-x"/></svg>
+      </button>
+    </header>
+    <div class="modal-body">
+      <div class="branch-swap-head">
+        <input class="input" id="branchFilter" placeholder="Filter branches…" autocomplete="off" spellcheck="false" aria-label="Filter branches">
+      </div>
+      <div class="branch-pick-list" id="branchPickList" role="listbox" aria-label="Branches"></div>
+      <div class="branch-create">
+        <span class="branch-create-label">New branch from <strong class="branch-base-name" id="branchBaseName">—</strong></span>
+        <div class="branch-create-row">
+          <input class="input mono-input" id="branchNameInput" placeholder="new-branch-name" autocomplete="off" spellcheck="false" aria-label="New branch name">
+          <button class="btn primary" id="branchCreateBtn" data-action="create-branch" disabled>Create &amp; switch</button>
+        </div>
+        <p class="branch-create-hint" id="branchCreateHint">The new branch starts at the selected branch and is checked out immediately.</p>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -5772,6 +5851,9 @@ const state = {
   projectId: PROJECTS[0].id,
   activeTab: "chat",
   sidebarHidden: false,
+  branchModalOpen: false,
+  branchModalQuery: "",
+  branchModalBase: null,
   paneMode: "preview",
   chatPaneMode: "preview",
   selectedFile: null,
@@ -6001,6 +6083,27 @@ const ZH = {
   "fetch": "获取",
   "push": "推送",
   "Branches": "分支",
+  "Switch or create branches": "切换或创建分支",
+  "Close branches": "关闭分支",
+  "New branch name": "新分支名称",
+  "Switch branches or start a new one from any branch": "切换分支，或从任意分支创建新分支",
+  "Filter branches…": "筛选分支…",
+  "Filter branches": "筛选分支",
+  "New branch from": "新建分支基于",
+  "Create & switch": "创建并切换",
+  "Current": "当前",
+  "Switch": "切换",
+  "Stash": "贮藏",
+  "Stash current changes": "贮藏当前更改",
+  "Working tree is clean": "工作区干净",
+  "Open folder": "打开文件夹",
+  "Open terminal": "打开终端",
+  "Project actions": "项目操作",
+  "Opened project folder": "已打开项目文件夹",
+  "Opened terminal at the project path": "已在项目路径打开终端",
+  "Working tree is clean — nothing to stash": "工作区干净 — 没有可贮藏的更改",
+  "The new branch starts at the selected branch and is checked out immediately.": "新分支将从所选分支开始，并立即检出。",
+  "Select a branch to start from.": "请选择起始分支。",
   "Loading branches…": "正在加载分支…",
   "Branches could not be loaded": "无法加载分支",
   "Branches unavailable": "分支不可用",
@@ -6409,6 +6512,15 @@ const ZH_PATTERNS = [
   [/^Switched to a new branch '(.+)'$/, (m) => `已创建并切换到新分支 ${m[1]}`],
   [/^Switched to (.+)$/, (m) => `已切换到 ${m[1]}`],
   [/^Already on '(.+)'$/, (m) => `已在分支 ${m[1]} 上`],
+  [/^Created and switched to '(.+)' from '(.+)'$/, (m) => `已从 ${m[2]} 创建并切换到 ${m[1]}`],
+  [/^The new branch starts at '(.+)' and is checked out immediately\.$/, (m) => `新分支将从 ${m[1]} 开始，并立即检出。`],
+  [/^Switching reuses the local branch '(.+)', which tracks this remote branch\.$/, (m) => `切换将复用跟踪该远程分支的本地分支 ${m[1]}。`],
+  [/^A new branch tracks '(.+)'; switching to it creates a local tracking branch\.$/, (m) => `新分支将跟踪 ${m[1]}；切换时将创建本地跟踪分支。`],
+  [/^No branches yet — make a commit first\.$/, () => "暂无分支 — 请先提交一次。"],
+  [/^No branches match “(.+)”\.$/, (m) => `没有匹配“${m[1]}”的分支。`],
+  [/^Stashed (\d+) files? on (.+)$/, (m) => `已在 ${m[2]} 上贮藏 ${m[1]} 个文件`],
+  [/^A local branch named '(.+)' already exists$/, (m) => `本地分支 ${m[1]} 已存在`],
+  [/^That branch name is not valid$/, () => "该分支名称无效"],
   [/^(\d+) files? changed · (.+)$/, (m) => `${m[1]} 个文件已更改 · ${m[2]}`],
   [/^(.+) is unchanged and its contents aren’t loaded into this prototype\. Use Changes for tracked edits or copy the path below\.$/, (m) => `${m[1]} 未更改，其内容尚未加载到此原型中。使用“更改”查看已跟踪的编辑，或复制下方路径。`]
 ];
@@ -6422,7 +6534,9 @@ const ZH_ATTR_PATTERNS = [
   [/^(\d+) changed files?$/, (m) => `${m[1]} 个已更改文件`],
   [/^(\d+) files? · (\d+) links? · (\d+) changed$/, (m) => `${m[1]} 个文件 · ${m[2]} 个链接 · ${m[3]} 个已更改`],
   [/^(\d+) files? · (\d+) changed$/, (m) => `${m[1]} 个文件 · ${m[2]} 个已更改`],
-  [/^(\d+) files?$/, (m) => `${m[1]} 个文件`]
+  [/^(\d+) files?$/, (m) => `${m[1]} 个文件`],
+  [/^Use (.+) as the starting point$/, (m) => `使用 ${m[1]} 作为起始分支`],
+  [/^Switch to (.+)$/, (m) => `切换到 ${m[1]}`]
 ];
 
 const I18N_SKIP_SELECTOR = [
@@ -6446,6 +6560,9 @@ const I18N_SKIP_SELECTOR = [
   ".branch-head",
   ".branch-subject",
   ".branch-author",
+  ".branch-pick-name",
+  ".branch-pick-subject",
+  ".branch-base-name",
   ".tag-name",
   ".tag-head",
   ".tag-subject",
@@ -6861,15 +6978,21 @@ function renderSummary() {
           <span class="title-sep" aria-hidden="true"></span>
           <span class="branch-pill">${icon("branch")}${esc(p.branch)}</span>
           <span class="sync-pair">${sync.join("")}</span>
-          <span class="remote">${icon("cloud")}${esc(p.upstream)}</span>
+          ${p.upstream ? `<span class="remote">${icon("cloud")}${esc(p.upstream)}</span>` : `<span class="remote">${icon("cloud")}no upstream</span>`}
           <span class="fetch-time">fetched ${esc(p.lastFetch)}</span>
         </div>
       </div>
 
       <div class="summary-actions">
         <button class="btn ghost" data-action="fetch">${icon("refresh")}Fetch</button>
-        <button class="btn ghost" data-action="pull">${icon("download")}Pull${p.behind ? `<span class="count">${p.behind}</span>` : ""}</button>
-        <button class="btn primary" data-action="push"${p.ahead ? "" : " disabled"}>${icon("upload")}Push${p.ahead ? `<span class="count">${p.ahead}</span>` : ""}</button>
+        <button class="btn ghost" data-action="pull"${p.upstream ? "" : " disabled"}>${icon("download")}Pull${p.behind ? `<span class="count">${p.behind}</span>` : ""}</button>
+        <button class="btn ghost summary-compact" data-action="stash" title="${p.files.length ? "Stash current changes" : "Working tree is clean"}"${p.files.length ? "" : " disabled"}>${icon("archive")}<span class="btn-label">Stash</span></button>
+        <button class="btn ghost summary-compact" data-action="branches" title="Switch or create branches">${icon("branch")}<span class="btn-label">Branch</span></button>
+        <button class="btn primary" data-action="push"${p.ahead && p.upstream ? "" : " disabled"}>${icon("upload")}Push${p.ahead ? `<span class="count">${p.ahead}</span>` : ""}</button>
+        <div class="summary-group" role="group" aria-label="Project actions">
+          <button class="btn ghost icon-only" data-action="open-folder" title="Open folder" aria-label="Open folder">${icon("folder")}</button>
+          <button class="btn ghost icon-only" data-action="open-terminal" title="Open terminal" aria-label="Open terminal">${icon("terminal")}</button>
+        </div>
       </div>
     </div>`;
 }
@@ -7893,18 +8016,205 @@ function renderBranches() {
   list.innerHTML = items.map(branchRowHTML).join("");
 }
 
-function checkoutBranchAction(branchName) {
+function branchLocalName(branchName) {
+  const remotes = getProjectRemotes().map((remote) => remote.name).sort((a, b) => b.length - a.length);
+  const remote = remotes.find((name) => branchName.startsWith(`${name}/`));
+  return remote ? branchName.slice(remote.length + 1) : branchName.split("/").slice(1).join("/");
+}
+
+function markProjectBranch(localBranch) {
+  const project = getProject();
+  const branches = getProjectBranches();
+  if (!branches.includes(localBranch)) branches.push(localBranch);
+  branches.forEach((branch) => {
+    branch.current = !branch.remote && branch.name === localBranch.name;
+  });
+  project.branch = localBranch.name;
+  project.upstream = localBranch.upstream || null;
+}
+
+function switchProjectBranch(branchName) {
   const branch = getProjectBranches().find((entry) => entry.name === branchName);
   if (!branch) {
     toast("Unknown branch", "warn");
-    return;
+    return false;
   }
   if (branch.current) {
     toast(`Already on '${branch.name}'`, "info");
+    return false;
+  }
+  let local = branch;
+  if (branch.remote) {
+    const localName = branchLocalName(branch.name);
+    local = getProjectBranches().find((entry) => !entry.remote && entry.name === localName) || {
+      name: localName,
+      remote: false,
+      current: false,
+      head: branch.head,
+      upstream: branch.name,
+      ahead: 0,
+      behind: 0,
+      gone: false,
+      author: state.currentUser.name,
+      when: "just now",
+      subject: branch.subject
+    };
+  }
+  markProjectBranch(local);
+  renderAll();
+  toast(`Switched to ${local.name}`, "success");
+  return true;
+}
+
+function validBranchName(name) {
+  if (!name || /\s/.test(name)) return false;
+  if (/[~^:?*\[\\]/.test(name)) return false;
+  if (name.startsWith("-") || name.startsWith("/") || name.endsWith("/") || name.endsWith(".") || name.endsWith(".lock")) return false;
+  return !name.includes("..") && !name.includes("@{") && !name.includes("//");
+}
+
+function createProjectBranch(branchName, baseName) {
+  const name = branchName.trim();
+  if (!name) {
+    toast("Enter a branch name", "warn");
+    return false;
+  }
+  if (!validBranchName(name)) {
+    toast("That branch name is not valid", "warn");
+    return false;
+  }
+  const branches = getProjectBranches();
+  const base = branches.find((entry) => entry.name === baseName);
+  if (!base) {
+    toast("Select a branch to start from", "warn");
+    return false;
+  }
+  if (branches.some((entry) => !entry.remote && entry.name === name)) {
+    toast(`A local branch named '${name}' already exists`, "warn");
+    return false;
+  }
+  markProjectBranch({
+    name,
+    remote: false,
+    current: false,
+    head: base.head,
+    upstream: base.remote ? base.name : null,
+    ahead: 0,
+    behind: 0,
+    gone: false,
+    author: state.currentUser.name,
+    when: "just now",
+    subject: base.subject
+  });
+  renderAll();
+  toast(`Created and switched to '${name}' from '${base.name}'`, "success");
+  return true;
+}
+
+function branchPickRowHTML(branch, baseName) {
+  const flags = [];
+  if (branch.current) flags.push(`<span class="branch-flag is-current">current</span>`);
+  if (branch.remote) flags.push(`<span class="branch-flag">remote</span>`);
+  if (branch.gone) flags.push(`<span class="branch-flag is-gone">gone</span>`);
+  const selected = branch.name === baseName;
+  return `<div class="branch-pick-row${selected ? " is-selected" : ""}">
+    <button class="branch-pick-select" role="option" aria-selected="${selected}" data-branch-base="${esc(branch.name)}" title="Use ${esc(branch.name)} as the starting point">
+      <span class="branch-pick-radio" aria-hidden="true"></span>
+      <span class="branch-pick-main">
+        <span class="branch-pick-name-line">
+          <span class="branch-pick-name">${esc(branch.name)}</span>
+          ${flags.join("")}
+        </span>
+        <span class="branch-pick-subject">${esc(branch.subject || "—")}<span class="dot"> · </span>${esc(branch.author || "—")}<span class="dot"> · </span>${esc(branch.when || "—")}</span>
+      </span>
+    </button>
+    <button class="branch-pick-switch" data-branch-switch="${esc(branch.name)}" title="Switch to ${esc(branch.name)}"${branch.current ? " disabled" : ""}>${branch.current ? "Current" : "Switch"}</button>
+  </div>`;
+}
+
+function syncBranchCreateButton() {
+  const input = $("#branchNameInput");
+  const button = $("#branchCreateBtn");
+  if (!button) return;
+  button.disabled = !state.branchModalOpen || !state.branchModalBase || !(input && input.value.trim());
+}
+
+function renderBranchModal() {
+  const list = $("#branchPickList");
+  if (!list) return;
+  const branches = getProjectBranches();
+  let base = branches.find((branch) => branch.name === state.branchModalBase);
+  if (!base) base = branches.find((branch) => branch.current) || branches[0] || null;
+  state.branchModalBase = base ? base.name : null;
+
+  const query = state.branchModalQuery.trim().toLowerCase();
+  const items = branches.filter((branch) => {
+    if (!query) return true;
+    return `${branch.name} ${branch.upstream || ""} ${branch.author} ${branch.subject}`.toLowerCase().includes(query);
+  });
+  if (!branches.length) {
+    list.innerHTML = `<div class="branch-pick-empty">No branches yet — make a commit first.</div>`;
+  } else if (!items.length) {
+    list.innerHTML = `<div class="branch-pick-empty">No branches match “${esc(state.branchModalQuery.trim())}”.</div>`;
+  } else {
+    list.innerHTML = items.map((branch) => branchPickRowHTML(branch, state.branchModalBase)).join("");
+  }
+
+  const baseName = $("#branchBaseName");
+  if (baseName) baseName.textContent = base ? base.name : "—";
+  const hint = $("#branchCreateHint");
+  if (hint) {
+    if (!base) {
+      hint.textContent = "Select a branch to start from.";
+    } else if (base.remote) {
+      const localName = branchLocalName(base.name);
+      const exists = branches.some((branch) => !branch.remote && branch.name === localName);
+      hint.textContent = exists
+        ? `Switching reuses the local branch '${localName}', which tracks this remote branch.`
+        : `A new branch tracks '${base.name}'; switching to it creates a local tracking branch.`;
+    } else {
+      hint.textContent = `The new branch starts at '${base.name}' and is checked out immediately.`;
+    }
+  }
+  syncBranchCreateButton();
+}
+
+function openBranchModal() {
+  lastFocusedElement = document.activeElement;
+  state.branchModalOpen = true;
+  state.branchModalQuery = "";
+  const branches = getProjectBranches();
+  const current = branches.find((branch) => branch.current);
+  state.branchModalBase = current ? current.name : (branches[0] ? branches[0].name : null);
+  const filter = $("#branchFilter");
+  if (filter) filter.value = "";
+  const nameInput = $("#branchNameInput");
+  if (nameInput) nameInput.value = "";
+  renderBranchModal();
+  const backdrop = $("#branchBackdrop");
+  backdrop.classList.add("is-open");
+  backdrop.setAttribute("aria-hidden", "false");
+  setTimeout(() => filter && filter.focus({ preventScroll: true }), 90);
+}
+
+function closeBranchModal() {
+  state.branchModalOpen = false;
+  const backdrop = $("#branchBackdrop");
+  backdrop.classList.remove("is-open");
+  backdrop.setAttribute("aria-hidden", "true");
+  if (lastFocusedElement && lastFocusedElement.focus) lastFocusedElement.focus();
+}
+
+function createBranchFromModal() {
+  const input = $("#branchNameInput");
+  if (!input || !state.branchModalOpen) return;
+  const name = input.value.trim();
+  if (!name) {
+    input.focus();
+    toast("Enter a branch name", "warn");
     return;
   }
-  const localName = branch.remote ? branch.name.split("/").slice(1).join("/") : branch.name;
-  toast(`Switched to ${localName}`, "success");
+  if (createProjectBranch(name, state.branchModalBase)) closeBranchModal();
 }
 
 /* ============================================================
@@ -9101,13 +9411,13 @@ function doFetch(button) {
   p.lastFetch = "just now";
   renderSummary();
   renderProjectList();
-  toast(p.behind ? `Fetched ${p.upstream} · ${plural(p.behind, "commit")} behind` : `Fetched ${p.upstream} · up to date`, "success");
+  toast(p.behind ? `Fetched ${p.upstream || "remotes"} · ${plural(p.behind, "commit")} behind` : `Fetched ${p.upstream || "remotes"} · up to date`, "success");
 }
 
 function doPull() {
   const p = getProject();
   if (!p.behind) {
-    toast(`Already up to date with ${p.upstream}`, "info");
+    toast(`Already up to date with ${p.upstream || "the upstream"}`, "info");
     return;
   }
   const count = p.behind;
@@ -9115,7 +9425,7 @@ function doPull() {
   p.lastFetch = "just now";
   renderSummary();
   renderProjectList();
-  toast(`Fast-forwarded ${plural(count, "commit")} from ${p.upstream}`, "success");
+  toast(`Fast-forwarded ${plural(count, "commit")} from ${p.upstream || "the upstream"}`, "success");
 }
 
 function doPush() {
@@ -9129,6 +9439,56 @@ function doPush() {
   renderSummary();
   renderProjectList();
   toast(`Pushed ${plural(count, "commit")} to ${p.upstream}`, "success");
+}
+
+function stashProjectChanges() {
+  const project = getProject();
+  if (!project.files.length) {
+    toast("Working tree is clean — nothing to stash", "info");
+    return;
+  }
+  const branches = getProjectBranches();
+  const current = branches.find((branch) => branch.current);
+  const files = project.files.length;
+  const add = project.files.reduce((sum, file) => sum + (file.add || 0), 0);
+  const del = project.files.reduce((sum, file) => sum + (file.del || 0), 0);
+  const list = STASHES[project.id] || (STASHES[project.id] = []);
+  const shortHead = current && current.head ? current.head.slice(0, 7) : "0000000";
+  list.unshift({
+    index: 0,
+    ref: "stash@{0}",
+    sha: current ? current.head : "0000000",
+    branch: project.branch,
+    message: `WIP on ${project.branch}: ${shortHead} ${(current && current.subject) || "uncommitted changes"}`,
+    base: current ? current.head : null,
+    baseSubject: current ? current.subject : "",
+    when: "just now",
+    timestamp: Math.floor(Date.now() / 1000),
+    files,
+    add,
+    del,
+    binary: false
+  });
+  list.forEach((stash, index) => {
+    stash.index = index;
+    stash.ref = `stash@{${index}}`;
+  });
+  project.files = [];
+  project.commitDraft = "";
+  state.selectedFile = pickTreeFile(project);
+  state.chatSelectedFile = pickChatFile(project);
+  const commitInput = $("#commitMessage");
+  if (commitInput) commitInput.value = "";
+  renderAll();
+  toast(`Stashed ${plural(files, "file")} on ${project.branch}`, "success");
+}
+
+function openProjectFolder() {
+  toast("Opened project folder", "info");
+}
+
+function openProjectTerminal() {
+  toast("Opened terminal at the project path", "info");
 }
 
 function copyText(text, message) {
@@ -9568,6 +9928,11 @@ function init() {
     else if (action === "fetch") doFetch(actionEl);
     else if (action === "pull") doPull();
     else if (action === "push") doPush();
+    else if (action === "stash") stashProjectChanges();
+    else if (action === "branches") openBranchModal();
+    else if (action === "create-branch") createBranchFromModal();
+    else if (action === "open-folder") openProjectFolder();
+    else if (action === "open-terminal") openProjectTerminal();
     else if (action === "copy-path") copyText(getProject().path, "Repository path copied to clipboard");
     else if (action === "open-worktree") {
       state.fileQuery = "";
@@ -9666,6 +10031,33 @@ function init() {
   $("#settingsBackdrop").addEventListener("click", (e) => {
     if (e.target === $("#settingsBackdrop")) closeSettings();
   });
+
+  // Branch picker
+  $("#branchClose").addEventListener("click", closeBranchModal);
+  $("#branchBackdrop").addEventListener("click", (e) => {
+    if (e.target === $("#branchBackdrop")) closeBranchModal();
+  });
+  $("#branchFilter").addEventListener("input", (e) => {
+    state.branchModalQuery = e.target.value;
+    renderBranchModal();
+  });
+  $("#branchNameInput").addEventListener("input", syncBranchCreateButton);
+  $("#branchNameInput").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      createBranchFromModal();
+    }
+  });
+  $("#branchPickList").addEventListener("click", (e) => {
+    const pick = e.target.closest("[data-branch-base]");
+    if (pick) {
+      state.branchModalBase = pick.dataset.branchBase;
+      renderBranchModal();
+      return;
+    }
+    const swap = e.target.closest("[data-branch-switch]");
+    if (swap && switchProjectBranch(swap.dataset.branchSwitch)) closeBranchModal();
+  });
   $$("#pullStrategy button").forEach((btn) => {
     btn.addEventListener("click", () => {
       $$("#pullStrategy button").forEach((b) => b.classList.toggle("is-active", b === btn));
@@ -9694,19 +10086,30 @@ function init() {
 
   // Keyboard shortcuts
   document.addEventListener("keydown", (e) => {
-    const modalOpen = $("#settingsBackdrop").classList.contains("is-open");
+    const settingsOpen = $("#settingsBackdrop").classList.contains("is-open");
+    const branchOpen = $("#branchBackdrop").classList.contains("is-open");
     if ((e.metaKey || e.ctrlKey) && e.key === ",") {
       e.preventDefault();
-      if (!modalOpen) openSettings();
+      if (!settingsOpen) openSettings();
       return;
     }
-    if (e.key === "Escape" && modalOpen) {
-      e.preventDefault();
-      closeSettings();
-      return;
+    if (e.key === "Escape") {
+      if (branchOpen) {
+        e.preventDefault();
+        closeBranchModal();
+        return;
+      }
+      if (settingsOpen) {
+        e.preventDefault();
+        closeSettings();
+        return;
+      }
     }
     if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
-      if (modalOpen) {
+      if (branchOpen) {
+        e.preventDefault();
+        createBranchFromModal();
+      } else if (settingsOpen) {
         e.preventDefault();
         saveSettings();
       } else if (state.activeTab === "files") {

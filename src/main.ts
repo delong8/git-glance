@@ -390,6 +390,10 @@ const state: AppState = {
   themeMode: 'dark',
   language: 'en',
   sidebarHidden: false,
+  branchModalOpen: false,
+  branchModalQuery: '',
+  branchModalBase: null,
+  creatingBranch: false,
   appVersion: ''
 };
 
@@ -850,6 +854,7 @@ function applyBootstrap(bootstrap: Bootstrap): void {
 }
 
 async function loadRepo(repoPath: string | null | undefined, { initial = false }: { initial?: boolean } = {}): Promise<void> {
+  if (state.branchModalOpen) closeBranchModal();
   if (!repoPath) {
     showOnboarding();
     return;
@@ -1156,6 +1161,7 @@ function renderSummary() {
   const canFetch = repo.remotes?.length > 0 && !busy;
   const canPull = !!repo.upstream && !busy;
   const canPush = !!repo.upstream && repo.ahead > 0 && !busy;
+  const canStash = repo.files.length > 0 && !busy;
 
   const summaryRoot = $('#summaryRoot');
   if (!summaryRoot) return;
@@ -1177,7 +1183,13 @@ function renderSummary() {
         <button class="btn ghost icon-only" data-action="refresh" title="Refresh repository" aria-label="Refresh repository"${busy ? ' disabled' : ''}>${icon('refresh', busy === 'refresh' ? 'spin' : '')}</button>
         <button class="btn ghost" data-action="fetch"${canFetch ? '' : ' disabled'} title="${repo.remotes?.length ? 'Fetch all remotes' : 'No remote configured'}">${icon('refresh', busy === 'fetch' ? 'spin' : '')}Fetch</button>
         <button class="btn ghost" data-action="pull"${canPull ? '' : ' disabled'} title="${repo.upstream ? 'Pull from upstream' : 'No upstream configured'}">${icon('download')}Pull${repo.behind ? `<span class="count">${repo.behind}</span>` : ''}</button>
+        <button class="btn ghost summary-compact" data-action="stash"${canStash ? '' : ' disabled'} title="${repo.files.length ? 'Stash current changes' : 'Working tree is clean'}">${icon('archive', busy === 'stash' ? 'spin' : '')}<span class="btn-label">Stash</span></button>
+        <button class="btn ghost summary-compact" data-action="branches"${busy ? ' disabled' : ''} title="Switch or create branches">${icon('branch')}<span class="btn-label">Branch</span></button>
         <button class="btn primary" data-action="push"${canPush ? '' : ' disabled'} title="${repo.upstream ? 'Push to upstream' : 'No upstream configured'}">${icon('upload')}Push${repo.ahead ? `<span class="count">${repo.ahead}</span>` : ''}</button>
+        <div class="summary-group" role="group" aria-label="Project actions">
+          <button class="btn ghost icon-only" data-action="open-folder" title="Open folder" aria-label="Open folder">${icon('folder')}</button>
+          <button class="btn ghost icon-only" data-action="open-terminal" title="Open terminal" aria-label="Open terminal">${icon('terminal')}</button>
+        </div>
       </div>
     </div>`;
 }
@@ -2080,6 +2092,7 @@ async function loadBranches(repoPath: string, { silent = false }: { silent?: boo
     if (requestId === branchesSeq) {
       state.branchesLoading = false;
       renderBranches();
+      if (state.branchModalOpen) renderBranchModal();
     }
   }
 }
@@ -2197,8 +2210,8 @@ function renderBranches(): void {
   list.innerHTML = items.map(branchRowHTML).join('');
 }
 
-async function checkoutBranchAction(branchName: string): Promise<void> {
-  if (!state.repo || !branchName || state.switchingBranch || state.busyAction) return;
+async function checkoutBranchAction(branchName: string): Promise<boolean> {
+  if (!state.repo || !branchName || state.switchingBranch || state.busyAction) return false;
   const repoPath = state.repo.path;
   state.switchingBranch = branchName;
   state.busyAction = 'checkout';
@@ -2211,13 +2224,175 @@ async function checkoutBranchAction(branchName: string): Promise<void> {
       await refreshSummaries();
     }
     toast(`Switched to ${result.branch}`, 'success');
+    return true;
   } catch (error) {
     toast(errorText(error), 'warn');
+    return false;
   } finally {
     state.switchingBranch = null;
     if (state.busyAction === 'checkout') state.busyAction = null;
     renderSummary();
     renderBranches();
+  }
+}
+
+function branchLocalName(branchName: string): string {
+  const remotes = state.remotes.map((remote) => remote.name).sort((a, b) => b.length - a.length);
+  const remote = remotes.find((name) => branchName.startsWith(`${name}/`));
+  return remote ? branchName.slice(remote.length + 1) : branchName.split('/').slice(1).join('/');
+}
+
+function branchPickRowHTML(branch: GitBranchInfo, baseName: string | null): string {
+  const flags: string[] = [];
+  if (branch.current) flags.push('<span class="branch-flag is-current">current</span>');
+  if (branch.remote) flags.push('<span class="branch-flag">remote</span>');
+  if (branch.gone) flags.push('<span class="branch-flag is-gone">gone</span>');
+  const selected = branch.name === baseName;
+  return `<div class="branch-pick-row${selected ? ' is-selected' : ''}">
+    <button class="branch-pick-select" role="option" aria-selected="${selected}" data-branch-base="${esc(branch.name)}" title="Use ${esc(branch.name)} as the starting point">
+      <span class="branch-pick-radio" aria-hidden="true"></span>
+      <span class="branch-pick-main">
+        <span class="branch-pick-name-line">
+          <span class="branch-pick-name">${esc(branch.name)}</span>
+          ${flags.join('')}
+        </span>
+        <span class="branch-pick-subject">${esc(branch.subject || '—')}<span class="dot"> · </span>${esc(branch.author || '—')}<span class="dot"> · </span>${esc(branch.when || '—')}</span>
+      </span>
+    </button>
+    <button class="branch-pick-switch" data-branch-switch="${esc(branch.name)}" title="Switch to ${esc(branch.name)}"${branch.current ? ' disabled' : ''}>${branch.current ? 'Current' : 'Switch'}</button>
+  </div>`;
+}
+
+function syncBranchCreateButton(): void {
+  const input = $<HTMLInputElement>('#branchNameInput');
+  const button = $<HTMLButtonElement>('#branchCreateBtn');
+  if (!button) return;
+  button.disabled = !state.branchModalOpen || !state.branchModalBase || !(input?.value.trim());
+}
+
+function renderBranchModal(): void {
+  const list = $('#branchPickList');
+  if (!list) return;
+  const branches = state.branches;
+  const base = branches.find((branch) => branch.name === state.branchModalBase)
+    || branches.find((branch) => branch.current)
+    || branches[0]
+    || null;
+  state.branchModalBase = base?.name || null;
+
+  const query = state.branchModalQuery.trim().toLowerCase();
+  const items = query
+    ? branches.filter((branch) => `${branch.name} ${branch.upstream || ''} ${branch.author} ${branch.subject}`.toLowerCase().includes(query))
+    : branches;
+
+  if (state.branchesLoading && !branches.length) {
+    list.innerHTML = '<div class="branch-pick-empty">Loading branches…</div>';
+  } else if (state.branchesError) {
+    list.innerHTML = '<div class="branch-pick-empty">Branches could not be loaded.</div>';
+  } else if (!branches.length) {
+    list.innerHTML = '<div class="branch-pick-empty">No branches yet — make a commit first.</div>';
+  } else if (!items.length) {
+    list.innerHTML = `<div class="branch-pick-empty">No branches match “${esc(state.branchModalQuery.trim())}”.</div>`;
+  } else {
+    list.innerHTML = items.map((branch) => branchPickRowHTML(branch, state.branchModalBase)).join('');
+  }
+
+  const baseName = $('#branchBaseName');
+  if (baseName) baseName.textContent = base?.name || '—';
+  const hint = $('#branchCreateHint');
+  if (hint) {
+    if (!base) {
+      hint.textContent = 'Select a branch to start from.';
+    } else if (base.remote) {
+      const localName = branchLocalName(base.name);
+      const exists = branches.some((branch) => !branch.remote && branch.name === localName);
+      hint.textContent = exists
+        ? `Switching reuses the local branch '${localName}', which tracks this remote branch.`
+        : `A new branch tracks '${base.name}'; switching to it creates a local tracking branch.`;
+    } else {
+      hint.textContent = `The new branch starts at '${base.name}' and is checked out immediately.`;
+    }
+  }
+  syncBranchCreateButton();
+}
+
+function openBranchModal(): void {
+  if (!state.repo) return;
+  lastFocusedElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  state.branchModalOpen = true;
+  state.branchModalQuery = '';
+  const branches = state.branches;
+  state.branchModalBase = (branches.find((branch) => branch.current) || branches[0])?.name || null;
+  const filter = $<HTMLInputElement>('#branchFilter');
+  if (filter) filter.value = '';
+  const nameInput = $<HTMLInputElement>('#branchNameInput');
+  if (nameInput) nameInput.value = '';
+  if (!branches.length) state.branchesLoading = true;
+  renderBranchModal();
+  const backdrop = $<HTMLElement>('#branchBackdrop');
+  backdrop?.classList.add('is-open');
+  backdrop?.setAttribute('aria-hidden', 'false');
+  const repoPath = state.repo.path;
+  void loadBranches(repoPath, { silent: true }).then(() => {
+    if (!state.branchModalOpen || state.repo?.path !== repoPath) return;
+    if (!state.branchModalBase || !state.branches.some((branch) => branch.name === state.branchModalBase)) {
+      state.branchModalBase = (state.branches.find((branch) => branch.current) || state.branches[0])?.name || null;
+    }
+    renderBranchModal();
+  });
+  setTimeout(() => filter?.focus({ preventScroll: true }), 90);
+}
+
+function closeBranchModal(): void {
+  state.branchModalOpen = false;
+  const backdrop = $<HTMLElement>('#branchBackdrop');
+  backdrop?.classList.remove('is-open');
+  backdrop?.setAttribute('aria-hidden', 'true');
+  if (lastFocusedElement?.focus) lastFocusedElement.focus();
+}
+
+async function switchBranchFromModal(branchName: string): Promise<void> {
+  if (!state.branchModalOpen) return;
+  const branch = state.branches.find((entry) => entry.name === branchName);
+  if (!branch) return;
+  if (branch.current) {
+    toast(`Already on '${branch.name}'`, 'info');
+    return;
+  }
+  const switched = await checkoutBranchAction(branchName);
+  if (switched) closeBranchModal();
+}
+
+async function createBranchFromModal(): Promise<void> {
+  if (!state.repo || !state.branchModalOpen || state.creatingBranch) return;
+  const input = $<HTMLInputElement>('#branchNameInput');
+  const name = input?.value.trim() || '';
+  const base = state.branchModalBase;
+  if (!name) {
+    input?.focus();
+    toast('Enter a branch name', 'warn');
+    return;
+  }
+  if (!base) {
+    toast('Select a branch to start from', 'warn');
+    return;
+  }
+  const repoPath = state.repo.path;
+  state.creatingBranch = true;
+  syncBranchCreateButton();
+  try {
+    const result = await api.createBranch(repoPath, name, base);
+    if (state.repo?.path === repoPath) {
+      await refreshRepo({ silent: true });
+      await refreshSummaries();
+    }
+    closeBranchModal();
+    toast(`Created and switched to ${result.branch}`, 'success');
+  } catch (error) {
+    toast(errorText(error), 'warn');
+  } finally {
+    state.creatingBranch = false;
+    syncBranchCreateButton();
   }
 }
 
@@ -4299,6 +4474,50 @@ async function runRepoAction(action: BusyAction): Promise<void> {
   }
 }
 
+async function openRepoFolder(): Promise<void> {
+  if (!state.repo) return;
+  try {
+    await api.openRepoFolder(state.repo.path);
+    toast('Opened project folder', 'info');
+  } catch (error) {
+    toast(errorText(error), 'warn');
+  }
+}
+
+async function openRepoTerminal(): Promise<void> {
+  if (!state.repo) return;
+  try {
+    await api.openRepoTerminal(state.repo.path);
+    toast('Opened terminal at the project path', 'info');
+  } catch (error) {
+    toast(errorText(error), 'warn');
+  }
+}
+
+async function stashWorkingTree(): Promise<void> {
+  if (!state.repo || state.busyAction) return;
+  const repo = state.repo;
+  if (!repo.files.length) {
+    toast('Working tree is clean — nothing to stash', 'info');
+    return;
+  }
+  state.busyAction = 'stash';
+  renderSummary();
+  try {
+    const output = await api.stashChanges(repo.path);
+    if (state.repo?.path === repo.path) {
+      await refreshRepo({ silent: true });
+      await refreshSummaries();
+    }
+    toast(briefGitOutput(output, 'Stashed working tree changes'), 'success');
+  } catch (error) {
+    toast(errorText(error), 'warn');
+  } finally {
+    if (state.busyAction === 'stash') state.busyAction = null;
+    renderSummary();
+  }
+}
+
 async function silentAutoFetch() {
   if (!state.repo || state.busyAction || state.loadingRepo || state.staging || state.committing) return;
   const repo = state.repo;
@@ -4966,6 +5185,33 @@ function bindStaticEvents(): void {
   $<HTMLElement>('#settingsBackdrop')!?.addEventListener('click', (event) => {
     if (event.target === $<HTMLElement>('#settingsBackdrop')!) closeSettings();
   });
+
+  $('#branchClose')?.addEventListener('click', closeBranchModal);
+  $<HTMLElement>('#branchBackdrop')!?.addEventListener('click', (event) => {
+    if (event.target === $<HTMLElement>('#branchBackdrop')!) closeBranchModal();
+  });
+  $('#branchFilter')?.addEventListener('input', () => {
+    state.branchModalQuery = $<HTMLInputElement>('#branchFilter')?.value || '';
+    renderBranchModal();
+  });
+  $('#branchNameInput')?.addEventListener('input', syncBranchCreateButton);
+  $('#branchNameInput')?.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      void createBranchFromModal();
+    }
+  });
+  $('#branchPickList')?.addEventListener('click', (event) => {
+    const target = eventTarget(event);
+    const pick = target?.closest<HTMLElement>('[data-branch-base]');
+    if (pick) {
+      state.branchModalBase = pick.dataset.branchBase || null;
+      renderBranchModal();
+      return;
+    }
+    const swap = target?.closest<HTMLElement>('[data-branch-switch]');
+    if (swap) void switchBranchFromModal(swap.dataset.branchSwitch || '');
+  });
   $$('#pullStrategy button').forEach((button) => {
     button.addEventListener('click', () => {
       $$('#pullStrategy button').forEach((candidate) => candidate.classList.toggle('is-active', candidate === button));
@@ -5023,6 +5269,11 @@ function bindStaticEvents(): void {
     else if (action === 'fetch') runRepoAction('fetch');
     else if (action === 'pull') runRepoAction('pull');
     else if (action === 'push') runRepoAction('push');
+    else if (action === 'stash') void stashWorkingTree();
+    else if (action === 'branches') openBranchModal();
+    else if (action === 'create-branch') void createBranchFromModal();
+    else if (action === 'open-folder') void openRepoFolder();
+    else if (action === 'open-terminal') void openRepoTerminal();
     else if (action === 'copy-path') {
       const repoPath = state.repo?.path || (state.activeRepo ? getRepoSummary(state.activeRepo)?.path : null);
       if (repoPath) copyText(repoPath, 'Repository path copied to clipboard');
@@ -5096,13 +5347,24 @@ function bindStaticEvents(): void {
 
   document.addEventListener('keydown', (event) => {
     const modalOpen = $<HTMLElement>('#settingsBackdrop')!?.classList.contains('is-open');
-    if (event.key === 'Escape' && modalOpen) {
-      event.preventDefault();
-      closeSettings();
-      return;
+    const branchOpen = $<HTMLElement>('#branchBackdrop')!?.classList.contains('is-open');
+    if (event.key === 'Escape') {
+      if (branchOpen) {
+        event.preventDefault();
+        closeBranchModal();
+        return;
+      }
+      if (modalOpen) {
+        event.preventDefault();
+        closeSettings();
+        return;
+      }
     }
     if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
-      if (modalOpen) {
+      if (branchOpen) {
+        event.preventDefault();
+        void createBranchFromModal();
+      } else if (modalOpen) {
         event.preventDefault();
         saveSettings();
       } else if (state.activeTab === 'files' && state.repo) {

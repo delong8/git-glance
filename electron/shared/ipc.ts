@@ -84,6 +84,8 @@ export interface GitGlanceApi {
   fetchRemote: (repoPath: string, remoteName: string, prune?: boolean) => Promise<string>;
   getBranches: (repoPath: string) => Promise<GitBranchInfo[]>;
   checkoutBranch: (repoPath: string, branchName: string) => Promise<GitCheckoutResult>;
+  createBranch: (repoPath: string, branchName: string, startPoint: string) => Promise<GitCheckoutResult>;
+  stashChanges: (repoPath: string) => Promise<string>;
   getTags: (repoPath: string) => Promise<GitTagInfo[]>;
   checkoutTag: (repoPath: string, tagName: string) => Promise<GitTagCheckoutResult>;
   getStashes: (repoPath: string) => Promise<GitStashInfo[]>;
@@ -107,6 +109,8 @@ export interface GitGlanceApi {
   readPreview: (repoPath: string, filePath: string) => Promise<PreviewData>;
   openPath: (repoPath: string, filePath: string) => Promise<true>;
   revealPath: (repoPath: string, filePath: string) => Promise<true>;
+  openRepoFolder: (repoPath: string) => Promise<true>;
+  openRepoTerminal: (repoPath: string) => Promise<true>;
   openExternal: (url: string) => Promise<true>;
   saveSettings: (settings: SettingsInput) => Promise<SaveSettingsResult>;
   setTheme: (theme: ThemeMode) => Promise<ThemeMode>;

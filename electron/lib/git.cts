@@ -359,6 +359,42 @@ export async function checkoutBranch(repoPath: string, branchName: string): Prom
   };
 }
 
+/** Create a local branch at `startPoint` and check it out. */
+export async function createBranch(
+  repoPath: string,
+  branchName: string,
+  startPoint: string
+): Promise<GitCheckoutResult> {
+  const name = branchName.trim();
+  if (!name) throw new Error('Enter a branch name');
+  const check = await runGit(repoPath, ['check-ref-format', '--branch', name], { allowFailure: true });
+  if (check.failed) throw new Error(`Invalid branch name: ${name}`);
+
+  const branches = await getBranches(repoPath);
+  const base = branches.find((entry) => entry.name === startPoint);
+  if (!base) throw new Error(`Unknown start point: ${startPoint}`);
+  if (branches.some((entry) => !entry.remote && entry.name === name)) {
+    throw new Error(`A local branch named ${name} already exists`);
+  }
+
+  const args = base.remote
+    ? ['switch', '-c', name, '--track', base.name]
+    : ['switch', '-c', name, base.name];
+  const result = await runGit(repoPath, args, { timeout: 60_000 });
+  return {
+    branch: name,
+    output: `${result.stdout || ''}${result.stderr || ''}`.trim()
+  };
+}
+
+/** Stash tracked and untracked working-tree changes. */
+export async function stashChanges(repoPath: string): Promise<string> {
+  const status = await runGit(repoPath, ['status', '--porcelain'], { allowFailure: true });
+  if (!status.stdout.trim()) throw new Error('Working tree is clean — nothing to stash');
+  const result = await runGit(repoPath, ['stash', 'push', '--include-untracked'], { timeout: 60_000 });
+  return `${result.stdout || ''}${result.stderr || ''}`.trim();
+}
+
 const TAG_REF_FORMAT = [
   '%(refname:short)',
   '%(objecttype)',

@@ -81,6 +81,7 @@ try {
   git(['worktree', 'add', '-b', 'smoke-worktree', worktreeDir]);
   git(['remote', 'add', 'origin', 'https://example.com/acme/console.git']);
   git(['update-ref', 'refs/remotes/origin/main', git(['rev-parse', 'HEAD'])]);
+  git(['update-ref', 'refs/remotes/origin/remote-only', git(['rev-parse', 'HEAD'])]);
   git(['symbolic-ref', 'refs/remotes/origin/HEAD', 'refs/remotes/origin/main']);
 
   app = await electron.launch({
@@ -105,7 +106,7 @@ try {
   });
 
   await window.waitForLoadState('domcontentloaded');
-  await window.waitForSelector('#bootSplash.is-hidden', { timeout: 20_000 });
+  await window.waitForSelector('#bootSplash.is-hidden', { state: 'attached', timeout: 20_000 });
   await window.waitForSelector('.project .proj-name', { timeout: 15_000 });
 
   const projectName = await window.locator('.project .proj-name').first().innerText();
@@ -117,6 +118,17 @@ try {
   const heading = await window.locator('.title-row h1').innerText();
   if (!heading.includes(path.basename(repoDir))) {
     throw new Error(`Summary did not switch to the test repository (heading: ${heading})`);
+  }
+
+  const openGroup = window.locator('.summary-group .btn.icon-only');
+  if (await openGroup.count() !== 2) {
+    throw new Error(`Expected 2 project open actions, found ${await openGroup.count()}.`);
+  }
+  if (!(await window.locator('[data-action="open-folder"]').getAttribute('title'))?.includes('Open folder')) {
+    throw new Error('Open folder action is missing its label.');
+  }
+  if (!(await window.locator('[data-action="open-terminal"]').getAttribute('title'))?.includes('Open terminal')) {
+    throw new Error('Open terminal action is missing its label.');
   }
 
   const titlebarPath = await window.locator('#windowContext .wc-path-text').innerText();
@@ -192,7 +204,8 @@ try {
   if (!remoteText.includes('origin')) throw new Error('Remote name was not listed.');
   if (!remoteText.includes('example.com')) throw new Error('Remote fetch URL was not listed.');
   if (!remoteText.includes('main')) throw new Error('Remote default branch was not listed.');
-  if (!remoteText.includes('1 branch')) throw new Error('Remote branch count was not listed.');
+  if (!remoteText.includes('remote-only')) throw new Error('Remote-only branch was not listed.');
+  if (!remoteText.includes('2 branches')) throw new Error('Remote branch count was not listed.');
 
   await window.locator('#tabSearch').fill('example.com');
   const filteredRemotes = await window.locator('#remotesList .remote-row').count();
@@ -203,10 +216,11 @@ try {
   await window.locator('#tabBranches').click();
   await window.waitForSelector('#branchesPanel.is-active .branch-row', { timeout: 10_000 });
   const branchCount = await window.locator('#branchesList .branch-row').count();
-  if (branchCount !== 3) throw new Error(`Expected 3 branches, found ${branchCount}.`);
+  if (branchCount !== 4) throw new Error(`Expected 4 branches, found ${branchCount}.`);
   const branchText = (await window.locator('#branchesList').innerText()).toLowerCase();
   if (!branchText.includes('smoke-worktree')) throw new Error('Local branch was not listed.');
   if (!branchText.includes('origin/main')) throw new Error('Remote-tracking branch was not listed.');
+  if (!branchText.includes('origin/remote-only')) throw new Error('Remote-only branch was not listed.');
   if (!branchText.includes('current')) throw new Error('Current branch badge is missing.');
   if (!branchText.includes('remote')) throw new Error('Remote branch badge is missing.');
 
@@ -214,7 +228,37 @@ try {
   const filteredBranches = await window.locator('#branchesList .branch-row').count();
   if (filteredBranches !== 1) throw new Error(`Branch filter did not narrow the list (found ${filteredBranches}).`);
   await window.locator('#tabSearchClear').click();
-  await window.waitForFunction(() => document.querySelectorAll('#branchesList .branch-row').length === 3, null, { timeout: 5_000 });
+  await window.waitForFunction(() => document.querySelectorAll('#branchesList .branch-row').length === 4, null, { timeout: 5_000 });
+
+  // Summary buttons: Stash and Branch.
+  await window.locator('[data-action="branches"]').click();
+  await window.waitForSelector('#branchBackdrop.is-open');
+  const modalBranchCount = await window.locator('#branchPickList .branch-pick-row').count();
+  if (modalBranchCount !== 4) throw new Error(`Branch modal listed ${modalBranchCount} branches, expected 4.`);
+  await window.locator('[data-branch-base="origin/remote-only"]').click();
+  await window.locator('#branchNameInput').fill('smoke-modal');
+  await window.locator('#branchCreateBtn').click();
+  await window.waitForFunction(() => !document.querySelector('#branchBackdrop')?.classList.contains('is-open'), null, { timeout: 15_000 });
+  await window.waitForFunction(() => document.querySelector('.branch-pill')?.textContent?.includes('smoke-modal'), null, { timeout: 10_000 });
+  if (git(['branch', '--show-current']) !== 'smoke-modal') {
+    throw new Error('Creating a branch from the modal did not switch the repository.');
+  }
+  if (git(['rev-parse', '--abbrev-ref', 'smoke-modal@{upstream}']) !== 'origin/remote-only') {
+    throw new Error('The branch created from a remote branch did not track it.');
+  }
+
+  // Switching to a remote-only branch creates a local tracking branch.
+  await window.locator('[data-action="branches"]').click();
+  await window.waitForSelector('#branchBackdrop.is-open');
+  await window.locator('[data-branch-switch="origin/remote-only"]').click();
+  await window.waitForFunction(() => !document.querySelector('#branchBackdrop')?.classList.contains('is-open'), null, { timeout: 15_000 });
+  await window.waitForFunction(() => document.querySelector('.branch-pill')?.textContent?.trim() === 'remote-only', null, { timeout: 10_000 });
+  if (git(['branch', '--show-current']) !== 'remote-only') {
+    throw new Error('Switching to a remote branch did not create and check out the local branch.');
+  }
+  if (git(['rev-parse', '--abbrev-ref', 'remote-only@{upstream}']) !== 'origin/remote-only') {
+    throw new Error('The local branch created for a remote branch does not track it.');
+  }
 
   await window.locator('#tabTags').click();
   await window.waitForSelector('#tagsPanel.is-active .tag-row', { timeout: 10_000 });
@@ -300,6 +344,24 @@ try {
   if (!statisticsText.includes('contributors')) throw new Error('Contributor statistics are missing.');
   if (!statisticsText.includes('commit activity')) throw new Error('Commit activity is missing.');
 
+  // Stash from the summary header.
+  await fs.appendFile(path.join(repoDir, 'README.md'), '\nStash from the summary.\n');
+  await window.locator('[data-action="refresh"]').click();
+  await window.waitForFunction(() => document.querySelector('#filesBadge') && !document.querySelector('#filesBadge').hidden, null, { timeout: 15_000 });
+  const stashButton = window.locator('[data-action="stash"]');
+  if (await stashButton.isDisabled()) throw new Error('Stash button stayed disabled with working-tree changes.');
+  await stashButton.click();
+  await window.waitForFunction(() => document.querySelector('#filesBadge')?.hidden === true, null, { timeout: 15_000 });
+  const stashEntries = git(['stash', 'list']).split('\n').filter(Boolean);
+  if (stashEntries.length !== 2) {
+    throw new Error(`Expected 2 stashes after using the summary button, found ${stashEntries.length}.`);
+  }
+  if (!stashEntries[0].includes('WIP on remote-only')) {
+    throw new Error(`The summary stash was not created on the current branch: ${stashEntries[0]}`);
+  }
+  await window.locator('#tabStashes').click();
+  await window.waitForFunction(() => document.querySelectorAll('#stashesList .stash-row').length === 2, null, { timeout: 10_000 });
+
   if (pageErrors.length) throw new Error(`Renderer error: ${pageErrors.join(' | ')}`);
 
   passed = true;
@@ -310,13 +372,14 @@ try {
   console.log(`  history: ${cleanHistory} commit`);
   console.log(`  worktrees: ${worktreeCount} linked`);
   console.log(`  remotes: ${remoteCount} configured`);
-  console.log(`  branches: ${branchCount} listed`);
+  console.log(`  branches: ${branchCount} listed, modal create + remote switch verified`);
   console.log(`  tags: ${tagCount} listed`);
-  console.log(`  stashes: ${stashCount} listed`);
+  console.log(`  stashes: ${stashCount} listed + 1 summary stash`);
   console.log(`  lfs: ${lfsFileCount} LFS / ${largeFileCount} large`);
   console.log(`  submodules: ${submoduleCount} listed`);
   console.log(`  statistics: ${statCards} cards`);
   console.log('  default tab: Chat');
+  console.log('  project actions: open folder + open terminal');
   console.log('  tabs: Chat, Files, History, Worktrees, Remote, Branches, Tags, Stash, LFS, Submodules, Statistics');
 } finally {
   if (app) await app.close().catch(() => {});

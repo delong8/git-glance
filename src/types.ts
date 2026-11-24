@@ -167,5 +167,9 @@ export interface AppState {
   themeMode: ThemeMode;
   language: Language;
   sidebarHidden: boolean;
+  branchModalOpen: boolean;
+  branchModalQuery: string;
+  branchModalBase: string | null;
+  creatingBranch: boolean;
   appVersion: string;
 }

@@ -566,6 +566,18 @@ try {
     throw new Error('ArrowUp recalled history with the caret away from the end.');
   }
 
+  // About dialog from the sidebar brand row.
+  await window.locator('#aboutButton').click();
+  await window.waitForSelector('#aboutBackdrop.is-open', { timeout: 5_000 });
+  const aboutText = await window.locator('#aboutBackdrop').innerText();
+  if (!aboutText.includes('About GitGlance') || !aboutText.includes('MIT')) {
+    throw new Error('The About dialog is missing its title or license.');
+  }
+  const aboutVersion = await window.locator('#aboutVersion').innerText();
+  if (!/^v\d/.test(aboutVersion)) throw new Error(`The About dialog has no version (got “${aboutVersion}”).`);
+  await window.keyboard.press('Escape');
+  await window.waitForFunction(() => !document.querySelector('#aboutBackdrop')?.classList.contains('is-open'), null, { timeout: 5_000 });
+
   if (pageErrors.length) throw new Error(`Renderer error: ${pageErrors.join(' | ')}`);
 
   passed = true;
@@ -586,6 +598,7 @@ try {
   console.log('  commit menu: branch, tag, reset and squash guard verified');
   console.log('  prompts: system + custom chip persisted, Pi spawned with both system prompts');
   console.log('  composer: ArrowUp/ArrowDown message history verified');
+  console.log('  about: dialog opened from the brand row, version + license verified');
   console.log('  project actions: open folder + open terminal');
   console.log('  tabs: Chat, Files, Worktrees, Remote, Branches, Tags, Stash, LFS, Submodules, Statistics');
 } finally {

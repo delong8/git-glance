@@ -470,6 +470,18 @@ kbd {
 }
 .brand-add:hover { background: var(--fill-strong); border-color: var(--border); color: var(--text); }
 .brand-add .ico { width: 14px; height: 14px; }
+.brand-info {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
+  color: var(--text-4);
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+}
+.brand-info:hover { background: var(--fill-strong); border-color: var(--border); color: var(--text); }
+.brand-info .ico { width: 13px; height: 13px; }
 
 .search { position: relative; }
 .search > .ico {
@@ -3426,6 +3438,46 @@ select.input option { background: var(--bg-option); color: var(--text); }
 .modal-foot .btn { height: 33px; font-size: 11px; border-radius: 8px; }
 .modal-foot .btn.primary { padding: 0 15px; }
 
+/* About dialog */
+.about-modal { width: min(540px, 100%); }
+.about-hero { display: flex; align-items: center; gap: 14px; }
+.about-mark {
+  width: 54px;
+  height: 54px;
+  flex: none;
+  border-radius: 15px;
+  display: grid;
+  place-items: center;
+  background: var(--fill);
+  border: 1px solid var(--border);
+}
+.about-hero-copy { min-width: 0; }
+.about-name { display: flex; align-items: baseline; gap: 8px; font-size: 18px; font-weight: 650; letter-spacing: -0.015em; color: var(--text-strong); }
+.about-version { font-family: var(--mono); font-size: 9.5px; font-weight: 500; color: var(--text-4); }
+.about-tagline { margin: 3px 0 0; font-size: 11px; line-height: 1.45; color: var(--text-3); }
+.about-copy { margin: 0; font-size: 11px; line-height: 1.55; color: var(--text-3); }
+.about-facts { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin: 0; }
+.about-fact { padding: 9px 11px; border: 1px solid var(--border); border-radius: 9px; background: var(--fill); }
+.about-fact dt { font-size: 8.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-4); }
+.about-fact dd { margin: 3px 0 0; font-size: 11px; line-height: 1.35; color: var(--text-2); }
+.about-links { display: flex; flex-wrap: wrap; gap: 8px; }
+.about-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: var(--fill);
+  color: var(--text-2);
+  font-size: 10.5px;
+  text-decoration: none;
+}
+.about-link:hover { background: var(--fill-strong); border-color: var(--border-strong); color: var(--text); }
+.about-link .ico { width: 12px; height: 12px; color: var(--text-4); }
+.about-note { margin: 0; font-size: 9.5px; line-height: 1.5; color: var(--text-4); }
+
 /* Branch picker modal */
 .branch-modal { width: min(620px, calc(100vw - 40px)); }
 .branch-modal .modal-body { gap: 0; padding: 0; overflow: hidden; }
@@ -3761,6 +3813,9 @@ select.input option { background: var(--bg-option); color: var(--text); }
           </svg>
           <span class="brand-name">GitGlance</span>
           <span class="brand-badge">v2.4</span>
+          <button class="brand-info" id="aboutButton" title="About GitGlance" aria-label="About GitGlance">
+            <svg class="ico"><use href="#i-info"/></svg>
+          </button>
           <button class="brand-add" id="addProject" title="Add repository" aria-label="Add repository">
             <svg class="ico"><use href="#i-plus"/></svg>
           </button>
@@ -4368,6 +4423,75 @@ select.input option { background: var(--bg-option); color: var(--text); }
       <span class="spacer"></span>
       <button class="btn ghost" id="settingsCancel">Cancel</button>
       <button class="btn primary" id="settingsSave">Save changes</button>
+    </footer>
+  </div>
+</div>
+
+<div class="backdrop" id="aboutBackdrop" aria-hidden="true">
+  <div class="modal about-modal" role="dialog" aria-modal="true" aria-labelledby="aboutTitle">
+    <header class="modal-head">
+      <div class="modal-icon"><svg class="ico"><use href="#i-info"/></svg></div>
+      <div class="modal-title">
+        <h2 id="aboutTitle">About GitGlance</h2>
+        <p>A local Git client with Pi AI chat and rich file previews</p>
+      </div>
+      <button class="icon-btn modal-close" id="aboutClose" aria-label="Close about dialog">
+        <svg class="ico"><use href="#i-x"/></svg>
+      </button>
+    </header>
+    <div class="modal-body">
+      <div class="about-hero">
+        <div class="about-mark">
+          <svg width="30" height="30" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+            <defs>
+              <linearGradient id="aboutLogoGrad" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#a3b8ff"/>
+                <stop offset="1" stop-color="#876dff"/>
+              </linearGradient>
+            </defs>
+            <rect x="1" y="1" width="30" height="30" rx="9" fill="url(#aboutLogoGrad)"/>
+            <rect x="1.5" y="1.5" width="29" height="29" rx="8.5" stroke="rgba(255,255,255,.22)"/>
+            <path d="M10.5 22V10.5" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".95"/>
+            <path d="M10.5 16.6c0-3.3 2.3-4.9 6.4-4.9" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".95"/>
+            <circle cx="10.4" cy="8.7" r="2.3" fill="#fff"/>
+            <circle cx="10.4" cy="23.4" r="2.3" fill="#fff"/>
+            <circle cx="19.4" cy="11.7" r="2.3" fill="#fff"/>
+          </svg>
+        </div>
+        <div class="about-hero-copy">
+          <div class="about-name">GitGlance <span class="about-version" id="aboutVersion">v2.4</span></div>
+          <p class="about-tagline">Open source, local-first, and built for the way you already work with Git.</p>
+        </div>
+      </div>
+      <p class="about-copy">Review changes, stage and commit, browse branches, tags, stashes, worktrees, LFS files, and submodules, then chat with the Pi agent — all in one window.</p>
+      <dl class="about-facts">
+        <div class="about-fact"><dt>Version</dt><dd id="aboutVersionFact">2.4</dd></div>
+        <div class="about-fact"><dt>License</dt><dd>MIT</dd></div>
+        <div class="about-fact"><dt>Runtime</dt><dd>Electron · TypeScript · Vite</dd></div>
+        <div class="about-fact"><dt>AI assistant</dt><dd>Pi agent with your own model endpoint</dd></div>
+      </dl>
+      <section class="setting-section">
+        <div class="section-head">
+          <h3>Links</h3>
+          <p>Source code and release downloads.</p>
+        </div>
+        <div class="about-links">
+          <a class="about-link" href="https://github.com/delong8/git-glance" target="_blank" rel="noreferrer">
+            <svg class="ico"><use href="#i-globe"/></svg>
+            <span>Repository</span>
+          </a>
+          <a class="about-link" href="https://github.com/delong8/git-glance/releases" target="_blank" rel="noreferrer">
+            <svg class="ico"><use href="#i-download"/></svg>
+            <span>Releases</span>
+          </a>
+        </div>
+      </section>
+      <p class="about-note">Git operations and previews stay on this machine. Chat prompts go to the model endpoint you configure in Settings.</p>
+    </div>
+    <footer class="modal-foot">
+      <span class="config-path"><svg class="ico"><use href="#i-file-code"/></svg>MIT License</span>
+      <span class="spacer"></span>
+      <button class="btn primary" id="aboutDone">Close</button>
     </footer>
   </div>
 </div>
@@ -6530,6 +6654,21 @@ const ZH = {
   "Remove prompt": "移除提示词",
   "No custom prompts yet.": "还没有自定义提示词。",
   "Shown above the chat input next to the staged tag. Click one to send it to the Pi agent.": "显示在对话输入框上方、暂存标签旁。点击即可发送给 Pi 智能体。",
+  "About GitGlance": "关于 GitGlance",
+  "A local Git client with Pi AI chat and rich file previews": "带 Pi AI 对话和丰富文件预览的本地 Git 客户端",
+  "Close about dialog": "关闭关于对话框",
+  "Open source, local-first, and built for the way you already work with Git.": "开源、本地优先，贴合你现有的 Git 工作方式。",
+  "Review changes, stage and commit, browse branches, tags, stashes, worktrees, LFS files, and submodules, then chat with the Pi agent — all in one window.": "审阅更改、暂存与提交，浏览分支、标签、贮藏、工作树、LFS 文件和子模块，并与 Pi 智能体对话——尽在一个窗口。",
+  "Version": "版本",
+  "License": "许可证",
+  "Runtime": "运行时",
+  "AI assistant": "AI 助手",
+  "Pi agent with your own model endpoint": "Pi 智能体，使用你自己的模型端点",
+  "Links": "链接",
+  "Source code and release downloads.": "源代码与发行版本下载。",
+  "Releases": "发行版本",
+  "MIT License": "MIT 许可证",
+  "Git operations and previews stay on this machine. Chat prompts go to the model endpoint you configure in Settings.": "Git 操作和预览都留在本机。对话提示词会发送到你在设置中配置的模型端点。",
   "Identity": "身份",
   "The name and email attached to every commit you create.": "附加到每个新提交的姓名和邮箱。",
   "Full name": "姓名",
@@ -6567,6 +6706,7 @@ const ZH = {
   "Auto-stage deleted files": "自动暂存已删除文件",
   "Stage removals automatically when files disappear from disk.": "文件从磁盘消失时自动暂存删除操作。",
   "Cancel": "取消",
+  "Close": "关闭",
   "Save changes": "保存更改",
   "No repositories": "暂无仓库",
   "Open a local Git worktree to get started.": "打开本地 Git 工作区以开始。",
@@ -10159,6 +10299,22 @@ function closeSettings() {
   backdrop.setAttribute("aria-hidden", "true");
   if (lastFocusedElement && lastFocusedElement.focus) lastFocusedElement.focus();
 }
+
+let aboutLastFocus = null;
+function openAbout() {
+  aboutLastFocus = document.activeElement;
+  const backdrop = $("#aboutBackdrop");
+  backdrop.classList.add("is-open");
+  backdrop.setAttribute("aria-hidden", "false");
+  setTimeout(() => $("#aboutClose").focus({ preventScroll: true }), 60);
+}
+function closeAbout() {
+  const backdrop = $("#aboutBackdrop");
+  backdrop.classList.remove("is-open");
+  backdrop.setAttribute("aria-hidden", "true");
+  if (aboutLastFocus && aboutLastFocus.focus) aboutLastFocus.focus();
+}
+
 const MAX_CUSTOM_PROMPTS = 8;
 
 function readCustomPromptRows() {
@@ -10764,6 +10920,14 @@ function init() {
     if (e.target === $("#settingsBackdrop")) closeSettings();
   });
 
+  // About dialog
+  $("#aboutButton").addEventListener("click", openAbout);
+  $("#aboutClose").addEventListener("click", closeAbout);
+  $("#aboutDone").addEventListener("click", closeAbout);
+  $("#aboutBackdrop").addEventListener("click", (e) => {
+    if (e.target === $("#aboutBackdrop")) closeAbout();
+  });
+
   // Branch picker
   $("#branchClose").addEventListener("click", closeBranchModal);
   $("#branchBackdrop").addEventListener("click", (e) => {
@@ -10819,6 +10983,7 @@ function init() {
   // Keyboard shortcuts
   document.addEventListener("keydown", (e) => {
     const settingsOpen = $("#settingsBackdrop").classList.contains("is-open");
+    const aboutOpen = $("#aboutBackdrop").classList.contains("is-open");
     const branchOpen = $("#branchBackdrop").classList.contains("is-open");
     const actionOpen = $("#commitActionBackdrop").classList.contains("is-open");
     const menuOpen = !$("#commitMenu").hidden;
@@ -10841,6 +11006,11 @@ function init() {
       if (branchOpen) {
         e.preventDefault();
         closeBranchModal();
+        return;
+      }
+      if (aboutOpen) {
+        e.preventDefault();
+        closeAbout();
         return;
       }
       if (settingsOpen) {

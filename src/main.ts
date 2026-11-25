@@ -867,6 +867,10 @@ function applyBootstrap(bootstrap: Bootstrap): void {
   applyLanguage(state.settings.language || 'en');
   const versionBadge = $('#appVersionBadge');
   if (versionBadge && state.appVersion) versionBadge.textContent = `v${state.appVersion}`;
+  const aboutVersion = $('#aboutVersion');
+  if (aboutVersion && state.appVersion) aboutVersion.textContent = `v${state.appVersion}`;
+  const aboutVersionFact = $('#aboutVersionFact');
+  if (aboutVersionFact && state.appVersion) aboutVersionFact.textContent = state.appVersion;
   updateUserUI();
   renderProjectList();
   renderSidebarMeta();
@@ -5054,6 +5058,25 @@ function closeSettings(): void {
   if (lastFocusedElement?.focus) lastFocusedElement.focus();
 }
 
+let aboutLastFocus: HTMLElement | null = null;
+
+function openAbout(): void {
+  aboutLastFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  const backdrop = $<HTMLElement>('#aboutBackdrop');
+  if (!backdrop) return;
+  backdrop.classList.add('is-open');
+  backdrop.setAttribute('aria-hidden', 'false');
+  setTimeout(() => $('#aboutClose')?.focus({ preventScroll: true }), 60);
+}
+
+function closeAbout(): void {
+  const backdrop = $<HTMLElement>('#aboutBackdrop');
+  if (!backdrop) return;
+  backdrop.classList.remove('is-open');
+  backdrop.setAttribute('aria-hidden', 'true');
+  aboutLastFocus?.focus();
+}
+
 async function saveSettings(): Promise<void> {
   if (state.savingSettings) return;
   const activePull = $<HTMLButtonElement>('#pullStrategy button.is-active');
@@ -5715,6 +5738,23 @@ function bindStaticEvents(): void {
   $('#settingsClose')?.addEventListener('click', closeSettings);
   $('#settingsCancel')?.addEventListener('click', closeSettings);
   $<HTMLButtonElement>('#settingsSave')!?.addEventListener('click', saveSettings);
+
+  $('#aboutButton')?.addEventListener('click', openAbout);
+  $('#aboutClose')?.addEventListener('click', closeAbout);
+  $('#aboutDone')?.addEventListener('click', closeAbout);
+  const aboutBackdrop = $<HTMLElement>('#aboutBackdrop');
+  aboutBackdrop?.addEventListener('click', (event) => {
+    const link = eventTarget(event)?.closest<HTMLElement>('[data-about-link]');
+    if (link) {
+      event.preventDefault();
+      const href = link.getAttribute('href');
+      if (href && /^https?:\/\//i.test(href)) {
+        void api.openExternal(href).catch((error: unknown) => toast(errorText(error), 'warn'));
+      }
+      return;
+    }
+    if (event.target === aboutBackdrop) closeAbout();
+  });
   $('#addCustomPrompt')?.addEventListener('click', addCustomPromptRow);
   $('#customPromptList')?.addEventListener('click', (event) => {
     const remove = eventTarget(event)?.closest<HTMLElement>('[data-remove-prompt]');
@@ -5882,6 +5922,7 @@ function bindStaticEvents(): void {
 
   document.addEventListener('keydown', (event) => {
     const modalOpen = $<HTMLElement>('#settingsBackdrop')!?.classList.contains('is-open');
+    const aboutOpen = $<HTMLElement>('#aboutBackdrop')!?.classList.contains('is-open');
     const branchOpen = $<HTMLElement>('#branchBackdrop')!?.classList.contains('is-open');
     const actionOpen = $<HTMLElement>('#commitActionBackdrop')!?.classList.contains('is-open');
     const menu = $<HTMLElement>('#commitMenu');
@@ -5900,6 +5941,11 @@ function bindStaticEvents(): void {
       if (branchOpen) {
         event.preventDefault();
         closeBranchModal();
+        return;
+      }
+      if (aboutOpen) {
+        event.preventDefault();
+        closeAbout();
         return;
       }
       if (modalOpen) {

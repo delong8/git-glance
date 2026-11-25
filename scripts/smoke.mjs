@@ -529,6 +529,43 @@ try {
     throw new Error('Pi was not spawned with the built-in system prompt.');
   }
 
+  // Composer message history: ArrowUp/ArrowDown at the end of the input.
+  await window.waitForFunction(() => !document.querySelector('#chatSend')?.classList.contains('is-stop'), null, { timeout: 15_000 });
+  const composer = window.locator('#chatInput');
+  await composer.fill('Second history message.');
+  await composer.press('Enter');
+  await window.waitForFunction(() => document.querySelectorAll('#chatThread .chat-msg.user').length === 2, null, { timeout: 15_000 });
+  await window.waitForFunction(() => !document.querySelector('#chatSend')?.classList.contains('is-stop'), null, { timeout: 15_000 });
+
+  await composer.fill('draft text');
+  await composer.evaluate((input) => { input.setSelectionRange(input.value.length, input.value.length); });
+  await composer.press('ArrowUp');
+  if (await composer.inputValue() !== 'Second history message.') {
+    throw new Error(`ArrowUp did not recall the newest message (got “${await composer.inputValue()}”).`);
+  }
+  await composer.press('ArrowUp');
+  if (await composer.inputValue() !== 'Summarize the staged files.') {
+    throw new Error(`ArrowUp did not recall the previous message (got “${await composer.inputValue()}”).`);
+  }
+  await composer.press('ArrowUp');
+  if (await composer.inputValue() !== 'Summarize the staged files.') {
+    throw new Error('ArrowUp changed the input at the oldest message.');
+  }
+  await composer.press('ArrowDown');
+  if (await composer.inputValue() !== 'Second history message.') {
+    throw new Error('ArrowDown did not move forward to the next message.');
+  }
+  await composer.press('ArrowDown');
+  if (await composer.inputValue() !== 'Second history message.') {
+    throw new Error('ArrowDown changed the input at the newest message.');
+  }
+  await composer.fill('caret not at end');
+  await composer.evaluate((input) => { input.setSelectionRange(2, 2); });
+  await composer.press('ArrowUp');
+  if (await composer.inputValue() !== 'caret not at end') {
+    throw new Error('ArrowUp recalled history with the caret away from the end.');
+  }
+
   if (pageErrors.length) throw new Error(`Renderer error: ${pageErrors.join(' | ')}`);
 
   passed = true;
@@ -548,6 +585,7 @@ try {
   console.log(`  chat: ${chatHistoryRows} first page → ${historyTotal} paged commits, ${chatTreeFiles} changed files in the tree`);
   console.log('  commit menu: branch, tag, reset and squash guard verified');
   console.log('  prompts: system + custom chip persisted, Pi spawned with both system prompts');
+  console.log('  composer: ArrowUp/ArrowDown message history verified');
   console.log('  project actions: open folder + open terminal');
   console.log('  tabs: Chat, Files, Worktrees, Remote, Branches, Tags, Stash, LFS, Submodules, Statistics');
 } finally {

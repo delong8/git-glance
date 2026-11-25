@@ -26,7 +26,7 @@ const gitConfigPath = path.join(userDataDir, 'gitconfig');
 function git(args, options = {}) {
   return execFileSync('git', args, {
     cwd: options.cwd || repoDir,
-    env: { ...process.env, GIT_CONFIG_GLOBAL: gitConfigPath, GIT_CONFIG_NOSYSTEM: '1' },
+    env: { ...process.env, GIT_CONFIG_GLOBAL: gitConfigPath, GIT_CONFIG_NOSYSTEM: '1', ...(options.env || {}) },
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe']
   }).trim();
@@ -73,6 +73,22 @@ try {
   git(['config', 'protocol.file.allow', 'always']);
   git(['-c', 'protocol.file.allow=always', 'submodule', 'add', submoduleRemote, 'vendor/sub']);
   git(['commit', '-m', 'Add submodule']);
+
+  // Build an older side branch with enough commits to exercise Chat history paging.
+  // Plumbing keeps the working tree untouched, and 2020 dates keep these commits
+  // behind the main-branch commits in the newest-first history page.
+  let bulkTip = git(['rev-list', '--max-parents=0', 'HEAD']);
+  for (let index = 1; index <= 90; index += 1) {
+    const stamp = new Date(Date.UTC(2020, 0, 1, 0, index)).toISOString();
+    bulkTip = git([
+      '-c', 'user.name=Smoke Test',
+      '-c', 'user.email=smoke@example.com',
+      'commit-tree', `${bulkTip}^{tree}`,
+      '-p', bulkTip,
+      '-m', `Bulk commit ${String(index).padStart(2, '0')}`
+    ], { env: { GIT_AUTHOR_DATE: stamp, GIT_COMMITTER_DATE: stamp } });
+  }
+  git(['branch', 'smoke-bulk', bulkTip]);
 
   git(['tag', 'v1.0.0']);
   git(['tag', '-a', 'v1.1.0', '-m', 'Smoke release']);
@@ -169,8 +185,20 @@ try {
 
   await window.waitForSelector('#chatPanel.is-active .chat-welcome', { timeout: 10_000 });
   await window.waitForSelector('#chatHistoryList .chat-history-row', { timeout: 10_000 });
+  const historyTotal = Number(git(['rev-list', '--count', '--branches', '--remotes', '--tags']));
+  if (historyTotal <= 80) throw new Error(`Smoke repo history is too small to page (${historyTotal} commits).`);
   const chatHistoryRows = await window.locator('#chatHistoryList .chat-history-row').count();
-  if (chatHistoryRows < 3) throw new Error(`Chat history column rendered ${chatHistoryRows} commits.`);
+  if (chatHistoryRows !== 80) throw new Error(`Chat history first page rendered ${chatHistoryRows} commits instead of 80.`);
+  const chatHistorySub = await window.locator('#chatHistorySub').innerText();
+  if (!chatHistorySub.includes(`80 of ${historyTotal}`)) {
+    throw new Error(`Chat history subheader did not report the loaded window (got “${chatHistorySub}”).`);
+  }
+  await window.locator('#chatHistoryList').evaluate((list) => { list.scrollTop = list.scrollHeight; });
+  await window.waitForFunction((total) => document.querySelectorAll('#chatHistoryList .chat-history-row').length === total, historyTotal, { timeout: 15_000 });
+  const loadedHistorySub = await window.locator('#chatHistorySub').innerText();
+  if (!loadedHistorySub.includes(`${historyTotal} commits`)) {
+    throw new Error(`Chat history did not settle on the full count (got “${loadedHistorySub}”).`);
+  }
   const chatTreeFolders = await window.locator('#chatChanges .tree-row.folder').count();
   const chatTreeFiles = await window.locator('#chatChanges .tree-row.file').count();
   if (chatTreeFolders < 2 || chatTreeFiles < 2) {
@@ -241,7 +269,7 @@ try {
   await window.locator('#tabBranches').click();
   await window.waitForSelector('#branchesPanel.is-active .branch-row', { timeout: 10_000 });
   const branchCount = await window.locator('#branchesList .branch-row').count();
-  if (branchCount !== 4) throw new Error(`Expected 4 branches, found ${branchCount}.`);
+  if (branchCount !== 5) throw new Error(`Expected 5 branches, found ${branchCount}.`);
   const branchText = (await window.locator('#branchesList').innerText()).toLowerCase();
   if (!branchText.includes('smoke-worktree')) throw new Error('Local branch was not listed.');
   if (!branchText.includes('origin/main')) throw new Error('Remote-tracking branch was not listed.');
@@ -253,13 +281,13 @@ try {
   const filteredBranches = await window.locator('#branchesList .branch-row').count();
   if (filteredBranches !== 1) throw new Error(`Branch filter did not narrow the list (found ${filteredBranches}).`);
   await window.locator('#tabSearchClear').click();
-  await window.waitForFunction(() => document.querySelectorAll('#branchesList .branch-row').length === 4, null, { timeout: 5_000 });
+  await window.waitForFunction(() => document.querySelectorAll('#branchesList .branch-row').length === 5, null, { timeout: 5_000 });
 
   // Summary buttons: Stash and Branch.
   await window.locator('[data-action="branches"]').click();
   await window.waitForSelector('#branchBackdrop.is-open');
   const modalBranchCount = await window.locator('#branchPickList .branch-pick-row').count();
-  if (modalBranchCount !== 4) throw new Error(`Branch modal listed ${modalBranchCount} branches, expected 4.`);
+  if (modalBranchCount !== 5) throw new Error(`Branch modal listed ${modalBranchCount} branches, expected 5.`);
   await window.locator('[data-branch-base="origin/remote-only"]').click();
   await window.locator('#branchNameInput').fill('smoke-modal');
   await window.locator('#branchCreateBtn').click();
@@ -403,8 +431,9 @@ try {
   if (!commitMenuLabels.some((label) => label.startsWith('Reset ') && label.endsWith(' to here'))) {
     throw new Error('Commit menu is missing the Reset action.');
   }
-  if (await window.locator('#commitMenu .context-menu-sep').count() !== 3) {
-    throw new Error('Commit menu groups are not separated into four sections.');
+  const commitMenuSeps = await window.locator('#commitMenu .context-menu-sep').count();
+  if (commitMenuSeps !== 3) {
+    throw new Error(`Commit menu groups are not separated into four sections (found ${commitMenuSeps} separators).`);
   }
   const targetSha = await targetCommit.getAttribute('data-commit-sha');
   await window.locator('[data-commit-action="new-branch"]').click();
@@ -437,6 +466,10 @@ try {
   await window.locator('#commitActionCancel').click();
   await window.waitForFunction(() => !document.querySelector('#commitActionBackdrop')?.classList.contains('is-open'), null, { timeout: 5_000 });
 
+  if (await window.locator('#chatHistoryList .chat-history-row').count() < historyTotal) {
+    await window.locator('#chatHistoryList').evaluate((list) => { list.scrollTop = list.scrollHeight; });
+    await window.waitForFunction((total) => document.querySelectorAll('#chatHistoryList .chat-history-row').length === total, historyTotal, { timeout: 15_000 });
+  }
   const rootCommit = window.locator('#chatHistoryList .chat-history-row').last();
   await rootCommit.click({ button: 'right' });
   await window.waitForSelector('#commitMenu:not([hidden])', { timeout: 5_000 });
@@ -462,7 +495,7 @@ try {
   console.log(`  submodules: ${submoduleCount} listed`);
   console.log(`  statistics: ${statCards} cards`);
   console.log('  default tab: Chat');
-  console.log(`  chat: ${chatHistoryRows} history commits, ${chatTreeFiles} changed files in the tree`);
+  console.log(`  chat: ${chatHistoryRows} first page → ${historyTotal} paged commits, ${chatTreeFiles} changed files in the tree`);
   console.log('  commit menu: branch, tag, reset and squash guard verified');
   console.log('  project actions: open folder + open terminal');
   console.log('  tabs: Chat, Files, Worktrees, Remote, Branches, Tags, Stash, LFS, Submodules, Statistics');

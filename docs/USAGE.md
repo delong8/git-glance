@@ -505,7 +505,9 @@ discard changes, rewrite history, or use credentials.
   collapse or expand it. Inline code references to changed files are clickable.
 - The left **History** column shows the commit graph across local branches,
   remote-tracking branches, and tags. Commit hashes are clickable to copy the
-  full SHA.
+  full SHA. The newest 80 commits load first; scrolling to the bottom loads
+  older pages, and the subheader reports how many commits are loaded out of the
+  all-refs total. Stashes are not part of history — see the **Stash** tab.
 - Use the welcome suggestions for a quick summary, review, or commit-message
   draft.
 

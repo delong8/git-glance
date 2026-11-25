@@ -6,6 +6,7 @@ import type {
   FileDiff,
   GitBranchInfo,
   GitCheckoutResult,
+  GitCommit,
   GitLfsReport,
   GitRemoteInfo,
   GitStashInfo,
@@ -78,6 +79,7 @@ export interface GitGlanceApi {
   selectRepository: (repoPath: string) => Promise<{ path: string }>;
   removeRepository: (repoPath: string) => Promise<{ bootstrap: Bootstrap }>;
   getSnapshot: (repoPath: string) => Promise<RepoSnapshot>;
+  getHistoryPage: (repoPath: string, skip: number) => Promise<GitCommit[]>;
   getWorktrees: (repoPath: string) => Promise<GitWorktree[]>;
   openWorktree: (repoPath: string, worktreePath: string) => Promise<OpenWorktreeResult>;
   revealWorktree: (repoPath: string, worktreePath: string) => Promise<true>;

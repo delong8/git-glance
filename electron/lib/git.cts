@@ -1415,15 +1415,20 @@ function parseStatLine(line: string): [number, number] | null {
   return [insertions ? Number(insertions[1]) : 0, deletions ? Number(deletions[1]) : 0];
 }
 
-export async function getHistory(repoPath: string, limit = 80, allRefs = false): Promise<GitCommit[]> {
+export const HISTORY_PAGE_SIZE = 80;
+
+export async function getHistory(repoPath: string, limit = HISTORY_PAGE_SIZE, allRefs = false, skip = 0): Promise<GitCommit[]> {
   const format = '%H%x1f%P%x1f%an%x1f%ae%x1f%ar%x1f%at%x1f%D%x1f%s';
+  const safeLimit = Math.max(1, Math.min(Math.floor(limit) || 1, 300));
+  const offset = Math.max(0, Math.floor(Number(skip) || 0));
   const result = await runGit(repoPath, [
     'log',
     ...(allRefs ? ['--branches', '--remotes', '--tags'] : []),
     '--topo-order',
     '--decorate=short',
     '--date=relative',
-    `--max-count=${Math.max(1, Math.min(limit, 300))}`,
+    ...(offset > 0 ? [`--skip=${offset}`] : []),
+    `--max-count=${safeLimit}`,
     `--pretty=format:${format}`,
     '--shortstat'
   ], { allowFailure: true, maxBuffer: 64 * 1024 * 1024, timeout: 30_000 });
@@ -1460,6 +1465,17 @@ export async function getHistory(repoPath: string, limit = 80, allRefs = false):
     }
   }
   return commits;
+}
+
+export async function getHistoryTotal(repoPath: string, allRefs = false): Promise<number> {
+  const result = await runGit(repoPath, [
+    'rev-list',
+    '--count',
+    ...(allRefs ? ['--branches', '--remotes', '--tags'] : ['HEAD'])
+  ], { allowFailure: true, timeout: 30_000 });
+  if (result.failed) return 0;
+  const total = Number.parseInt(result.stdout.trim(), 10);
+  return Number.isFinite(total) && total > 0 ? total : 0;
 }
 
 interface ParsedWorktree {
@@ -1565,14 +1581,15 @@ export async function getRepoSummary(inputPath: string): Promise<RepoSummary> {
 
 export async function getSnapshot(
   inputPath: string,
-  { historyLimit = 80 }: { historyLimit?: number } = {}
+  { historyLimit = HISTORY_PAGE_SIZE }: { historyLimit?: number } = {}
 ): Promise<RepoSnapshot> {
   const root = await normalizeRepo(inputPath);
-  const [branchInfo, files, tree, history] = await Promise.all([
+  const [branchInfo, files, tree, history, historyTotal] = await Promise.all([
     getBranchInfo(root),
     getStatusFiles(root),
     getTree(root),
-    getHistory(root, historyLimit, true)
+    getHistory(root, historyLimit, true),
+    getHistoryTotal(root, true)
   ]);
   return {
     path: root,
@@ -1589,7 +1606,8 @@ export async function getSnapshot(
     tree: tree.entries,
     treeTotal: tree.total,
     treeTruncated: tree.truncated,
-    history
+    history,
+    historyTotal
   };
 }
 

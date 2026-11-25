@@ -343,6 +343,8 @@ const state: AppState = {
   chatSelectedFile: null,
   chatTreeCollapsed: new Set<string>(),
   chatPreviewOpen: false,
+  historyLoading: false,
+  historyError: null,
   fileQuery: '',
   projectQuery: '',
   treeExpanded: new Set<string>(),
@@ -893,6 +895,7 @@ async function loadRepo(repoPath: string | null | undefined, { initial = false }
     if (chatDetail) chatDetail.innerHTML = '';
 
     state.repo = prepareRepo(snapshot);
+    resetChatHistoryPaging();
     state.repoError = null;
     document.body.classList.remove('no-repo');
     mergeSummaryFromSnapshot(snapshot);
@@ -3829,31 +3832,134 @@ function chatTreeNodes(nodes: RepoTreeNode[], depth = 0): string {
   }).join('');
 }
 
-function renderChatHistory(): void {
+/* ============================================================
+   Chat history paging
+   ============================================================ */
+let historySeq = 0;
+let historyScrollGuardUntil = 0;
+
+function guardHistoryScroll(): void {
+  historyScrollGuardUntil = performance.now() + 150;
+}
+
+function resetChatHistoryPaging(): void {
+  historySeq += 1;
+  state.historyLoading = false;
+  state.historyError = null;
+}
+
+function historyTotal(repo: RepoState): number {
+  return Math.max(repo.historyTotal || 0, repo.history.length);
+}
+
+function updateChatHistorySub(): void {
   const repo = state.repo;
-  const list = $('#chatHistoryList');
   const sub = $('#chatHistorySub');
-  if (!repo || !list) return;
-  const commits = repo.history;
-  const rows = computeGraph(commits);
-  if (sub) sub.textContent = `all refs · ${plural(commits.length, 'commit')}`;
-  if (!commits.length) {
-    list.innerHTML = '<div class="chat-history-empty">No commits yet.</div>';
+  if (!repo || !sub) return;
+  const loaded = repo.history.length;
+  const total = historyTotal(repo);
+  sub.textContent = loaded < total
+    ? `all refs · ${loaded} of ${plural(total, 'commit')}`
+    : `all refs · ${plural(loaded, 'commit')}`;
+}
+
+function updateChatHistoryFooter(): void {
+  const list = $('#chatHistoryList');
+  if (!list) return;
+  const repo = state.repo;
+  const foot = $('#chatHistoryFoot');
+  const exhausted = !repo || repo.history.length >= historyTotal(repo);
+  if (!repo || !repo.history.length || (exhausted && !state.historyLoading && !state.historyError)) {
+    foot?.remove();
     return;
   }
-  list.innerHTML = commits.map((commit, index) => {
-    const isHead = !!repo.headSha && (commit.sha === repo.headSha || commit.sha.startsWith(repo.headSha));
+  let html = '';
+  if (state.historyLoading) {
+    html = '<span class="spinner" aria-hidden="true"></span><span>Loading older commits…</span>';
+  } else if (state.historyError) {
+    html = '<span>Could not load older commits.</span><button class="chat-history-retry" data-action="retry-history">Retry</button>';
+  }
+  if (!html) {
+    foot?.remove();
+    return;
+  }
+  const element = foot || document.createElement('div');
+  if (!foot) {
+    element.id = 'chatHistoryFoot';
+    element.className = 'chat-history-foot';
+    list.appendChild(element);
+  }
+  guardHistoryScroll();
+  element.innerHTML = html;
+}
+
+function maybeLoadOlderHistory(): void {
+  if (state.activeTab !== 'chat') return;
+  const list = $('#chatHistoryList');
+  const repo = state.repo;
+  if (!list || !repo) return;
+  if (state.historyLoading || state.historyError) return;
+  if (repo.history.length >= historyTotal(repo)) return;
+  if (list.scrollTop + list.clientHeight < list.scrollHeight - 160) return;
+  void loadOlderHistory();
+}
+
+async function loadOlderHistory(): Promise<void> {
+  const repo = state.repo;
+  if (!repo || state.historyLoading || state.historyError) return;
+  const loaded = repo.history.length;
+  if (loaded >= historyTotal(repo)) return;
+  const target = repo.path;
+  const requestId = ++historySeq;
+  state.historyLoading = true;
+  updateChatHistoryFooter();
+  try {
+    const page = await api.getHistoryPage(target, loaded);
+    if (requestId !== historySeq || state.repo?.path !== target) return;
+    const known = new Set(repo.history.map((commit) => commit.sha));
+    const fresh = page.filter((commit) => !known.has(commit.sha));
+    if (!fresh.length) {
+      repo.historyTotal = repo.history.length;
+      updateChatHistorySub();
+      return;
+    }
+    const start = repo.history.length;
+    repo.history = repo.history.concat(fresh);
+    const rows = computeGraph(repo.history);
     const remoteNames = state.remotes.map((remote) => remote.name);
-    const refs = (commit.refs || [])
-      .filter((ref) => !remoteNames.some((name) => ref.startsWith(`${name}/`)) && !ref.endsWith('/HEAD'))
-      .slice(0, 2)
-      .map(refPill)
-      .join('');
-    const stats = commit.stats && (commit.stats[0] || commit.stats[1])
-      ? `<span class="chat-history-stats"><span class="diff-add">+${commit.stats[0]}</span><span class="diff-del">−${commit.stats[1]}</span></span>`
-      : '';
-    const isRoot = commit.parents.length === 0;
-    return `<div class="chat-history-row${isHead ? ' is-head' : ''}" data-commit-sha="${esc(commit.sha)}" data-commit-short="${esc((commit.sha || '').slice(0, 7))}" data-commit-message="${esc(commit.message)}" data-commit-root="${isRoot}" title="${esc(commit.message)}">
+    const list = $('#chatHistoryList');
+    if (list) {
+      guardHistoryScroll();
+      $('#chatHistoryFoot')?.remove();
+      list.insertAdjacentHTML('beforeend', fresh
+        .map((commit, index) => chatHistoryRowHTML(commit, start + index, rows, repo, remoteNames))
+        .join(''));
+    }
+    updateChatHistorySub();
+  } catch (error) {
+    if (requestId !== historySeq || state.repo?.path !== target) return;
+    state.historyError = errorText(error);
+  } finally {
+    if (requestId === historySeq && state.repo?.path === target) {
+      state.historyLoading = false;
+      updateChatHistoryFooter();
+    }
+  }
+  maybeLoadOlderHistory();
+}
+
+function chatHistoryRowHTML(commit: GitCommit, index: number, rows: GraphRow[], repo: RepoState, remoteNames: string[]): string {
+  const isHead = !!repo.headSha && (commit.sha === repo.headSha || commit.sha.startsWith(repo.headSha));
+  const refs = (commit.refs || [])
+    .filter((ref) => !remoteNames.some((name) => ref.startsWith(`${name}/`)) && !ref.endsWith('/HEAD'))
+    .slice(0, 2)
+    .map(refPill)
+    .join('');
+  const stats = commit.stats && (commit.stats[0] || commit.stats[1])
+    ? `<span class="chat-history-stats"><span class="diff-add">+${commit.stats[0]}</span><span class="diff-del">−${commit.stats[1]}</span></span>`
+    : '';
+  const isRoot = commit.parents.length === 0;
+  return `<div class="chat-history-row${isHead ? ' is-head' : ''}" data-commit-sha="${esc(commit.sha)}" data-commit-short="${esc((commit.sha || '').slice(0, 7))}" data-commit-message="${esc(commit.message)}" data-commit-root="${isRoot}" title="${esc(commit.message)}">
       <div class="chat-history-graph">${graphSVG(rows[index], isHead, commit)}</div>
       <div class="chat-history-main">
         <div class="chat-history-msg-line">
@@ -3869,7 +3975,27 @@ function renderChatHistory(): void {
         </div>
       </div>
     </div>`;
-  }).join('');
+}
+
+function renderChatHistory(): void {
+  const repo = state.repo;
+  const list = $('#chatHistoryList');
+  if (!repo || !list) return;
+  updateChatHistorySub();
+  const commits = repo.history;
+  if (!commits.length) {
+    list.innerHTML = '<div class="chat-history-empty">No commits yet.</div>';
+    updateChatHistoryFooter();
+    return;
+  }
+  const rows = computeGraph(commits);
+  const remoteNames = state.remotes.map((remote) => remote.name);
+  const scrollTop = list.scrollTop;
+  guardHistoryScroll();
+  list.innerHTML = commits.map((commit, index) => chatHistoryRowHTML(commit, index, rows, repo, remoteNames)).join('');
+  list.scrollTop = scrollTop;
+  updateChatHistoryFooter();
+  maybeLoadOlderHistory();
 }
 
 function commitContextFromRow(row: HTMLElement): CommitContext {
@@ -4514,6 +4640,7 @@ async function refreshRepo({ silent = false, spinner = false }: { silent?: boole
     const previousSelected = state.selectedFile;
     const previousChatSelected = state.chatSelectedFile;
     state.repo = prepareRepo(snapshot);
+    resetChatHistoryPaging();
     mergeSummaryFromSnapshot(snapshot);
     repoEntries(state.repo);
     if (previousSelected && state.repo._entryMap?.has(previousSelected)) state.selectedFile = previousSelected;
@@ -4988,6 +5115,7 @@ function switchTab(tab: Tab): void {
     renderChatThread();
     renderChatSide();
     syncChatInput();
+    requestAnimationFrame(() => maybeLoadOlderHistory());
     if (state.chatPreviewOpen) renderDetail('chat');
   } else if (tab === 'worktrees') {
     renderWorktrees();
@@ -5172,6 +5300,13 @@ function bindStaticEvents(): void {
   });
 
   $('#chatHistoryList')?.addEventListener('click', (event) => {
+    const retry = eventTarget(event)?.closest<HTMLElement>('[data-action="retry-history"]');
+    if (retry) {
+      state.historyError = null;
+      updateChatHistoryFooter();
+      void loadOlderHistory();
+      return;
+    }
     const hash = eventTarget(event)?.closest<HTMLElement>('[data-copy-sha]');
     if (!hash) return;
     const sha = hash.dataset.copySha;
@@ -5232,8 +5367,13 @@ function bindStaticEvents(): void {
   document.addEventListener('contextmenu', (event) => {
     if (!eventTarget(event)?.closest('#chatHistoryList')) closeCommitMenu();
   });
-  $('#chatHistoryList')?.addEventListener('scroll', closeCommitMenu, true);
+  $('#chatHistoryList')?.addEventListener('scroll', () => {
+    if (performance.now() < historyScrollGuardUntil) return;
+    closeCommitMenu();
+  }, true);
+  $('#chatHistoryList')?.addEventListener('scroll', maybeLoadOlderHistory, { passive: true });
   window.addEventListener('resize', closeCommitMenu);
+  window.addEventListener('resize', maybeLoadOlderHistory);
 
   $('#commitActionClose')?.addEventListener('click', closeCommitActionModal);
   $('#commitActionCancel')?.addEventListener('click', closeCommitActionModal);

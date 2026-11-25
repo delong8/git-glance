@@ -144,6 +144,8 @@ export interface AppState {
   chatSelectedFile: string | null;
   chatTreeCollapsed: Set<string>;
   chatPreviewOpen: boolean;
+  historyLoading: boolean;
+  historyError: string | null;
   fileQuery: string;
   projectQuery: string;
   treeExpanded: Set<string>;

@@ -17,6 +17,7 @@ import type {
   FileDiff,
   GitBranchInfo,
   GitCheckoutResult,
+  GitCommit,
   GitLfsReport,
   GitRemoteInfo,
   GitStashInfo,
@@ -372,6 +373,12 @@ function registerIpc(): void {
   ipcMain.handle('repo:snapshot', wrapHandler(async (repoPath: unknown): Promise<RepoSnapshot> => {
     const known = assertKnownRepo(repoPath);
     return git.getSnapshot(known);
+  }));
+
+  ipcMain.handle('repo:history', wrapHandler(async (repoPath: unknown, skip: unknown): Promise<GitCommit[]> => {
+    const known = assertKnownRepo(repoPath);
+    const offset = typeof skip === 'number' && Number.isFinite(skip) ? Math.max(0, Math.floor(skip)) : 0;
+    return git.getHistory(known, git.HISTORY_PAGE_SIZE, true, offset);
   }));
 
   ipcMain.handle('repo:worktrees', wrapHandler(async (repoPath: unknown): Promise<GitWorktree[]> => {

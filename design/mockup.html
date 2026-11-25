@@ -2821,6 +2821,25 @@ kbd {
 .chat-history-hash:hover { background: var(--fill-strong); color: var(--text-2); }
 .chat-history .ref-pill { max-width: 96px; height: 15px; padding: 0 4px; font-size: 8px; overflow: hidden; text-overflow: ellipsis; }
 .chat-history-empty { padding: 34px 16px; text-align: center; font-size: 9.5px; color: var(--text-4); }
+.chat-history-foot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 8px 4px;
+  font-size: 9px;
+  color: var(--text-4);
+}
+.chat-history-foot .spinner {
+  width: 10px;
+  height: 10px;
+  flex: none;
+  border: 1.5px solid var(--border-strong);
+  border-top-color: var(--text-3);
+  border-radius: 50%;
+  animation: chat-history-spin 0.8s linear infinite;
+}
+@keyframes chat-history-spin { to { transform: rotate(360deg); } }
 
 .chat-center {
   min-width: 0;
@@ -5946,6 +5965,9 @@ const state = {
   contextCommit: null,
   commitAction: null,
   commitActionBusy: false,
+  historyLoading: false,
+  historyError: null,
+  historySeq: 0,
   fileQuery: "",
   worktreesQuery: "",
   remotesQuery: "",
@@ -6484,7 +6506,8 @@ const ZH = {
   "deleted": "已删除",
   "modified": "已修改",
   "unified": "统一",
-  "End of file": "文件结束"
+  "End of file": "文件结束",
+  "Loading older commits…": "正在加载更早的提交…"
 };
 
 const ZH_ATTR = {
@@ -6563,6 +6586,7 @@ const ZH_PATTERNS = [
   [/^(\d+) submodules? · (.*)$/, (m) => `${m[1]} 个子模块 · ${m[2]}`],
   [/^(\d+) submodules?$/, (m) => `${m[1]} 个子模块`],
   [/^(\d+) commits?$/, (m) => `${m[1]} 个提交`],
+  [/^all refs · (\d+) of (\d+) commits?$/, (m) => `所有引用 · ${m[1]} / ${m[2]} 个提交`],
   [/^all refs · (\d+) commits?$/, (m) => `所有引用 · ${m[1]} 个提交`],
   [/^(.+) · (\d+) commits?$/, (m) => `${m[1]} · ${m[2]} 个提交`],
   [/^(\d+) contributors?$/, (m) => `${m[1]} 个贡献者`],
@@ -9189,20 +9213,133 @@ function chatTreeNodes(nodes, depth = 0) {
   }).join("");
 }
 
+/* ============================================================
+   Chat history paging
+   ============================================================ */
+const HISTORY_PAGE = 40;
+const HISTORY_ARCHIVE = new Map();
+const ARCHIVE_VERBS = ["Polish", "Refactor", "Tighten", "Document", "Simplify", "Harden", "Tune", "Clean up"];
+const ARCHIVE_TOPICS = [
+  "session refresh", "form validation", "empty states", "table density",
+  "keyboard shortcuts", "error toasts", "avatar loading", "route transitions",
+  "settings copy", "query caching", "icon alignment", "theme tokens",
+  "menu focus", "retry backoff", "date formatting"
+];
+
+function historyTotalFor(project) {
+  return Math.max(COMMIT_TOTALS[project.id] || 0, project.history.length);
+}
+
+function historyArchiveFor(project) {
+  if (HISTORY_ARCHIVE.has(project.id)) return HISTORY_ARCHIVE.get(project.id);
+  const baseLength = project.history.length;
+  const missing = Math.max(0, historyTotalFor(project) - baseLength);
+  const authors = [...new Set(project.history.map((commit) => commit.author))];
+  if (!authors.length) authors.push("Maya Chen");
+  const seed = [...project.id].reduce((acc, ch) => (Math.imul(acc, 31) + ch.charCodeAt(0)) >>> 0, 7);
+  const used = new Set(project.history.map((commit) => commit.sha));
+  const commits = [];
+  const now = Date.now();
+  for (let index = 0; index < missing; index += 1) {
+    let value = (seed ^ Math.imul(index + 1, 2654435761)) >>> 0;
+    let sha = "";
+    for (let digit = 0; digit < 7; digit += 1) {
+      sha += "0123456789abcdef"[value % 16];
+      value = (Math.floor(value / 16) + 0x9e3779b9) >>> 0;
+    }
+    while (used.has(sha)) sha = sha.slice(0, 6) + "0123456789abcdef"[(parseInt(sha.slice(6), 16) + 1) % 16];
+    used.add(sha);
+    commits.push({
+      sha,
+      message: `${ARCHIVE_VERBS[index % ARCHIVE_VERBS.length]} ${ARCHIVE_TOPICS[(index * 7) % ARCHIVE_TOPICS.length]}`,
+      author: authors[index % authors.length],
+      when: timeAgoFromMs(now - (3 + index * 0.21) * 86_400_000),
+      refs: [],
+      parents: [],
+      stats: [8 + (index * 13) % 140, (index * 7) % 61]
+    });
+  }
+  for (let index = 0; index < commits.length - 1; index += 1) commits[index].parents = [commits[index + 1].sha];
+  const archive = { baseLength, commits, connected: false };
+  HISTORY_ARCHIVE.set(project.id, archive);
+  return archive;
+}
+
+function renderChatHistoryFoot() {
+  const list = $("#chatHistoryList");
+  if (!list) return;
+  const existing = $("#chatHistoryFoot");
+  const project = getProject();
+  if (!state.historyLoading || !project.history.length || project.history.length >= historyTotalFor(project)) {
+    existing?.remove();
+    return;
+  }
+  const element = existing || document.createElement("div");
+  if (!existing) {
+    element.id = "chatHistoryFoot";
+    element.className = "chat-history-foot";
+    list.appendChild(element);
+  }
+  element.innerHTML = `<span class="spinner" aria-hidden="true"></span><span>Loading older commits…</span>`;
+}
+
+function loadOlderChatHistory() {
+  const project = getProject();
+  if (state.historyLoading || state.historyError) return;
+  if (project.history.length >= historyTotalFor(project)) return;
+  const archive = historyArchiveFor(project);
+  const offset = project.history.length - archive.baseLength;
+  const page = archive.commits.slice(offset, offset + HISTORY_PAGE);
+  if (!page.length) return;
+  const seq = ++state.historySeq;
+  state.historyLoading = true;
+  renderChatHistoryFoot();
+  window.setTimeout(() => {
+    if (seq !== state.historySeq || state.projectId !== project.id) return;
+    if (!archive.connected) {
+      const anchor = project.history[archive.baseLength - 1];
+      if (anchor && !(anchor.parents || []).length && archive.commits.length) anchor.parents = [archive.commits[0].sha];
+      archive.connected = true;
+    }
+    project.history.push(...page);
+    state.historyLoading = false;
+    renderChatHistory();
+    maybeLoadOlderChatHistory();
+  }, 260);
+}
+
+function maybeLoadOlderChatHistory() {
+  if (state.activeTab !== "chat") return;
+  const list = $("#chatHistoryList");
+  const project = getProject();
+  if (!list || !project.history.length) return;
+  if (state.historyLoading || state.historyError) return;
+  if (project.history.length >= historyTotalFor(project)) return;
+  if (list.scrollTop + list.clientHeight < list.scrollHeight - 160) return;
+  loadOlderChatHistory();
+}
+
 function renderChatHistory() {
   const project = getProject();
   const list = $("#chatHistoryList");
   const sub = $("#chatHistorySub");
   if (!list) return;
+  const total = historyTotalFor(project);
+  if (sub) {
+    sub.textContent = project.history.length < total
+      ? `all refs · ${project.history.length} of ${plural(total, "commit")}`
+      : `all refs · ${plural(project.history.length, "commit")}`;
+  }
   const rows = computeGraph(project.history);
-  if (sub) sub.textContent = `all refs · ${plural(project.history.length, "commit")}`;
   if (!project.history.length) {
     list.innerHTML = `<div class="chat-history-empty">No commits yet.</div>`;
+    renderChatHistoryFoot();
     return;
   }
+  const remoteNames = getProjectRemotes().map((remote) => remote.name);
+  const scrollTop = list.scrollTop;
   list.innerHTML = project.history.map((commit, index) => {
     const isHead = index === 0;
-    const remoteNames = getProjectRemotes().map((remote) => remote.name);
     const refs = (commit.refs || [])
       .filter((ref) => !remoteNames.some((name) => ref.startsWith(`${name}/`)) && !ref.endsWith("/HEAD"))
       .slice(0, 2)
@@ -9229,6 +9366,9 @@ function renderChatHistory() {
       </div>
     </div>`;
   }).join("");
+  list.scrollTop = scrollTop;
+  renderChatHistoryFoot();
+  maybeLoadOlderChatHistory();
 }
 
 function commitContextFromRow(row) {
@@ -9602,6 +9742,9 @@ function renderAll() {
 function selectProject(id) {
   if (state.projectId === id) return;
   state.projectId = id;
+  state.historySeq += 1;
+  state.historyLoading = false;
+  state.historyError = null;
   state.fileQuery = "";
   state.worktreesQuery = "";
   state.remotesQuery = "";
@@ -9637,6 +9780,7 @@ function switchTab(tab) {
     renderChatThread();
     syncChatInput();
     resizeChatInput();
+    requestAnimationFrame(maybeLoadOlderChatHistory);
   } else if (tab === "worktrees") {
     renderWorktrees();
   } else if (tab === "remotes") {
@@ -10133,6 +10277,10 @@ function init() {
     e.preventDefault();
     openCommitMenu(row, e.clientX, e.clientY);
   });
+  $("#chatHistoryList").addEventListener("scroll", () => {
+    closeCommitMenu();
+    maybeLoadOlderChatHistory();
+  }, { passive: true });
 
   $("#commitMenu").addEventListener("click", (e) => {
     const item = e.target.closest("[data-commit-action]");

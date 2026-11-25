@@ -305,6 +305,7 @@ export interface RepoSnapshot {
   treeTotal: number;
   treeTruncated: boolean;
   history: GitCommit[];
+  historyTotal: number;
 }
 
 export interface FileDiff {

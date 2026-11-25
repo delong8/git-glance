@@ -574,7 +574,14 @@ try {
     throw new Error('The About dialog is missing its title or license.');
   }
   const aboutVersion = await window.locator('#aboutVersion').innerText();
-  if (!/^v\d/.test(aboutVersion)) throw new Error(`The About dialog has no version (got “${aboutVersion}”).`);
+  const { tag: buildTag } = JSON.parse(await fs.readFile(path.join(projectRoot, 'dist-electron', 'build-tag.json'), 'utf8'));
+  if (aboutVersion !== buildTag) {
+    throw new Error(`The About dialog shows “${aboutVersion}” instead of the build tag “${buildTag}”.`);
+  }
+  const brandBadge = (await window.locator('#appVersionBadge').innerText()).replace(/\s+/g, '');
+  if (brandBadge !== buildTag) {
+    throw new Error(`The brand badge shows “${brandBadge}” instead of the build tag “${buildTag}”.`);
+  }
   await window.keyboard.press('Escape');
   await window.waitForFunction(() => !document.querySelector('#aboutBackdrop')?.classList.contains('is-open'), null, { timeout: 5_000 });
 

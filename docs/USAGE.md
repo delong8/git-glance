@@ -587,11 +587,13 @@ Set `GIT_CONFIG_GLOBAL` to use a different global config file.
 
 ## About GitGlance
 
-The info button beside the sidebar wordmark (next to the version badge) opens
-the About dialog. It shows the running version, MIT license, runtime stack, a
-note that the Pi assistant uses your configured model endpoint, and links to
-the repository and release downloads. Links open in your default browser; close
-the dialog with **×**, **Close**, <kbd>Esc</kbd>, or a click outside it.
+The info button beside the sidebar wordmark (next to the release tag) opens
+the About dialog. It shows the running release tag — the same
+`YYMMDD.shortSHA` stamp that names the installer files — plus the MIT license,
+runtime stack, a note that the Pi assistant uses your configured model
+endpoint, and links to the repository and release downloads. Links open in your
+default browser; close the dialog with **×**, **Close**, <kbd>Esc</kbd>, or a
+click outside it.
 
 ![About GitGlance](./screenshots/about.png)
 

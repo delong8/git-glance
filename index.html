@@ -3052,6 +3052,17 @@ kbd {
   font-size: 8.5px;
 }
 .chat-context-chip .ico { width: 9px; height: 9px; color: var(--text-4); }
+.chat-prompt-chip {
+  max-width: 190px;
+  color: var(--text-2);
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+  cursor: pointer;
+  transition: background 0.1s ease, border-color 0.1s ease;
+}
+.chat-prompt-chip:hover { background: var(--fill-strong); border-color: var(--accent); color: var(--text); }
+.chat-prompt-chip .ico { color: var(--accent-text); }
+.chat-prompt-chip-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .chat-input-row {
   display: flex;
   align-items: flex-end;
@@ -3280,6 +3291,28 @@ kbd {
 .input.mono-input { font-family: var(--mono); font-size: 10.5px; }
 .field-hint { font-size: 9px; color: var(--text-4); line-height: 1.4; }
 .field-hint code { font-family: var(--mono); font-size: 8.5px; color: var(--text-3); background: var(--fill-hover); padding: 1px 4px; border-radius: 3px; }
+.prompt-textarea {
+  height: auto;
+  min-height: 68px;
+  padding: 8px 10px;
+  line-height: 1.5;
+  font-family: var(--sans);
+  resize: vertical;
+}
+.prompt-editor { display: flex; flex-direction: column; gap: 7px; }
+.prompt-editor-row { display: flex; align-items: flex-start; gap: 6px; }
+.prompt-editor-row .prompt-textarea { min-height: 52px; }
+.prompt-editor-row .icon-btn { margin-top: 2px; flex: none; }
+.prompt-editor-empty {
+  margin: 0;
+  padding: 12px;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  font-size: 10px;
+  color: var(--text-4);
+  text-align: center;
+}
+.prompt-add { align-self: flex-start; }
 .field-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .field-row .field-label { font-size: 10.5px; font-weight: 550; color: var(--text-3); }
 .field-value { font-family: var(--mono); font-size: 10.5px; color: var(--text-2); font-variant-numeric: tabular-nums; }
@@ -4163,6 +4196,30 @@ select.input option { background: var(--bg-option); color: var(--text); }
           <input class="input mono-input" id="setLlmApiKey" type="password" placeholder="sk-…" autocomplete="off" spellcheck="false">
           <span class="field-hint">Written to GitGlance&rsquo;s own Pi config. Leave blank for endpoints that don&rsquo;t require a key, such as a local Ollama server.</span>
         </label>
+      </section>
+
+      <section class="setting-section">
+        <div class="section-head">
+          <h3>Prompts</h3>
+          <p>Shape the Pi agent&rsquo;s instructions and add one-click prompts to the chat composer.</p>
+        </div>
+        <label class="field">
+          <span class="field-label">System prompt</span>
+          <textarea class="input prompt-textarea" id="setSystemPrompt" rows="4" placeholder="Extra instructions for the Pi agent…" spellcheck="false"></textarea>
+          <span class="field-hint">Appended to GitGlance&rsquo;s built-in assistant prompt. New messages use it immediately.</span>
+        </label>
+        <div class="field">
+          <div class="field-row">
+            <span class="field-label">Custom user prompts</span>
+            <span class="field-value" id="customPromptCount">0 / 8</span>
+          </div>
+          <div class="prompt-editor" id="customPromptList"></div>
+          <button class="btn ghost sm prompt-add" type="button" id="addCustomPrompt">
+            <svg class="ico"><use href="#i-plus"/></svg>
+            <span>Add prompt</span>
+          </button>
+          <span class="field-hint">Shown above the chat input next to the staged tag. Click one to send it to the Pi agent.</span>
+        </div>
       </section>
 
       <section class="setting-section">

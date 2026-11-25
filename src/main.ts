@@ -13,6 +13,7 @@ import {
   translateUI
 } from './i18n';
 import type { GitGlanceApi, MenuAction } from '../electron/shared/ipc';
+import { MAX_CUSTOM_PROMPTS } from '../electron/shared/models';
 import type {
   AppSettings,
   AutoFetchInterval,
@@ -362,6 +363,8 @@ const state: AppState = {
     theme: 'dark',
     language: 'en',
     zoom: null,
+    systemPrompt: '',
+    customPrompts: [],
     llm: {
       provider: '',
       api: 'openai-completions',
@@ -3569,13 +3572,30 @@ function renderChatHead(): void {
   }
   const row = $('#chatContextRow');
   if (row) {
+    const prompts = state.settings.customPrompts || [];
     row.innerHTML = `
       <span class="chat-context-chip">${icon('branch')}${esc(repo.branch)}</span>
       <span class="chat-context-chip">${icon('git-commit')}${files} changed</span>
-      <span class="chat-context-chip">${icon('check')}${staged} staged</span>`;
+      <span class="chat-context-chip">${icon('check')}${staged} staged</span>` + prompts.map((prompt, index) => {
+      const label = prompt.split('\n').map((line) => line.trim()).find(Boolean) || prompt;
+      return `<button type="button" class="chat-context-chip chat-prompt-chip" data-custom-prompt="${index}" title="${esc(prompt)}">${icon('sparkles')}<span class="chat-prompt-chip-label">${esc(label)}</span></button>`;
+    }).join('');
   }
   const input = $<HTMLTextAreaElement>('#chatInput');
   if (input) input.placeholder = `Ask about ${repo.name}…`;
+}
+
+function sendCustomPrompt(index: number): void {
+  if (!state.repo) return;
+  const prompt = (state.settings.customPrompts || [])[index];
+  if (!prompt) return;
+  const input = $<HTMLTextAreaElement>('#chatInput');
+  if (input) {
+    input.value = prompt;
+    resizeChatInput();
+    input.focus();
+  }
+  sendChatMessage(prompt);
 }
 
 function syncChatInput(force = false): void {
@@ -4925,6 +4945,42 @@ let contextCommit: CommitContext | null = null;
 let commitAction: CommitActionState | null = null;
 let commitActionBusy = false;
 
+function readCustomPromptRows(): string[] {
+  return $$<HTMLTextAreaElement>('#customPromptList [data-prompt-input]').map((input) => input.value);
+}
+
+function renderCustomPromptEditor(prompts: string[]): void {
+  const list = $('#customPromptList');
+  if (!list) return;
+  if (!prompts.length) {
+    list.innerHTML = '<p class="prompt-editor-empty">No custom prompts yet.</p>';
+  } else {
+    list.innerHTML = prompts.map((prompt, index) => `
+      <div class="prompt-editor-row">
+        <textarea class="input prompt-textarea" data-prompt-input rows="2" placeholder="Ask the Pi agent to…" spellcheck="false" aria-label="Custom prompt ${index + 1}">${esc(prompt)}</textarea>
+        <button class="icon-btn" type="button" data-remove-prompt="${index}" title="Remove prompt" aria-label="Remove prompt">${icon('x')}</button>
+      </div>`).join('');
+  }
+  const count = $('#customPromptCount');
+  if (count) count.textContent = `${prompts.length} / ${MAX_CUSTOM_PROMPTS}`;
+  const add = $<HTMLButtonElement>('#addCustomPrompt');
+  if (add) add.disabled = prompts.length >= MAX_CUSTOM_PROMPTS;
+}
+
+function addCustomPromptRow(): void {
+  const prompts = readCustomPromptRows().map((prompt) => prompt.trim());
+  if (prompts.length >= MAX_CUSTOM_PROMPTS) return;
+  prompts.push('');
+  renderCustomPromptEditor(prompts);
+  const inputs = $$<HTMLTextAreaElement>('#customPromptList [data-prompt-input]');
+  inputs[inputs.length - 1]?.focus();
+}
+
+function removeCustomPromptRow(index: number): void {
+  const prompts = readCustomPromptRows().filter((_, row) => row !== index);
+  renderCustomPromptEditor(prompts);
+}
+
 function populateSettingsForm(): void {
   const settings = state.settings || {};
   $<HTMLInputElement>('#setName')!.value = state.currentUser.name || settings.name || '';
@@ -4950,6 +5006,8 @@ function populateSettingsForm(): void {
   $<HTMLSelectElement>('#setLlmApi')!.value = llm.api;
   $<HTMLInputElement>('#setLlmBaseUrl')!.value = llm.baseUrl;
   $<HTMLInputElement>('#setLlmApiKey')!.value = llm.apiKey;
+  $<HTMLTextAreaElement>('#setSystemPrompt')!.value = settings.systemPrompt || '';
+  renderCustomPromptEditor(settings.customPrompts || []);
 }
 
 function openSettings(): void {
@@ -4988,6 +5046,8 @@ async function saveSettings(): Promise<void> {
     fetchAll: $<HTMLInputElement>('#setFetchAll')!.checked,
     theme: normalizeThemeMode(activeTheme?.dataset.value),
     language: normalizeLanguage(activeLanguage?.dataset.value || state.settings.language),
+    systemPrompt: $<HTMLTextAreaElement>('#setSystemPrompt')!.value,
+    customPrompts: readCustomPromptRows().map((prompt) => prompt.trim()).filter(Boolean),
     llm: {
       provider: $<HTMLInputElement>('#setLlmProvider')!.value.trim(),
       api: normalizeLlmApiType($<HTMLSelectElement>('#setLlmApi')!.value),
@@ -5028,6 +5088,7 @@ async function saveSettings(): Promise<void> {
     updateUserUI();
     renderSidebarMeta();
     renderSummary();
+    renderChatHead();
     scheduleAutoFetch();
     closeSettings();
     toast('Git settings saved to ~/.gitconfig', 'success');
@@ -5421,6 +5482,12 @@ function bindStaticEvents(): void {
     }
   });
 
+  $('#chatContextRow')?.addEventListener('click', (event) => {
+    const chip = eventTarget(event)?.closest<HTMLElement>('[data-custom-prompt]');
+    if (!chip) return;
+    sendCustomPrompt(Number(chip.dataset.customPrompt));
+  });
+
   const chatInput = $<HTMLTextAreaElement>('#chatInput');
   chatInput?.addEventListener('input', () => {
     if (!state.repo) return;
@@ -5610,6 +5677,12 @@ function bindStaticEvents(): void {
   $('#settingsClose')?.addEventListener('click', closeSettings);
   $('#settingsCancel')?.addEventListener('click', closeSettings);
   $<HTMLButtonElement>('#settingsSave')!?.addEventListener('click', saveSettings);
+  $('#addCustomPrompt')?.addEventListener('click', addCustomPromptRow);
+  $('#customPromptList')?.addEventListener('click', (event) => {
+    const remove = eventTarget(event)?.closest<HTMLElement>('[data-remove-prompt]');
+    if (!remove) return;
+    removeCustomPromptRow(Number(remove.dataset.removePrompt));
+  });
   $<HTMLElement>('#settingsBackdrop')!?.addEventListener('click', (event) => {
     if (event.target === $<HTMLElement>('#settingsBackdrop')!) closeSettings();
   });

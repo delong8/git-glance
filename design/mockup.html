@@ -3084,6 +3084,17 @@ kbd {
   font-size: 8.5px;
 }
 .chat-context-chip .ico { width: 9px; height: 9px; color: var(--text-4); }
+.chat-prompt-chip {
+  max-width: 190px;
+  color: var(--text-2);
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+  cursor: pointer;
+  transition: background 0.1s ease, border-color 0.1s ease;
+}
+.chat-prompt-chip:hover { background: var(--fill-strong); border-color: var(--accent); color: var(--text); }
+.chat-prompt-chip .ico { color: var(--accent-text); }
+.chat-prompt-chip-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .chat-input-row {
   display: flex;
   align-items: flex-end;
@@ -3312,6 +3323,28 @@ kbd {
 .input.mono-input { font-family: var(--mono); font-size: 10.5px; }
 .field-hint { font-size: 9px; color: var(--text-4); line-height: 1.4; }
 .field-hint code { font-family: var(--mono); font-size: 8.5px; color: var(--text-3); background: var(--fill-hover); padding: 1px 4px; border-radius: 3px; }
+.prompt-textarea {
+  height: auto;
+  min-height: 68px;
+  padding: 8px 10px;
+  line-height: 1.5;
+  font-family: var(--sans);
+  resize: vertical;
+}
+.prompt-editor { display: flex; flex-direction: column; gap: 7px; }
+.prompt-editor-row { display: flex; align-items: flex-start; gap: 6px; }
+.prompt-editor-row .prompt-textarea { min-height: 52px; }
+.prompt-editor-row .icon-btn { margin-top: 2px; flex: none; }
+.prompt-editor-empty {
+  margin: 0;
+  padding: 12px;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  font-size: 10px;
+  color: var(--text-4);
+  text-align: center;
+}
+.prompt-add { align-self: flex-start; }
 .field-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .field-row .field-label { font-size: 10.5px; font-weight: 550; color: var(--text-3); }
 .field-value { font-family: var(--mono); font-size: 10.5px; color: var(--text-2); font-variant-numeric: tabular-nums; }
@@ -4196,6 +4229,30 @@ select.input option { background: var(--bg-option); color: var(--text); }
           <input class="input mono-input" id="setLlmApiKey" type="password" placeholder="sk-…" autocomplete="off" spellcheck="false">
           <span class="field-hint">Written to GitGlance&rsquo;s own Pi config. Leave blank for endpoints that don&rsquo;t require a key, such as a local Ollama server.</span>
         </label>
+      </section>
+
+      <section class="setting-section">
+        <div class="section-head">
+          <h3>Prompts</h3>
+          <p>Shape the Pi agent&rsquo;s instructions and add one-click prompts to the chat composer.</p>
+        </div>
+        <label class="field">
+          <span class="field-label">System prompt</span>
+          <textarea class="input prompt-textarea" id="setSystemPrompt" rows="4" placeholder="Extra instructions for the Pi agent…" spellcheck="false"></textarea>
+          <span class="field-hint">Appended to GitGlance&rsquo;s built-in assistant prompt. New messages use it immediately.</span>
+        </label>
+        <div class="field">
+          <div class="field-row">
+            <span class="field-label">Custom user prompts</span>
+            <span class="field-value" id="customPromptCount">0 / 8</span>
+          </div>
+          <div class="prompt-editor" id="customPromptList"></div>
+          <button class="btn ghost sm prompt-add" type="button" id="addCustomPrompt">
+            <svg class="ico"><use href="#i-plus"/></svg>
+            <span>Add prompt</span>
+          </button>
+          <span class="field-hint">Shown above the chat input next to the staged tag. Click one to send it to the Pi agent.</span>
+        </div>
       </section>
 
       <section class="setting-section">
@@ -5992,6 +6049,12 @@ const state = {
     zoom: null,
     theme: "dark",
     language: "en",
+    systemPrompt: "Prefer concise answers. Point out risky Git operations before suggesting them.",
+    customPrompts: [
+      "Summarize my working tree and flag anything that looks accidental.",
+      "Review the staged changes for bugs.",
+      "Draft a conventional commit message for the staged changes."
+    ],
     llm: {
       provider: "ollama",
       api: "openai-completions",
@@ -6456,6 +6519,17 @@ const ZH = {
   "Google Generative AI": "Google Generative AI",
   "Google Vertex": "Google Vertex",
   "Written to GitGlance’s own Pi config. Leave blank for endpoints that don’t require a key, such as a local Ollama server.": "写入 GitGlance 自己的 Pi 配置。若端点不需要密钥（例如本地 Ollama 服务），请留空。",
+  "Prompts": "提示词",
+  "Shape the Pi agent’s instructions and add one-click prompts to the chat composer.": "塑造 Pi 智能体的指令，并为对话编辑器添加一键提示词。",
+  "System prompt": "系统提示词",
+  "Extra instructions for the Pi agent…": "给 Pi 智能体的额外指令…",
+  "Appended to GitGlance’s built-in assistant prompt. New messages use it immediately.": "追加到 GitGlance 内置助手提示词之后。新消息会立即使用它。",
+  "Custom user prompts": "自定义用户提示词",
+  "Ask the Pi agent to…": "让 Pi 智能体…",
+  "Add prompt": "添加提示词",
+  "Remove prompt": "移除提示词",
+  "No custom prompts yet.": "还没有自定义提示词。",
+  "Shown above the chat input next to the staged tag. Click one to send it to the Pi agent.": "显示在对话输入框上方、暂存标签旁。点击即可发送给 Pi 智能体。",
   "Identity": "身份",
   "The name and email attached to every commit you create.": "附加到每个新提交的姓名和邮箱。",
   "Full name": "姓名",
@@ -6674,6 +6748,7 @@ const ZH_PATTERNS = [
 
 const ZH_ATTR_PATTERNS = [
   [/^Ask about (.*)…$/, (m) => `询问关于 ${m[1]} 的更改…`],
+  [/^Custom prompt (\d+)$/, (m) => `自定义提示词 ${m[1]}`],
   [/^(Stage|Unstage) (.+)$/, (m) => `${m[1] === "Stage" ? "暂存" : "取消暂存"} ${m[2]}`],
   [/^(Modified|Added|Deleted|Renamed|Changed) · staged$/, (m) => `${ZH_ATTR[m[1]]} · 已暂存`],
   [/^(\d+) uncommitted files?$/, (m) => `${m[1]} 个未提交文件`],
@@ -6692,6 +6767,7 @@ const I18N_SKIP_SELECTOR = [
   ".diff-hunk",
   ".text-code",
   ".chat-bubble",
+  ".chat-prompt-chip",
   ".wt-name",
   ".wt-path",
   ".wt-branch",
@@ -9149,12 +9225,28 @@ function renderChatHead() {
   const project = getProject();
   const stats = projectFileStats(project);
   $("#chatContextLabel").innerHTML = `<span class="status-dot"></span>Ready · ${esc(project.name)} · ${plural(stats.total, "change")}`;
+  const prompts = state.settings.customPrompts || [];
   $("#chatContextRow").innerHTML = `
     <span class="chat-context-chip">${icon("branch")}${esc(project.branch)}</span>
     <span class="chat-context-chip">${icon("git-commit")}${stats.total} changed</span>
-    <span class="chat-context-chip">${icon("check")}${stats.staged} staged</span>`;
+    <span class="chat-context-chip">${icon("check")}${stats.staged} staged</span>` + prompts.map((prompt, index) => {
+    const label = prompt.split("\n").map((line) => line.trim()).find(Boolean) || prompt;
+    return `<button type="button" class="chat-context-chip chat-prompt-chip" data-custom-prompt="${index}" title="${esc(prompt)}">${icon("sparkles")}<span class="chat-prompt-chip-label">${esc(label)}</span></button>`;
+  }).join("");
   const input = $("#chatInput");
   if (input) input.placeholder = tx(`Ask about ${project.name}…`, `询问关于 ${project.name} 的更改…`);
+}
+
+function sendCustomPrompt(index) {
+  const prompt = (state.settings.customPrompts || [])[index];
+  if (!prompt) return;
+  const input = $("#chatInput");
+  if (input) {
+    input.value = prompt;
+    resizeChatInput();
+    input.focus();
+  }
+  sendChatMessage(prompt);
 }
 
 function syncChatInput() {
@@ -10046,6 +10138,43 @@ function closeSettings() {
   backdrop.setAttribute("aria-hidden", "true");
   if (lastFocusedElement && lastFocusedElement.focus) lastFocusedElement.focus();
 }
+const MAX_CUSTOM_PROMPTS = 8;
+
+function readCustomPromptRows() {
+  return $$("#customPromptList [data-prompt-input]").map((input) => input.value);
+}
+
+function renderCustomPromptEditor(prompts) {
+  const list = $("#customPromptList");
+  if (!list) return;
+  if (!prompts.length) {
+    list.innerHTML = `<p class="prompt-editor-empty">No custom prompts yet.</p>`;
+  } else {
+    list.innerHTML = prompts.map((prompt, index) => `
+      <div class="prompt-editor-row">
+        <textarea class="input prompt-textarea" data-prompt-input rows="2" placeholder="Ask the Pi agent to…" spellcheck="false" aria-label="Custom prompt ${index + 1}">${esc(prompt)}</textarea>
+        <button class="icon-btn" type="button" data-remove-prompt="${index}" title="Remove prompt" aria-label="Remove prompt">${icon("x")}</button>
+      </div>`).join("");
+  }
+  const count = $("#customPromptCount");
+  if (count) count.textContent = `${prompts.length} / ${MAX_CUSTOM_PROMPTS}`;
+  const add = $("#addCustomPrompt");
+  if (add) add.disabled = prompts.length >= MAX_CUSTOM_PROMPTS;
+}
+
+function addCustomPromptRow() {
+  const prompts = readCustomPromptRows().map((prompt) => prompt.trim());
+  if (prompts.length >= MAX_CUSTOM_PROMPTS) return;
+  prompts.push("");
+  renderCustomPromptEditor(prompts);
+  const inputs = $$("#customPromptList [data-prompt-input]");
+  if (inputs.length) inputs[inputs.length - 1].focus();
+}
+
+function removeCustomPromptRow(index) {
+  renderCustomPromptEditor(readCustomPromptRows().filter((_, row) => row !== index));
+}
+
 function populateSettingsForm() {
   const s = state.settings;
   $("#setName").value = state.currentUser.name;
@@ -10069,6 +10198,8 @@ function populateSettingsForm() {
   $("#setLlmApi").value = llm.api;
   $("#setLlmBaseUrl").value = llm.baseUrl;
   $("#setLlmApiKey").value = llm.apiKey;
+  $("#setSystemPrompt").value = s.systemPrompt || "";
+  renderCustomPromptEditor(s.customPrompts || []);
 }
 function saveSettings() {
   const name = $("#setName").value.trim();
@@ -10100,6 +10231,8 @@ function saveSettings() {
     zoom: normalizeZoom($("#setZoom").value),
     theme: normalizeThemeMode(activeTheme ? activeTheme.dataset.value : state.settings.theme),
     language: normalizeLanguage(activeLanguage ? activeLanguage.dataset.value : state.settings.language),
+    systemPrompt: $("#setSystemPrompt").value.trim(),
+    customPrompts: readCustomPromptRows().map((prompt) => prompt.trim()).filter(Boolean),
     llm: {
       provider: $("#setLlmProvider").value.trim(),
       api: $("#setLlmApi").value,
@@ -10113,6 +10246,7 @@ function saveSettings() {
   updateLanguageControls(state.settings.language);
   updateUserUI();
   renderSidebarMeta();
+  renderChatHead();
   closeSettings();
   toast("Git settings saved to ~/.gitconfig", "success");
 }
@@ -10231,6 +10365,11 @@ function init() {
   $("#chatNew").addEventListener("click", resetChat);
 
   // Chat suggestions, file references, and copy actions
+  $("#chatContextRow").addEventListener("click", (e) => {
+    const chip = e.target.closest("[data-custom-prompt]");
+    if (chip) sendCustomPrompt(Number(chip.dataset.customPrompt));
+  });
+
   $("#chatThread").addEventListener("click", (e) => {
     const prompt = e.target.closest("[data-chat-prompt]");
     if (prompt) {
@@ -10584,6 +10723,11 @@ function init() {
   $("#settingsClose").addEventListener("click", closeSettings);
   $("#settingsCancel").addEventListener("click", closeSettings);
   $("#settingsSave").addEventListener("click", saveSettings);
+  $("#addCustomPrompt").addEventListener("click", addCustomPromptRow);
+  $("#customPromptList").addEventListener("click", (e) => {
+    const remove = e.target.closest("[data-remove-prompt]");
+    if (remove) removeCustomPromptRow(Number(remove.dataset.removePrompt));
+  });
   $("#settingsBackdrop").addEventListener("click", (e) => {
     if (e.target === $("#settingsBackdrop")) closeSettings();
   });

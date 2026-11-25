@@ -31,6 +31,7 @@ actions, syncing with remotes, and talking to Pi about your code.
 - [AI chat with Pi](#ai-chat-with-pi)
 - [Chat commit actions](#commit-actions)
 - [Settings](#settings)
+- [About GitGlance](#about-gitglance)
 - [Appearance and language](#appearance-and-language)
 - [Keyboard shortcuts](#keyboard-shortcuts)
 - [Where your data lives](#where-your-data-lives)
@@ -529,6 +530,8 @@ Configure prompts in **Settings → Prompts**:
 
 Prompts are stored in app preferences (`config.json`), not in `~/.pi`.
 
+![Settings: system prompt and custom user prompts](./screenshots/settings-prompts.png)
+
 ### Commit actions
 
 Right-click any commit in the **History** column for a grouped menu:
@@ -582,6 +585,16 @@ Pull strategy mapping:
 The footer shows the Git config file being edited (`~/.gitconfig` by default).
 Set `GIT_CONFIG_GLOBAL` to use a different global config file.
 
+## About GitGlance
+
+The info button beside the sidebar wordmark (next to the version badge) opens
+the About dialog. It shows the running version, MIT license, runtime stack, a
+note that the Pi assistant uses your configured model endpoint, and links to
+the repository and release downloads. Links open in your default browser; close
+the dialog with **×**, **Close**, <kbd>Esc</kbd>, or a click outside it.
+
+![About GitGlance](./screenshots/about.png)
+
 ## Appearance and language
 
 The theme control offers **Light**, **Dark**, and **Follow system**. The choice
@@ -611,7 +624,7 @@ commit messages, and file paths are never translated.
 | <kbd>Enter</kbd> | Send a chat message |
 | <kbd>⇧↵</kbd> | Newline in the chat composer |
 | <kbd>↑</kbd> / <kbd>↓</kbd> | With the caret at the end of the chat composer: recall the previous / next sent message |
-| <kbd>Esc</kbd> | Close Settings |
+| <kbd>Esc</kbd> | Close the open dialog or context menu |
 | <kbd>⌘W</kbd> | Close the window |
 | <kbd>⌘Q</kbd> | Quit GitGlance |
 | <kbd>⌘+</kbd> / <kbd>⌘−</kbd> / <kbd>⌘0</kbd> | Zoom in / out / actual size |
@@ -628,7 +641,7 @@ the machine.
 | Data | Location |
 | --- | --- |
 | Git identity, pull strategy, signing, pruning | Global Git config (`~/.gitconfig` by default) |
-| Repository list, theme, language, zoom, auto-fetch, LLM provider | `~/Library/Application Support/GitGlance/config.json` on macOS (mode `0600`) |
+| Repository list, theme, language, zoom, auto-fetch, LLM provider, system prompt and custom prompts | `~/Library/Application Support/GitGlance/config.json` on macOS (mode `0600`) |
 | Generated Pi configuration | `<user data>/pi-agent/{models.json,settings.json}` |
 | Office conversion cache | `<user data>/preview-cache` |
 | Chat history | Renderer memory, per repository, for the current session |

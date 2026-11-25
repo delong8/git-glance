@@ -11,7 +11,7 @@ A local Git desktop client built around the UI in [index.html](./index.html). It
 
 ## Documentation
 
-The [usage guide](./docs/USAGE.md) is the end-user walkthrough: opening and switching repositories, reading the summary, browsing the working tree, previewing files, staging and committing, the Chat history graph and its commit actions, worktrees, remotes, branches, tags, stashes, LFS audits, submodules, repository statistics and HTML reports, syncing with remotes, AI chat, settings, and troubleshooting.
+The [usage guide](./docs/USAGE.md) is the end-user walkthrough: opening and switching repositories, reading the summary, browsing the working tree, previewing files, staging and committing, the Chat history graph and its commit actions, worktrees, remotes, branches, tags, stashes, LFS audits, submodules, repository statistics and HTML reports, syncing with remotes, AI chat, settings, the About dialog, and troubleshooting.
 
 Quick links:
 
@@ -31,6 +31,7 @@ Quick links:
 - [AI chat with Pi](./docs/USAGE.md#ai-chat-with-pi)
 - [Chat commit actions](./docs/USAGE.md#commit-actions)
 - [Settings](./docs/USAGE.md#settings)
+- [About GitGlance](./docs/USAGE.md#about-gitglance)
 - [Keyboard shortcuts](./docs/USAGE.md#keyboard-shortcuts)
 - [Troubleshooting](./docs/USAGE.md#troubleshooting)
 
@@ -43,6 +44,10 @@ Quick links:
 | Working tree diff | Settings |
 | --- | --- |
 | ![Working tree diff for a modified source file](./docs/screenshots/file-diff.png) | ![Settings: appearance, language, and LLM provider](./docs/screenshots/settings-appearance.png) |
+
+| Prompts settings | About GitGlance |
+| --- | --- |
+| ![Settings: system prompt and custom user prompts](./docs/screenshots/settings-prompts.png) | ![About GitGlance](./docs/screenshots/about.png) |
 
 ## Features
 
@@ -65,9 +70,10 @@ Quick links:
 - **LFS tab** with a two-column audit: LFS-tracked files on the left and non-LFS files over 5 MB on the right, with sizes, OIDs, pointer/tracking badges, filtering, and open/reveal/copy actions.
 - **Submodules tab** listing each submodule with URL, expected/checked-out commits, branch, initialization/modified/dirty status, filtering, and update/open/reveal/copy actions.
 - **Statistics tab** with commit, contributor, file, language, activity, repository, and working-tree metrics plus a **Download** action that writes a self-contained HTML report.
-- **AI Chat tab** backed by the Pi agent, with a three-column workspace: an all-refs commit history graph on the left that loads the newest 80 commits first and pages older commits in as you scroll, a changed-file tree above the chat in the middle, and a preview pane on the right that opens when a changed file is selected. The preview has a hide button, so the tree and chat can use the full width. Right-clicking a commit offers New Branch, New Tag, Cherry Pick, Revert, Reset (Soft/Mixed/Hard), Squash into parent, and Copy SHA actions. Streaming responses, tool activity (including Git and shell commands), stop/new-chat controls, and per-repository conversations are included.
+- **AI Chat tab** backed by the Pi agent, with a three-column workspace: an all-refs commit history graph on the left that loads the newest 80 commits first and pages older commits in as you scroll, a changed-file tree above the chat in the middle, and a preview pane on the right that opens when a changed file is selected. The preview has a hide button, so the tree and chat can use the full width. Right-clicking a commit offers New Branch, New Tag, Cherry Pick, Revert, Reset (Soft/Mixed/Hard), Squash into parent, and Copy SHA actions. Streaming responses, tool activity (including Git and shell commands), stop/new-chat controls, ↑/↓ recall of sent messages when the caret is at the end of the composer, and per-repository conversations are included.
 - **Git settings** for identity, default branch, editor, pull strategy, GPG signing, pruning, and app-level auto-fetch behavior.
 - **Prompts** configuration for the Pi agent: a system prompt appended to GitGlance's built-in assistant instructions, plus up to eight custom user prompts shown as one-click chips above the chat composer.
+- **About dialog** from the info button beside the sidebar wordmark, with the running version, MIT license, runtime stack, Pi assistant note, and repository/release links.
 - **Appearance** with light, dark, and system-following themes plus interface zoom (50%–500%), applied live and remembered between launches.
 - **Language** with English and Simplified Chinese, applied live to the UI and native menus; repository content, code, and commit messages stay as-is.
 - **Native desktop shell** with a custom protocol, sandboxed renderer, context-isolated IPC, native menus, and single-instance behavior.

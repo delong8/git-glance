@@ -505,5 +505,7 @@ export interface Bootstrap {
   platform: string;
   home: string;
   appVersion: string;
+  /** Release tag from the build, e.g. 261125.86148e0; empty when unavailable. */
+  buildTag: string;
   configPath: string;
 }

@@ -401,7 +401,8 @@ const state: AppState = {
   branchModalQuery: '',
   branchModalBase: null,
   creatingBranch: false,
-  appVersion: ''
+  appVersion: '',
+  buildTag: ''
 };
 
 /* ============================================================
@@ -863,14 +864,25 @@ function applyBootstrap(bootstrap: Bootstrap): void {
   state.currentUser = bootstrap.currentUser || state.currentUser;
   state.pi = bootstrap.pi || state.pi;
   state.appVersion = bootstrap.appVersion;
+  state.buildTag = bootstrap.buildTag || '';
   applyTheme(state.settings.theme || 'dark');
   applyLanguage(state.settings.language || 'en');
   const versionBadge = $('#appVersionBadge');
-  if (versionBadge && state.appVersion) versionBadge.textContent = `v${state.appVersion}`;
+  const buildTag = state.buildTag;
+  if (versionBadge) {
+    if (buildTag) {
+      const [date, sha] = buildTag.split('.');
+      versionBadge.innerHTML = `<span class="tag-date">${esc(date)}.</span><span class="tag-sha">${esc(sha || '')}</span>`;
+      versionBadge.title = buildTag;
+    } else if (state.appVersion) {
+      versionBadge.textContent = `v${state.appVersion}`;
+      versionBadge.removeAttribute('title');
+    }
+  }
   const aboutVersion = $('#aboutVersion');
-  if (aboutVersion && state.appVersion) aboutVersion.textContent = `v${state.appVersion}`;
+  if (aboutVersion) aboutVersion.textContent = buildTag || (state.appVersion ? `v${state.appVersion}` : '');
   const aboutVersionFact = $('#aboutVersionFact');
-  if (aboutVersionFact && state.appVersion) aboutVersionFact.textContent = state.appVersion;
+  if (aboutVersionFact) aboutVersionFact.textContent = buildTag || state.appVersion;
   updateUserUI();
   renderProjectList();
   renderSidebarMeta();

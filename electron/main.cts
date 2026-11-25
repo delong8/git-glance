@@ -168,9 +168,25 @@ function registerAppProtocol(): void {
   });
 }
 
+let cachedBuildTag: string | null = null;
+
+/** Release tag written at build time (YYMMDD.shortSHA); empty when missing. */
+async function readBuildTag(): Promise<string> {
+  if (cachedBuildTag !== null) return cachedBuildTag;
+  try {
+    const raw = await fs.readFile(path.join(__dirname, 'build-tag.json'), 'utf8');
+    const parsed = JSON.parse(raw) as { tag?: unknown };
+    cachedBuildTag = typeof parsed.tag === 'string' ? parsed.tag : '';
+  } catch {
+    cachedBuildTag = '';
+  }
+  return cachedBuildTag;
+}
+
 async function getBootstrap(): Promise<Bootstrap> {
   const gitConfig = await git.readGlobalGitConfig();
   const ui = config.getUiSettings();
+  const buildTag = await readBuildTag();
   const configuredRepos = config.getRepos();
   const summaries = await Promise.all(configuredRepos.map(async (repoPath): Promise<RepoSummary> => {
     try {
@@ -221,6 +237,7 @@ async function getBootstrap(): Promise<Bootstrap> {
     platform: process.platform,
     home: app.getPath('home'),
     appVersion: app.getVersion(),
+    buildTag,
     configPath: config.file
   };
 }

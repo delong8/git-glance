@@ -177,4 +177,5 @@ export interface AppState {
   branchModalBase: string | null;
   creatingBranch: boolean;
   appVersion: string;
+  buildTag: string;
 }

@@ -411,15 +411,17 @@ kbd {
 .brand-logo { filter: drop-shadow(0 4px 12px rgba(112, 132, 255, 0.28)); }
 .brand-name { font-size: 15px; font-weight: 650; letter-spacing: -0.02em; color: var(--text-strong); }
 .brand-badge {
-  font-size: 9px;
+  font-size: 8px;
   font-weight: 600;
   color: var(--text-3);
   border: 1px solid var(--border);
   background: var(--fill);
-  padding: 2px 5px;
+  padding: 2px 4px;
   border-radius: 4px;
-  letter-spacing: 0.03em;
+  letter-spacing: 0;
   margin-left: 1px;
+  font-family: var(--mono);
+  white-space: nowrap;
 }
 .brand-add {
   margin-left: auto;
@@ -446,6 +448,9 @@ kbd {
 }
 .brand-info:hover { background: var(--fill-strong); border-color: var(--border); color: var(--text); }
 .brand-info .ico { width: 13px; height: 13px; }
+@media (max-width: 1280px) {
+  .brand-badge .tag-date { display: none; }
+}
 
 .search { position: relative; }
 .search > .ico {

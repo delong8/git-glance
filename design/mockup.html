@@ -447,15 +447,17 @@ kbd {
 .brand-logo { filter: drop-shadow(0 4px 12px rgba(112, 132, 255, 0.28)); }
 .brand-name { font-size: 15px; font-weight: 650; letter-spacing: -0.02em; color: var(--text-strong); }
 .brand-badge {
-  font-size: 9px;
+  font-size: 8px;
   font-weight: 600;
   color: var(--text-3);
   border: 1px solid var(--border);
   background: var(--fill);
-  padding: 2px 5px;
+  padding: 2px 4px;
   border-radius: 4px;
-  letter-spacing: 0.03em;
+  letter-spacing: 0;
   margin-left: 1px;
+  font-family: var(--mono);
+  white-space: nowrap;
 }
 .brand-add {
   margin-left: auto;
@@ -482,6 +484,9 @@ kbd {
 }
 .brand-info:hover { background: var(--fill-strong); border-color: var(--border); color: var(--text); }
 .brand-info .ico { width: 13px; height: 13px; }
+@media (max-width: 1280px) {
+  .brand-badge .tag-date { display: none; }
+}
 
 .search { position: relative; }
 .search > .ico {
@@ -3812,7 +3817,7 @@ select.input option { background: var(--bg-option); color: var(--text); }
             <circle cx="19.4" cy="11.7" r="2.3" fill="#fff"/>
           </svg>
           <span class="brand-name">GitGlance</span>
-          <span class="brand-badge">v2.4</span>
+          <span class="brand-badge"><span class="tag-date">261125.</span><span class="tag-sha">86148e0</span></span>
           <button class="brand-info" id="aboutButton" title="About GitGlance" aria-label="About GitGlance">
             <svg class="ico"><use href="#i-info"/></svg>
           </button>
@@ -4459,13 +4464,13 @@ select.input option { background: var(--bg-option); color: var(--text); }
           </svg>
         </div>
         <div class="about-hero-copy">
-          <div class="about-name">GitGlance <span class="about-version" id="aboutVersion">v2.4</span></div>
+          <div class="about-name">GitGlance <span class="about-version" id="aboutVersion">261125.86148e0</span></div>
           <p class="about-tagline">Open source, local-first, and built for the way you already work with Git.</p>
         </div>
       </div>
       <p class="about-copy">Review changes, stage and commit, browse branches, tags, stashes, worktrees, LFS files, and submodules, then chat with the Pi agent — all in one window.</p>
       <dl class="about-facts">
-        <div class="about-fact"><dt>Version</dt><dd id="aboutVersionFact">2.4</dd></div>
+        <div class="about-fact"><dt>Version</dt><dd id="aboutVersionFact">261125.86148e0</dd></div>
         <div class="about-fact"><dt>License</dt><dd>MIT</dd></div>
         <div class="about-fact"><dt>Runtime</dt><dd>Electron · TypeScript · Vite</dd></div>
         <div class="about-fact"><dt>AI assistant</dt><dd>Pi agent with your own model endpoint</dd></div>

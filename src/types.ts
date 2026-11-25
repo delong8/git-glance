@@ -61,6 +61,8 @@ export interface ChatState {
   stopping: boolean;
   streamText: string;
   draft: string;
+  /** Position while browsing sent messages with ArrowUp/ArrowDown; null at the live draft. */
+  historyIndex: number | null;
   error: string | null;
   tool: string | null;
 }

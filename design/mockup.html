@@ -7112,7 +7112,7 @@ const getProject = () => PROJECTS.find((p) => p.id === state.projectId) || PROJE
 const CHATS = new Map();
 function getChat(project) {
   if (!CHATS.has(project.id)) {
-    CHATS.set(project.id, { messages: [], pending: false, draft: "", timer: null });
+    CHATS.set(project.id, { messages: [], pending: false, draft: "", historyIndex: null, timer: null });
   }
   return CHATS.get(project.id);
 }
@@ -9749,6 +9749,25 @@ function renderChat() {
   syncChatInput();
 }
 
+function navigateChatHistory(direction, input) {
+  const chat = getChat(getProject());
+  const history = chat.messages
+    .filter((message) => message.role === "user")
+    .map((message) => message.text);
+  if (!history.length) return false;
+  if (chat.historyIndex == null && direction > 0) return false;
+  const index = chat.historyIndex == null ? history.length + direction : chat.historyIndex + direction;
+  if (index < 0 || index >= history.length) return false;
+  chat.historyIndex = index;
+  input.value = history[index];
+  chat.draft = input.value;
+  resizeChatInput();
+  syncChatComposer();
+  const end = input.value.length;
+  input.setSelectionRange(end, end);
+  return true;
+}
+
 function sendChatMessage(raw) {
   const text = String(raw || "").trim();
   if (!text) return;
@@ -9757,6 +9776,7 @@ function sendChatMessage(raw) {
   if (chat.pending) return;
   chat.messages.push({ role: "user", text, time: chatTime() });
   chat.draft = "";
+  chat.historyIndex = null;
   chat.pending = true;
   const input = $("#chatInput");
   if (input) {
@@ -9786,6 +9806,7 @@ function resetChat() {
   chat.pending = false;
   chat.timer = null;
   chat.draft = "";
+  chat.historyIndex = null;
   const input = $("#chatInput");
   if (input) {
     input.value = "";
@@ -10352,10 +10373,21 @@ function init() {
   chatInput.addEventListener("input", () => {
     const chat = getChat(getProject());
     chat.draft = chatInput.value;
+    chat.historyIndex = null;
     resizeChatInput();
     syncChatComposer();
   });
   chatInput.addEventListener("keydown", (e) => {
+    const atEnd = chatInput.selectionStart === chatInput.value.length && chatInput.selectionEnd === chatInput.value.length;
+    if (atEnd && !e.shiftKey && !e.altKey && !e.metaKey && !e.ctrlKey && !e.isComposing
+      && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
+      const chat = getChat(getProject());
+      if (chat.messages.some((message) => message.role === "user")) {
+        e.preventDefault();
+        navigateChatHistory(e.key === "ArrowUp" ? -1 : 1, chatInput);
+      }
+      return;
+    }
     if (e.key === "Enter" && !e.shiftKey && !e.isComposing) {
       e.preventDefault();
       sendChatMessage(chatInput.value);

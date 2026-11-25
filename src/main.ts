@@ -755,6 +755,7 @@ function getChat(repoPath: string): ChatState {
       stopping: false,
       streamText: '',
       draft: '',
+      historyIndex: null,
       error: null,
       tool: null
     };
@@ -3592,6 +3593,9 @@ function sendCustomPrompt(index: number): void {
   const input = $<HTMLTextAreaElement>('#chatInput');
   if (input) {
     input.value = prompt;
+    const chat = getChat(state.repo.path);
+    chat.draft = prompt;
+    chat.historyIndex = null;
     resizeChatInput();
     input.focus();
   }
@@ -3766,6 +3770,7 @@ function sendChatMessage(rawText: unknown): void {
   chat.error = null;
   chat.tool = null;
   chat.draft = '';
+  chat.historyIndex = null;
   const input = $<HTMLTextAreaElement>('#chatInput');
   if (input) {
     input.value = '';
@@ -3788,6 +3793,26 @@ function sendChatMessage(rawText: unknown): void {
   });
 }
 
+function navigateChatHistory(direction: -1 | 1, input: HTMLTextAreaElement): boolean {
+  if (!state.repo) return false;
+  const chat = getChat(state.repo.path);
+  const history = chat.messages
+    .filter((message) => message.role === 'user')
+    .map((message) => message.text);
+  if (!history.length) return false;
+  if (chat.historyIndex == null && direction > 0) return false;
+  const index = chat.historyIndex == null ? history.length + direction : chat.historyIndex + direction;
+  if (index < 0 || index >= history.length) return false;
+  chat.historyIndex = index;
+  input.value = history[index];
+  chat.draft = input.value;
+  resizeChatInput();
+  syncChatComposer();
+  const end = input.value.length;
+  input.setSelectionRange(end, end);
+  return true;
+}
+
 function stopChat(): void {
   if (!state.repo) return;
   const chat = getChat(state.repo.path);
@@ -3807,6 +3832,7 @@ function resetChat(): void {
   chat.stopping = false;
   chat.streamText = '';
   chat.draft = '';
+  chat.historyIndex = null;
   chat.error = null;
   chat.tool = null;
   const input = $<HTMLTextAreaElement>('#chatInput');
@@ -5491,11 +5517,23 @@ function bindStaticEvents(): void {
   const chatInput = $<HTMLTextAreaElement>('#chatInput');
   chatInput?.addEventListener('input', () => {
     if (!state.repo) return;
-    getChat(state.repo.path).draft = chatInput.value;
+    const chat = getChat(state.repo.path);
+    chat.draft = chatInput.value;
+    chat.historyIndex = null;
     resizeChatInput();
     syncChatComposer();
   });
   chatInput?.addEventListener('keydown', (event) => {
+    const atEnd = chatInput.selectionStart === chatInput.value.length && chatInput.selectionEnd === chatInput.value.length;
+    if (atEnd && !event.shiftKey && !event.altKey && !event.metaKey && !event.ctrlKey && !event.isComposing
+      && (event.key === 'ArrowUp' || event.key === 'ArrowDown')) {
+      const chat = state.repo ? getChat(state.repo.path) : null;
+      if (chat?.messages.some((message) => message.role === 'user')) {
+        event.preventDefault();
+        navigateChatHistory(event.key === 'ArrowUp' ? -1 : 1, chatInput);
+      }
+      return;
+    }
     if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) {
       event.preventDefault();
       sendChatMessage(chatInput.value);

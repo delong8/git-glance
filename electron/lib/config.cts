@@ -1,5 +1,10 @@
 import * as fs from 'node:fs/promises';
 import path from 'node:path';
+import {
+  MAX_CUSTOM_PROMPT_LENGTH,
+  MAX_CUSTOM_PROMPTS,
+  MAX_SYSTEM_PROMPT_LENGTH
+} from '../shared/models.js';
 import type {
   AutoFetchInterval,
   Language,
@@ -69,6 +74,24 @@ function text(value: unknown): string {
   return typeof value === 'string' ? value.trim() : '';
 }
 
+/** Coerce a user system prompt into a trimmed, length-limited string. */
+export function normalizeSystemPrompt(value: unknown): string {
+  return text(value).replace(/\r\n/g, '\n').slice(0, MAX_SYSTEM_PROMPT_LENGTH);
+}
+
+/** Coerce custom chat prompts into trimmed, non-empty, length-limited strings. */
+export function normalizeCustomPrompts(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  const prompts: string[] = [];
+  for (const entry of value) {
+    const prompt = text(entry).replace(/\r\n/g, '\n');
+    if (!prompt) continue;
+    prompts.push(prompt.slice(0, MAX_CUSTOM_PROMPT_LENGTH));
+    if (prompts.length >= MAX_CUSTOM_PROMPTS) break;
+  }
+  return prompts;
+}
+
 /** Coerce unknown renderer/config input into a complete LLM provider record. */
 export function normalizeLlmSettings(value: unknown): LlmSettings {
   const input = isRecord(value) ? value : {};
@@ -104,7 +127,9 @@ export class ConfigStore {
         fetchAll: false,
         theme: 'dark',
         language: 'en',
-        zoom: null
+        zoom: null,
+        systemPrompt: '',
+        customPrompts: []
       },
       llm: { ...DEFAULT_LLM_SETTINGS }
     };
@@ -133,7 +158,9 @@ export class ConfigStore {
             fetchAll: ui.fetchAll === true,
             theme: isThemeMode(ui.theme) ? ui.theme : 'dark',
             language: isLanguage(ui.language) ? ui.language : 'en',
-            zoom: normalizeZoom(ui.zoom)
+            zoom: normalizeZoom(ui.zoom),
+            systemPrompt: normalizeSystemPrompt(ui.systemPrompt),
+            customPrompts: normalizeCustomPrompts(ui.customPrompts)
           },
           llm: normalizeLlmSettings(parsed.llm)
         };
@@ -212,10 +239,13 @@ export class ConfigStore {
   }
 
   async updateUiSettings(partial: Partial<UiSettings>): Promise<UiSettings> {
-    this.data.ui = {
+    const next: UiSettings = {
       ...this.data.ui,
       ...partial
     };
+    if ('systemPrompt' in partial) next.systemPrompt = normalizeSystemPrompt(partial.systemPrompt);
+    if ('customPrompts' in partial) next.customPrompts = normalizeCustomPrompts(partial.customPrompts);
+    this.data.ui = next;
     await this.save();
     return this.getUiSettings();
   }

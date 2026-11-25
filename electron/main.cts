@@ -4,7 +4,7 @@ import { execFile, spawn } from 'node:child_process';
 import * as fs from 'node:fs/promises';
 import path from 'node:path';
 import { promisify } from 'node:util';
-import { ConfigStore, isLanguage, isThemeMode, normalizeLlmSettings, normalizeZoom } from './lib/config.cjs';
+import { ConfigStore, isLanguage, isThemeMode, normalizeCustomPrompts, normalizeLlmSettings, normalizeSystemPrompt, normalizeZoom } from './lib/config.cjs';
 import * as git from './lib/git.cjs';
 import { PreviewService } from './lib/preview.cjs';
 import { PiService } from './lib/pi.cjs';
@@ -637,10 +637,13 @@ function registerIpc(): void {
       autoFetch,
       fetchAll: !!settings.fetchAll,
       theme: isThemeMode(settings.theme) ? settings.theme : config.getUiSettings().theme,
-      language: isLanguage(settings.language) ? settings.language : config.getUiSettings().language
+      language: isLanguage(settings.language) ? settings.language : config.getUiSettings().language,
+      systemPrompt: normalizeSystemPrompt(settings.systemPrompt),
+      customPrompts: normalizeCustomPrompts(settings.customPrompts)
     });
     const llm: LlmSettings = await config.updateLlmSettings(normalizeLlmSettings(settings.llm));
     piService.setLlmSettings(llm);
+    piService.setSystemPrompt(ui.systemPrompt);
     syncWindowBackground(ui.theme);
     if (ui.language !== previousLanguage) createApplicationMenu();
     const merged = await getBootstrap();
@@ -875,7 +878,8 @@ if (!gotLock) {
     piService = new PiService({
       onEvent: (event) => sendToRenderer('pi:event', event),
       agentDir: path.join(app.getPath('userData'), 'pi-agent'),
-      llm: config.getLlmSettings()
+      llm: config.getLlmSettings(),
+      systemPrompt: config.getUiSettings().systemPrompt
     });
     registerIpc();
     createApplicationMenu();

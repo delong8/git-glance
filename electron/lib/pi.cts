@@ -100,6 +100,8 @@ export interface PiServiceOptions {
   /** GitGlance-owned Pi config directory; the user's ~/.pi is never read. */
   agentDir: string;
   llm: LlmSettings;
+  /** Extra system instructions appended to the built-in prompt. */
+  systemPrompt?: string;
 }
 
 export class PiService {
@@ -108,12 +110,14 @@ export class PiService {
   private readonly onEvent: (event: PiEvent) => void;
   private readonly sessions: Map<string, PiSession>;
   private llm: LlmSettings;
+  private systemPrompt: string;
   private shuttingDown: boolean;
 
-  constructor({ onEvent, agentDir, llm }: PiServiceOptions) {
+  constructor({ onEvent, agentDir, llm, systemPrompt }: PiServiceOptions) {
     this.bin = resolvePiBinary();
     this.agentDir = agentDir;
     this.llm = { ...llm };
+    this.systemPrompt = String(systemPrompt || '').trim();
     this.onEvent = onEvent || (() => {});
     this.sessions = new Map();
     this.shuttingDown = false;
@@ -152,6 +156,17 @@ export class PiService {
   setLlmSettings(settings: LlmSettings): void {
     this.llm = { ...settings };
     this.writeAgentConfig();
+    for (const repoPath of [...this.sessions.keys()]) this.reset(repoPath);
+  }
+
+  /**
+   * Adopt a user system prompt, dropping running sessions so the next prompt
+   * is spawned with the new `--append-system-prompt` argument.
+   */
+  setSystemPrompt(prompt: string): void {
+    const next = String(prompt || '').trim();
+    if (next === this.systemPrompt) return;
+    this.systemPrompt = next;
     for (const repoPath of [...this.sessions.keys()]) this.reset(repoPath);
   }
 
@@ -221,7 +236,8 @@ export class PiService {
       '--provider', this.llm.provider,
       '--model', this.llm.model,
       '--tools', 'read,grep,find,ls,bash',
-      '--append-system-prompt', PI_SYSTEM_PROMPT
+      '--append-system-prompt', PI_SYSTEM_PROMPT,
+      ...(this.systemPrompt ? ['--append-system-prompt', this.systemPrompt] : [])
     ];
     const extraPaths = ['/opt/homebrew/bin', '/usr/local/bin', '/usr/bin', '/bin'];
     const childEnv: NodeJS.ProcessEnv = {

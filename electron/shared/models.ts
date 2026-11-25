@@ -344,6 +344,10 @@ export interface LlmSettings {
   model: string;
 }
 
+export const MAX_SYSTEM_PROMPT_LENGTH = 8000;
+export const MAX_CUSTOM_PROMPT_LENGTH = 2000;
+export const MAX_CUSTOM_PROMPTS = 8;
+
 export interface UiSettings {
   autoFetch: AutoFetchInterval;
   fetchAll: boolean;
@@ -351,6 +355,10 @@ export interface UiSettings {
   language: Language;
   /** Interface zoom factor (0.5–5.0). Null uses the default of 1.0. */
   zoom: number | null;
+  /** Extra system instructions appended to GitGlance's built-in Pi prompt. */
+  systemPrompt: string;
+  /** User-authored prompts shown above the chat composer. */
+  customPrompts: string[];
 }
 
 export interface GitGlobalConfig {
@@ -382,6 +390,8 @@ export interface SettingsInput {
   fetchAll: boolean;
   theme: ThemeMode;
   language: Language;
+  systemPrompt: string;
+  customPrompts: string[];
   llm: LlmSettings;
 }
 

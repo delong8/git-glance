@@ -510,6 +510,21 @@ discard changes, rewrite history, or use credentials.
   all-refs total. Stashes are not part of history — see the **Stash** tab.
 - Use the welcome suggestions for a quick summary, review, or commit-message
   draft.
+- Custom **prompt chips** from Settings appear above the composer next to the
+  staged tag. Clicking one fills the composer with that prompt and sends it.
+
+### Prompts
+
+Configure prompts in **Settings → Prompts**:
+
+- **System prompt** — extra instructions appended to GitGlance's built-in
+  assistant prompt and Pi's default prompt. Saving restarts running Pi sessions
+  so the next message uses the new instructions.
+- **Custom user prompts** — up to eight prompts. They appear as chips above the
+  chat input next to the staged tag; clicking a chip fills the composer with the
+  prompt and sends it to Pi.
+
+Prompts are stored in app preferences (`config.json`), not in `~/.pi`.
 
 ### Commit actions
 
@@ -545,6 +560,7 @@ Git settings to your global config and persists app preferences.
 | **Appearance** | Light, dark, or follow-system theme; interface zoom (50%–500%) | App preferences |
 | **Language** | English or Simplified Chinese for the interface and native menus | App preferences |
 | **LLM provider** | Provider ID, model ID, API protocol, base URL, API key | App preferences |
+| **Prompts** | System prompt appended to the built-in instructions; up to eight custom user prompts shown as chat chips | App preferences |
 | **Identity** | `user.name` and `user.email` for commits | `~/.gitconfig` |
 | **Git defaults** | `init.defaultBranch`, `core.editor`, pull strategy, auto-fetch interval | Git config / app preferences |
 | **Commit signing** | `commit.gpgsign` and `user.signingkey` | `~/.gitconfig` |

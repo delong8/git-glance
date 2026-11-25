@@ -22,6 +22,8 @@ const submoduleSourceDir = await fs.mkdtemp(path.join(os.tmpdir(), 'gitglance-sm
 const submoduleRemoteDir = await fs.mkdtemp(path.join(os.tmpdir(), 'gitglance-smoke-sub-remote-'));
 const userDataDir = await fs.mkdtemp(path.join(os.tmpdir(), 'gitglance-smoke-profile-'));
 const gitConfigPath = path.join(userDataDir, 'gitconfig');
+const piArgsPath = path.join(userDataDir, 'pi-args.txt');
+const piStubPath = path.join(userDataDir, 'pi-stub.sh');
 
 function git(args, options = {}) {
   return execFileSync('git', args, {
@@ -103,6 +105,10 @@ try {
   git(['update-ref', 'refs/remotes/origin/remote-only', git(['rev-parse', 'HEAD'])]);
   git(['symbolic-ref', 'refs/remotes/origin/HEAD', 'refs/remotes/origin/main']);
 
+  // Pi stub: records its argv so the smoke can verify the system prompt flags,
+  // then exits. The app still treats the binary as available.
+  await fs.writeFile(piStubPath, `#!/bin/sh\nprintf '%s\\n' "$@" > '${piArgsPath}'\nexit 1\n`, { mode: 0o755 });
+
   app = await electron.launch({
     args: ['.'],
     cwd: projectRoot,
@@ -112,7 +118,8 @@ try {
       GIT_CONFIG_NOSYSTEM: '1',
       GITGLANCE_USER_DATA: userDataDir,
       GITGLANCE_REPO: repoDir,
-      GITGLANCE_DISABLE_SINGLE_INSTANCE: '1'
+      GITGLANCE_DISABLE_SINGLE_INSTANCE: '1',
+      PI_BIN: piStubPath
     },
     timeout: 30_000
   });
@@ -479,6 +486,49 @@ try {
   await window.keyboard.press('Escape');
   await window.waitForFunction(() => document.querySelector('#commitMenu')?.hidden === true, null, { timeout: 5_000 });
 
+  // Prompts settings: system prompt, custom chips, and Pi spawn arguments.
+  await window.locator('#openSettings').click();
+  await window.waitForSelector('#settingsBackdrop.is-open', { timeout: 10_000 });
+  await window.locator('#setLlmProvider').fill('smoke-provider');
+  await window.locator('#setLlmModel').fill('smoke-model');
+  await window.locator('#setLlmBaseUrl').fill('http://127.0.0.1:1/v1');
+  await window.locator('#setSystemPrompt').fill('SMOKE-SYSTEM-PROMPT: keep answers brief.');
+  await window.locator('#addCustomPrompt').click();
+  await window.locator('#customPromptList [data-prompt-input]').first().fill('Summarize the staged files.');
+  await window.locator('#settingsSave').click();
+  await window.waitForFunction(() => !document.querySelector('#settingsBackdrop')?.classList.contains('is-open'), null, { timeout: 15_000 });
+  await window.waitForSelector('#chatContextRow .chat-prompt-chip', { timeout: 10_000 });
+  const promptChips = await window.locator('#chatContextRow .chat-prompt-chip').count();
+  if (promptChips !== 1) throw new Error(`Expected 1 custom prompt chip, found ${promptChips}.`);
+  const savedConfig = JSON.parse(await fs.readFile(path.join(userDataDir, 'config.json'), 'utf8'));
+  if (savedConfig.ui.systemPrompt !== 'SMOKE-SYSTEM-PROMPT: keep answers brief.') {
+    throw new Error('The system prompt was not persisted to config.json.');
+  }
+  if (!Array.isArray(savedConfig.ui.customPrompts) || savedConfig.ui.customPrompts[0] !== 'Summarize the staged files.') {
+    throw new Error('Custom prompts were not persisted to config.json.');
+  }
+  await window.locator('#chatContextRow .chat-prompt-chip').first().click();
+  await window.waitForFunction(() => document.querySelectorAll('#chatThread .chat-msg.user').length >= 1, null, { timeout: 10_000 });
+  let piArgs = '';
+  for (let attempt = 0; attempt < 50; attempt += 1) {
+    try {
+      piArgs = await fs.readFile(piArgsPath, 'utf8');
+      break;
+    } catch {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+  }
+  const piArgv = piArgs.split('\n').filter(Boolean);
+  if (piArgv.filter((arg) => arg === '--append-system-prompt').length !== 2) {
+    throw new Error('Pi was not spawned with both the built-in and user system prompts.');
+  }
+  if (!piArgv.includes('SMOKE-SYSTEM-PROMPT: keep answers brief.')) {
+    throw new Error('Pi was not spawned with the configured system prompt.');
+  }
+  if (!piArgv.some((arg) => arg.startsWith('You are GitGlance AI'))) {
+    throw new Error('Pi was not spawned with the built-in system prompt.');
+  }
+
   if (pageErrors.length) throw new Error(`Renderer error: ${pageErrors.join(' | ')}`);
 
   passed = true;
@@ -497,6 +547,7 @@ try {
   console.log('  default tab: Chat');
   console.log(`  chat: ${chatHistoryRows} first page → ${historyTotal} paged commits, ${chatTreeFiles} changed files in the tree`);
   console.log('  commit menu: branch, tag, reset and squash guard verified');
+  console.log('  prompts: system + custom chip persisted, Pi spawned with both system prompts');
   console.log('  project actions: open folder + open terminal');
   console.log('  tabs: Chat, Files, Worktrees, Remote, Branches, Tags, Stash, LFS, Submodules, Statistics');
 } finally {

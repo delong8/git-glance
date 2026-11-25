@@ -512,6 +512,9 @@ discard changes, rewrite history, or use credentials.
   draft.
 - Custom **prompt chips** from Settings appear above the composer next to the
   staged tag. Clicking one fills the composer with that prompt and sends it.
+- With the caret at the end of the composer, <kbd>↑</kbd> recalls the previous
+  sent message and <kbd>↓</kbd> moves forward again. At the oldest or newest
+  message the input stays unchanged.
 
 ### Prompts
 
@@ -607,6 +610,7 @@ commit messages, and file paths are never translated.
 | <kbd>⌘↵</kbd> | Commit staged files (File tree) or save Settings (modal) |
 | <kbd>Enter</kbd> | Send a chat message |
 | <kbd>⇧↵</kbd> | Newline in the chat composer |
+| <kbd>↑</kbd> / <kbd>↓</kbd> | With the caret at the end of the chat composer: recall the previous / next sent message |
 | <kbd>Esc</kbd> | Close Settings |
 | <kbd>⌘W</kbd> | Close the window |
 | <kbd>⌘Q</kbd> | Quit GitGlance |

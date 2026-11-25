@@ -38,7 +38,22 @@ function commitStamp() {
   }
 }
 
-const stamp = `${dateStamp()}.${commitStamp()}`;
+/**
+ * Prefer the tag baked into dist-electron/build-tag.json at build time so the
+ * installer name matches the tag the app shows in its sidebar and About dialog.
+ * Fall back to the build date and HEAD when the app was not built first.
+ */
+async function releaseStamp() {
+  try {
+    const info = JSON.parse(await fs.readFile(path.join(root, 'dist-electron', 'build-tag.json'), 'utf8'));
+    if (typeof info.tag === 'string' && /^\d{6}\.[a-z0-9]+$/i.test(info.tag)) return info.tag;
+  } catch {
+    /* no baked tag; use the build machine clock and HEAD */
+  }
+  return `${dateStamp()}.${commitStamp()}`;
+}
+
+const stamp = await releaseStamp();
 
 async function releaseEntries() {
   try {

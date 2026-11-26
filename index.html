@@ -3621,15 +3621,24 @@ select.input option { background: var(--bg-option); color: var(--text); }
   }
 }
 @media (max-width: 1760px) {
-  .tab { padding: 0; font-size: 11px; }
+  .tab { padding: 0 4px; font-size: 11px; }
   .tabs-tools .search { width: 112px; }
 }
+/* Keep the tab labels while they still fit: badges give way first after 1432px,
+   labels collapse to icons only at 1244px. */
+@media (max-width: 1432px) {
+  .tab-badge { display: none; }
+  .tab { padding: 0 6px; }
+}
 @media (max-width: 1420px) {
-  .tab-label { display: none; }
-  .tab { padding: 0 12px; }
-  .tabs-tools .search { width: 190px; }
   .summary-actions .summary-compact { width: 32px; padding: 0; justify-content: center; }
   .summary-actions .summary-compact .btn-label { display: none; }
+}
+@media (max-width: 1244px) {
+  .tab-label { display: none; }
+  .tab { padding: 0 12px; }
+  .tab-badge { display: grid; }
+  .tabs-tools .search { width: 120px; }
 }
 @media (max-width: 1120px) {
   .tab-badge { display: none; }

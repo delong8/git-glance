@@ -2,11 +2,13 @@ import * as fs from 'node:fs/promises';
 import path from 'node:path';
 import {
   MAX_CUSTOM_PROMPT_LENGTH,
+  MAX_CUSTOM_PROMPT_TITLE_LENGTH,
   MAX_CUSTOM_PROMPTS,
   MAX_SYSTEM_PROMPT_LENGTH
 } from '../shared/models.js';
 import type {
   AutoFetchInterval,
+  CustomPrompt,
   LanguageMode,
   LlmApiType,
   LlmSettings,
@@ -79,14 +81,28 @@ export function normalizeSystemPrompt(value: unknown): string {
   return text(value).replace(/\r\n/g, '\n').slice(0, MAX_SYSTEM_PROMPT_LENGTH);
 }
 
-/** Coerce custom chat prompts into trimmed, non-empty, length-limited strings. */
-export function normalizeCustomPrompts(value: unknown): string[] {
+/** Collapse a title to one line and cap it at the chip-label length. */
+function promptTitle(value: string): string {
+  const singleLine = value.replace(/\s+/g, ' ').trim();
+  if (singleLine.length <= MAX_CUSTOM_PROMPT_TITLE_LENGTH) return singleLine;
+  return `${singleLine.slice(0, MAX_CUSTOM_PROMPT_TITLE_LENGTH - 1).trimEnd()}…`;
+}
+
+/**
+ * Coerce custom chat prompts into titled, trimmed, non-empty records. Older
+ * configs stored plain strings, so those migrate with a title derived from the
+ * prompt text.
+ */
+export function normalizeCustomPrompts(value: unknown): CustomPrompt[] {
   if (!Array.isArray(value)) return [];
-  const prompts: string[] = [];
+  const prompts: CustomPrompt[] = [];
   for (const entry of value) {
-    const prompt = text(entry).replace(/\r\n/g, '\n');
+    const record = isRecord(entry) ? entry : null;
+    const raw = record ? record.prompt : entry;
+    const prompt = typeof raw === 'string' ? raw.replace(/\r\n/g, '\n').trim().slice(0, MAX_CUSTOM_PROMPT_LENGTH) : '';
     if (!prompt) continue;
-    prompts.push(prompt.slice(0, MAX_CUSTOM_PROMPT_LENGTH));
+    const title = record && typeof record.title === 'string' ? promptTitle(record.title) : '';
+    prompts.push({ title: title || promptTitle(prompt), prompt });
     if (prompts.length >= MAX_CUSTOM_PROMPTS) break;
   }
   return prompts;

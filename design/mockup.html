@@ -3354,6 +3354,8 @@ kbd {
 }
 .prompt-editor { display: flex; flex-direction: column; gap: 7px; }
 .prompt-editor-row { display: flex; align-items: flex-start; gap: 6px; }
+.prompt-editor-fields { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.prompt-editor-row .prompt-title-input { font-weight: 500; }
 .prompt-editor-row .prompt-textarea { min-height: 52px; }
 .prompt-editor-row .icon-btn { margin-top: 2px; flex: none; }
 .prompt-editor-empty {
@@ -4316,7 +4318,7 @@ select.input option { background: var(--bg-option); color: var(--text); }
             <svg class="ico"><use href="#i-plus"/></svg>
             <span>Add prompt</span>
           </button>
-          <span class="field-hint">Shown above the chat input next to the staged tag. Click one to send it to the Pi agent.</span>
+          <span class="field-hint">Each prompt has a short title for its chip above the chat input; clicking sends the full prompt to the Pi agent.</span>
         </div>
       </section>
 
@@ -6185,9 +6187,9 @@ const state = {
     language: "en",
     systemPrompt: "Prefer concise answers. Point out risky Git operations before suggesting them.",
     customPrompts: [
-      "Summarize my working tree and flag anything that looks accidental.",
-      "Review the staged changes for bugs.",
-      "Draft a conventional commit message for the staged changes."
+      { title: "Summarize my changes", prompt: "Summarize my working tree and flag anything that looks accidental." },
+      { title: "Review staged changes", prompt: "Review the staged changes for bugs." },
+      { title: "Draft commit message", prompt: "Draft a conventional commit message for the staged changes." }
     ],
     llm: {
       provider: "ollama",
@@ -6664,7 +6666,8 @@ const ZH = {
   "Add prompt": "添加提示词",
   "Remove prompt": "移除提示词",
   "No custom prompts yet.": "还没有自定义提示词。",
-  "Shown above the chat input next to the staged tag. Click one to send it to the Pi agent.": "显示在对话输入框上方、暂存标签旁。点击即可发送给 Pi 智能体。",
+  "Short title": "简短标题",
+  "Each prompt has a short title for its chip above the chat input; clicking sends the full prompt to the Pi agent.": "每条提示词含一个简短标题，显示在对话输入框上方的芯片上；点击即可发送完整提示词给 Pi 智能体。",
   "About GitGlance": "关于 GitGlance",
   "A local Git client with Pi AI chat and rich file previews": "带 Pi AI 对话和丰富文件预览的本地 Git 客户端",
   "Close about dialog": "关闭关于对话框",
@@ -9408,15 +9411,16 @@ function renderChatHead() {
     <span class="chat-context-chip">${icon("branch")}${esc(project.branch)}</span>
     <span class="chat-context-chip">${icon("git-commit")}${stats.total} changed</span>
     <span class="chat-context-chip">${icon("check")}${stats.staged} staged</span>` + prompts.map((prompt, index) => {
-    const label = prompt.split("\n").map((line) => line.trim()).find(Boolean) || prompt;
-    return `<button type="button" class="chat-context-chip chat-prompt-chip" data-custom-prompt="${index}" title="${esc(prompt)}">${icon("sparkles")}<span class="chat-prompt-chip-label">${esc(label)}</span></button>`;
+    const title = prompt.title || customPromptTitle(prompt.prompt);
+    return `<button type="button" class="chat-context-chip chat-prompt-chip" data-custom-prompt="${index}" title="${esc(prompt.prompt)}">${icon("sparkles")}<span class="chat-prompt-chip-label">${esc(title)}</span></button>`;
   }).join("");
   const input = $("#chatInput");
   if (input) input.placeholder = tx(`Ask about ${project.name}…`, `询问关于 ${project.name} 的更改…`);
 }
 
 function sendCustomPrompt(index) {
-  const prompt = (state.settings.customPrompts || [])[index];
+  const entry = (state.settings.customPrompts || [])[index];
+  const prompt = entry && entry.prompt;
   if (!prompt) return;
   const input = $("#chatInput");
   if (input) {
@@ -10354,35 +10358,54 @@ function closeAbout() {
 }
 
 const MAX_CUSTOM_PROMPTS = 8;
+const MAX_CUSTOM_PROMPT_TITLE_LENGTH = 40;
+
+function customPromptTitle(text) {
+  const singleLine = String(text || "").replace(/\s+/g, " ").trim();
+  return singleLine.length > MAX_CUSTOM_PROMPT_TITLE_LENGTH
+    ? `${singleLine.slice(0, MAX_CUSTOM_PROMPT_TITLE_LENGTH - 1).trimEnd()}…`
+    : singleLine;
+}
 
 function readCustomPromptRows() {
-  return $$("#customPromptList [data-prompt-input]").map((input) => input.value);
+  return $$("#customPromptList .prompt-editor-row").map((row) => {
+    const title = row.querySelector("[data-prompt-title]");
+    const prompt = row.querySelector("[data-prompt-input]");
+    return { title: title ? title.value : "", prompt: prompt ? prompt.value : "" };
+  });
 }
 
 function renderCustomPromptEditor(prompts) {
   const list = $("#customPromptList");
   if (!list) return;
-  if (!prompts.length) {
+  const entries = (prompts || []).map((entry) => ({
+    title: entry && typeof entry === "object" ? String(entry.title || "") : "",
+    prompt: entry && typeof entry === "object" ? String(entry.prompt || "") : String(entry || "")
+  }));
+  if (!entries.length) {
     list.innerHTML = `<p class="prompt-editor-empty">No custom prompts yet.</p>`;
   } else {
-    list.innerHTML = prompts.map((prompt, index) => `
+    list.innerHTML = entries.map((prompt, index) => `
       <div class="prompt-editor-row">
-        <textarea class="input prompt-textarea" data-prompt-input rows="2" placeholder="Ask the Pi agent to…" spellcheck="false" aria-label="Custom prompt ${index + 1}">${esc(prompt)}</textarea>
+        <div class="prompt-editor-fields">
+          <input class="input prompt-title-input" data-prompt-title type="text" maxlength="${MAX_CUSTOM_PROMPT_TITLE_LENGTH}" placeholder="Short title" spellcheck="false" aria-label="Prompt title ${index + 1}" value="${esc(prompt.title)}">
+          <textarea class="input prompt-textarea" data-prompt-input rows="2" placeholder="Ask the Pi agent to…" spellcheck="false" aria-label="Custom prompt ${index + 1}">${esc(prompt.prompt)}</textarea>
+        </div>
         <button class="icon-btn" type="button" data-remove-prompt="${index}" title="Remove prompt" aria-label="Remove prompt">${icon("x")}</button>
       </div>`).join("");
   }
   const count = $("#customPromptCount");
-  if (count) count.textContent = `${prompts.length} / ${MAX_CUSTOM_PROMPTS}`;
+  if (count) count.textContent = `${entries.length} / ${MAX_CUSTOM_PROMPTS}`;
   const add = $("#addCustomPrompt");
-  if (add) add.disabled = prompts.length >= MAX_CUSTOM_PROMPTS;
+  if (add) add.disabled = entries.length >= MAX_CUSTOM_PROMPTS;
 }
 
 function addCustomPromptRow() {
-  const prompts = readCustomPromptRows().map((prompt) => prompt.trim());
+  const prompts = readCustomPromptRows();
   if (prompts.length >= MAX_CUSTOM_PROMPTS) return;
-  prompts.push("");
+  prompts.push({ title: "", prompt: "" });
   renderCustomPromptEditor(prompts);
-  const inputs = $$("#customPromptList [data-prompt-input]");
+  const inputs = $$("#customPromptList [data-prompt-title]");
   if (inputs.length) inputs[inputs.length - 1].focus();
 }
 
@@ -10447,7 +10470,12 @@ function saveSettings() {
     theme: normalizeThemeMode(activeTheme ? activeTheme.dataset.value : state.settings.theme),
     language: normalizeLanguageMode(activeLanguage ? activeLanguage.dataset.value : state.settings.language),
     systemPrompt: $("#setSystemPrompt").value.trim(),
-    customPrompts: readCustomPromptRows().map((prompt) => prompt.trim()).filter(Boolean),
+    customPrompts: readCustomPromptRows()
+      .map(({ title, prompt }) => {
+        const body = prompt.trim();
+        return { title: title.trim() || customPromptTitle(body), prompt: body };
+      })
+      .filter((prompt) => prompt.prompt),
     llm: {
       provider: $("#setLlmProvider").value.trim(),
       api: $("#setLlmApi").value,

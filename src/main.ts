@@ -14,11 +14,12 @@ import {
   translateUI
 } from './i18n';
 import type { GitGlanceApi, MenuAction } from '../electron/shared/ipc';
-import { MAX_CUSTOM_PROMPTS } from '../electron/shared/models';
+import { MAX_CUSTOM_PROMPTS, MAX_CUSTOM_PROMPT_TITLE_LENGTH } from '../electron/shared/models';
 import type {
   AppSettings,
   AutoFetchInterval,
   Bootstrap,
+  CustomPrompt,
   GitBranchInfo,
   GitCommit,
   GitLargeFile,
@@ -3608,8 +3609,8 @@ function renderChatHead(): void {
       <span class="chat-context-chip">${icon('branch')}${esc(repo.branch)}</span>
       <span class="chat-context-chip">${icon('git-commit')}${files} changed</span>
       <span class="chat-context-chip">${icon('check')}${staged} staged</span>` + prompts.map((prompt, index) => {
-      const label = prompt.split('\n').map((line) => line.trim()).find(Boolean) || prompt;
-      return `<button type="button" class="chat-context-chip chat-prompt-chip" data-custom-prompt="${index}" title="${esc(prompt)}">${icon('sparkles')}<span class="chat-prompt-chip-label">${esc(label)}</span></button>`;
+      const title = prompt.title || customPromptTitle(prompt.prompt);
+      return `<button type="button" class="chat-context-chip chat-prompt-chip" data-custom-prompt="${index}" title="${esc(prompt.prompt)}">${icon('sparkles')}<span class="chat-prompt-chip-label">${esc(title)}</span></button>`;
     }).join('');
   }
   const input = $<HTMLTextAreaElement>('#chatInput');
@@ -3618,7 +3619,8 @@ function renderChatHead(): void {
 
 function sendCustomPrompt(index: number): void {
   if (!state.repo) return;
-  const prompt = (state.settings.customPrompts || [])[index];
+  const entry = (state.settings.customPrompts || [])[index];
+  const prompt = entry?.prompt;
   if (!prompt) return;
   const input = $<HTMLTextAreaElement>('#chatInput');
   if (input) {
@@ -5001,11 +5003,21 @@ let contextCommit: CommitContext | null = null;
 let commitAction: CommitActionState | null = null;
 let commitActionBusy = false;
 
-function readCustomPromptRows(): string[] {
-  return $$<HTMLTextAreaElement>('#customPromptList [data-prompt-input]').map((input) => input.value);
+function customPromptTitle(text: string): string {
+  const singleLine = text.replace(/\s+/g, ' ').trim();
+  return singleLine.length > MAX_CUSTOM_PROMPT_TITLE_LENGTH
+    ? `${singleLine.slice(0, MAX_CUSTOM_PROMPT_TITLE_LENGTH - 1).trimEnd()}…`
+    : singleLine;
 }
 
-function renderCustomPromptEditor(prompts: string[]): void {
+function readCustomPromptRows(): CustomPrompt[] {
+  return $$<HTMLElement>('#customPromptList .prompt-editor-row').map((row) => ({
+    title: row.querySelector<HTMLInputElement>('[data-prompt-title]')?.value ?? '',
+    prompt: row.querySelector<HTMLTextAreaElement>('[data-prompt-input]')?.value ?? ''
+  }));
+}
+
+function renderCustomPromptEditor(prompts: CustomPrompt[]): void {
   const list = $('#customPromptList');
   if (!list) return;
   if (!prompts.length) {
@@ -5013,7 +5025,10 @@ function renderCustomPromptEditor(prompts: string[]): void {
   } else {
     list.innerHTML = prompts.map((prompt, index) => `
       <div class="prompt-editor-row">
-        <textarea class="input prompt-textarea" data-prompt-input rows="2" placeholder="Ask the Pi agent to…" spellcheck="false" aria-label="Custom prompt ${index + 1}">${esc(prompt)}</textarea>
+        <div class="prompt-editor-fields">
+          <input class="input prompt-title-input" data-prompt-title type="text" maxlength="${MAX_CUSTOM_PROMPT_TITLE_LENGTH}" placeholder="Short title" spellcheck="false" aria-label="Prompt title ${index + 1}" value="${esc(prompt.title)}">
+          <textarea class="input prompt-textarea" data-prompt-input rows="2" placeholder="Ask the Pi agent to…" spellcheck="false" aria-label="Custom prompt ${index + 1}">${esc(prompt.prompt)}</textarea>
+        </div>
         <button class="icon-btn" type="button" data-remove-prompt="${index}" title="Remove prompt" aria-label="Remove prompt">${icon('x')}</button>
       </div>`).join('');
   }
@@ -5024,11 +5039,11 @@ function renderCustomPromptEditor(prompts: string[]): void {
 }
 
 function addCustomPromptRow(): void {
-  const prompts = readCustomPromptRows().map((prompt) => prompt.trim());
+  const prompts = readCustomPromptRows();
   if (prompts.length >= MAX_CUSTOM_PROMPTS) return;
-  prompts.push('');
+  prompts.push({ title: '', prompt: '' });
   renderCustomPromptEditor(prompts);
-  const inputs = $$<HTMLTextAreaElement>('#customPromptList [data-prompt-input]');
+  const inputs = $$<HTMLInputElement>('#customPromptList [data-prompt-title]');
   inputs[inputs.length - 1]?.focus();
 }
 
@@ -5122,7 +5137,12 @@ async function saveSettings(): Promise<void> {
     theme: normalizeThemeMode(activeTheme?.dataset.value),
     language: normalizeLanguageMode(activeLanguage?.dataset.value || state.settings.language),
     systemPrompt: $<HTMLTextAreaElement>('#setSystemPrompt')!.value,
-    customPrompts: readCustomPromptRows().map((prompt) => prompt.trim()).filter(Boolean),
+    customPrompts: readCustomPromptRows()
+      .map(({ title, prompt }) => {
+        const body = prompt.trim();
+        return { title: title.trim() || customPromptTitle(body), prompt: body };
+      })
+      .filter((prompt) => prompt.prompt),
     llm: {
       provider: $<HTMLInputElement>('#setLlmProvider')!.value.trim(),
       api: normalizeLlmApiType($<HTMLSelectElement>('#setLlmApi')!.value),

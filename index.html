@@ -3318,6 +3318,8 @@ kbd {
 }
 .prompt-editor { display: flex; flex-direction: column; gap: 7px; }
 .prompt-editor-row { display: flex; align-items: flex-start; gap: 6px; }
+.prompt-editor-fields { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.prompt-editor-row .prompt-title-input { font-weight: 500; }
 .prompt-editor-row .prompt-textarea { min-height: 52px; }
 .prompt-editor-row .icon-btn { margin-top: 2px; flex: none; }
 .prompt-editor-empty {
@@ -4279,7 +4281,7 @@ select.input option { background: var(--bg-option); color: var(--text); }
             <svg class="ico"><use href="#i-plus"/></svg>
             <span>Add prompt</span>
           </button>
-          <span class="field-hint">Shown above the chat input next to the staged tag. Click one to send it to the Pi agent.</span>
+          <span class="field-hint">Each prompt has a short title for its chip above the chat input; clicking sends the full prompt to the Pi agent.</span>
         </div>
       </section>
 

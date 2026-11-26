@@ -122,7 +122,10 @@ The summary is the dashboard for the active repository:
 - **Fetch**, **Pull**, **Stash**, **Branch**, and **Push** actions. Fetch, Pull,
   and Push are disabled when there is no remote, no upstream, or nothing to
   push. Stash is disabled when the working tree is clean; Branch opens the
-  branch picker described below.
+  branch picker described below. While a sync action runs, its button shows a
+  spinner and a **Fetching…**/**Pulling…**/**Pushing…** label, the other
+  actions stay disabled, and the result appears as a success or warning toast
+  when Git finishes.
 - A two-button group at the far right: **Open folder** opens the repository’s
   local path in the system file manager, and **Open terminal** opens a terminal
   window already in that directory. On macOS the terminal is Terminal; on
@@ -140,9 +143,9 @@ are saved, the LFS badge shows how many LFS-tracked files exist, the Submodules
 badge shows how many submodules are configured, and the Statistics badge shows
 the commit count once the tab has loaded.
 
-The **panel toggle** at the start of the tab bar hides the sidebar so the main
-panel can use the full window width. Click it again to bring the project list
-back.
+The **panel toggle** to the left of the repository title hides the sidebar so the
+main panel can use the full window width. Click it again to bring the project
+list back.
 
 ## Browsing files and changes
 
@@ -737,4 +740,4 @@ npm run dist:win           # Windows x64 installer
 npm run dist:all           # both installers
 ```
 
-See the [README](../README.md) for architecture, build, and signing details. On Apple Silicon, `dist:win` needs Rosetta 2 or a native `makensis` bundle as described there.
+See the [README](../README.en.md) for architecture, build, and signing details. On Apple Silicon, `dist:win` needs Rosetta 2 or a native `makensis` bundle as described there.

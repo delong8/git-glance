@@ -492,7 +492,7 @@ GitGlance 没有服务器。除可选的 AI 对话外，所有内容都留在本
   xattr -dr com.apple.quarantine /Applications/GitGlance.app
   ```
 
-  若要分发，请使用 Developer ID 签名并公证的构建。签名步骤见 [README](../README.zh.md)。
+  若要分发，请使用 Developer ID 签名并公证的构建。签名步骤见 [README](../README.md)。
 - **窗口打开了，但仓库列表为空。** 应用可能在使用其他配置目录。检查 `GITGLANCE_USER_DATA` 以及设置中显示的配置路径。
 
 ## 限制
@@ -517,4 +517,4 @@ npm run dist:win           # Windows x64 安装包
 npm run dist:all           # 两个安装包
 ```
 
-架构、构建与签名细节见 [README](../README.zh.md)。在 Apple Silicon 上，`dist:win` 需要 Rosetta 2 或原生的 `makensis` 包，具体见该文档。
+架构、构建与签名细节见 [README](../README.md)。在 Apple Silicon 上，`dist:win` 需要 Rosetta 2 或原生的 `makensis` 包，具体见该文档。

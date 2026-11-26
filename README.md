@@ -1,162 +1,162 @@
 # GitGlance
 
-**English** | [简体中文](./README.zh.md)
+[English](./README.en.md) | **简体中文**
 
-A local Git desktop client built around the UI in [index.html](./index.html). It runs in Electron, executes the installed Git CLI, talks to the Pi coding agent for AI chat, and previews images, PDFs, Word/Excel/PowerPoint documents, and text files without uploading them anywhere.
+一款围绕 [index.html](./index.html) 中的界面构建的本地 Git 桌面客户端。它运行在 Electron 中，调用本机已安装的 Git CLI，通过 Pi coding agent 提供 AI 对话，并可在不上传任何内容的前提下预览图片、PDF、Word/Excel/PowerPoint 文档和文本文件。
 
-**Official links**
+**官方链接**
 
-- Repository: [github.com/delong8/git-glance](https://github.com/delong8/git-glance)
-- Release downloads: [github.com/delong8/git-glance/releases](https://github.com/delong8/git-glance/releases)
+- 仓库：[github.com/delong8/git-glance](https://github.com/delong8/git-glance)
+- 发布下载：[github.com/delong8/git-glance/releases](https://github.com/delong8/git-glance/releases)
 
-![GitGlance workspace with a repository open](./docs/screenshots/workspace.png)
+![打开仓库后的 GitGlance 工作区](./docs/screenshots/workspace.png)
 
-## Documentation
+## 文档
 
-The [usage guide](./docs/USAGE.md) is the end-user walkthrough: opening and switching repositories, reading the summary, browsing the working tree, previewing files, staging and committing, the Chat history graph and its commit actions, worktrees, remotes, branches, tags, stashes, LFS audits, submodules, repository statistics and HTML reports, syncing with remotes, AI chat, settings, the About dialog, and troubleshooting. It is also available in [Simplified Chinese](./docs/USAGE.zh.md).
+[使用指南](./docs/USAGE.zh.md)是面向最终用户的完整教程（另有[英文版](./docs/USAGE.md)）：打开与切换仓库、阅读摘要、浏览工作区、预览文件、暂存与提交、对话页的提交历史图及其提交操作、工作树、远程、分支、标签、贮藏、LFS 审计、子模块、仓库统计与 HTML 报告、与远程同步、AI 对话、设置、关于对话框以及故障排查。
 
-Quick links:
+快速链接：
 
-- [Quick start](./docs/USAGE.md#quick-start)
-- [Opening repositories](./docs/USAGE.md#opening-repositories)
-- [Browsing files and changes](./docs/USAGE.md#browsing-files-and-changes)
-- [Previewing files](./docs/USAGE.md#previewing-files)
-- [Committing changes](./docs/USAGE.md#committing-changes)
-- [Worktrees](./docs/USAGE.md#worktrees)
-- [Remotes](./docs/USAGE.md#remotes)
-- [Branches](./docs/USAGE.md#branches)
-- [Tags](./docs/USAGE.md#tags)
-- [Stash](./docs/USAGE.md#stash)
-- [LFS](./docs/USAGE.md#lfs)
-- [Submodules](./docs/USAGE.md#submodules)
-- [Statistics](./docs/USAGE.md#statistics)
-- [AI chat with Pi](./docs/USAGE.md#ai-chat-with-pi)
-- [Chat commit actions](./docs/USAGE.md#commit-actions)
-- [Settings](./docs/USAGE.md#settings)
-- [About GitGlance](./docs/USAGE.md#about-gitglance)
-- [Keyboard shortcuts](./docs/USAGE.md#keyboard-shortcuts)
-- [Troubleshooting](./docs/USAGE.md#troubleshooting)
+- [快速开始](./docs/USAGE.zh.md#快速开始)
+- [打开仓库](./docs/USAGE.zh.md#打开仓库)
+- [浏览文件与更改](./docs/USAGE.zh.md#浏览文件与更改)
+- [预览文件](./docs/USAGE.zh.md#预览文件)
+- [提交更改](./docs/USAGE.zh.md#提交更改)
+- [工作树](./docs/USAGE.zh.md#工作树)
+- [远程](./docs/USAGE.zh.md#远程)
+- [分支](./docs/USAGE.zh.md#分支)
+- [标签](./docs/USAGE.zh.md#标签)
+- [贮藏](./docs/USAGE.zh.md#贮藏)
+- [LFS](./docs/USAGE.zh.md#lfs)
+- [子模块](./docs/USAGE.zh.md#子模块)
+- [统计](./docs/USAGE.zh.md#统计)
+- [与 Pi 进行 AI 对话](./docs/USAGE.zh.md#与-pi-进行-ai-对话)
+- [对话内的提交操作](./docs/USAGE.zh.md#对话内的提交操作)
+- [设置](./docs/USAGE.zh.md#设置)
+- [关于 GitGlance](./docs/USAGE.zh.md#关于-gitglance)
+- [键盘快捷键](./docs/USAGE.zh.md#键盘快捷键)
+- [故障排查](./docs/USAGE.zh.md#故障排查)
 
-### Screenshots
+### 截图
 
-| File tree and preview | Image preview |
+| 文件树与预览 | 图片预览 |
 | --- | --- |
-| ![File tree with a syntax-highlighted preview](./docs/screenshots/files-preview.png) | ![Image preview with zoom and metadata](./docs/screenshots/image-preview.png) |
+| ![带语法高亮预览的文件树](./docs/screenshots/files-preview.png) | ![支持缩放与元数据的图片预览](./docs/screenshots/image-preview.png) |
 
-| Working tree diff | Settings |
+| 工作区差异 | 设置 |
 | --- | --- |
-| ![Working tree diff for a modified source file](./docs/screenshots/file-diff.png) | ![Settings: appearance, language, and LLM provider](./docs/screenshots/settings-appearance.png) |
+| ![已修改源文件的工作区差异](./docs/screenshots/file-diff.png) | ![设置：外观、语言与 LLM 提供商](./docs/screenshots/settings-appearance.png) |
 
-| Prompts settings | About GitGlance |
+| 提示词设置 | 关于 GitGlance |
 | --- | --- |
-| ![Settings: system prompt and custom user prompts](./docs/screenshots/settings-prompts.png) | ![About GitGlance](./docs/screenshots/about.png) |
+| ![设置：系统提示词与自定义用户提示词](./docs/screenshots/settings-prompts.png) | ![关于 GitGlance](./docs/screenshots/about.png) |
 
-## Features
+## 功能
 
-- **Multi-repository sidebar** with filtering, per-project branch and change counts, and an onboarding screen when no repository is open yet. The panel toggle at the start of the tab bar collapses it.
-- **Repository summary** with the current branch, upstream, ahead/behind counts, and Fetch / Pull / Stash / Branch / Push actions. Stash saves the working tree in one click; Branch opens a picker for switching or creating a branch from any local or remote branch. A compact group at the far right opens the repository folder in the system file manager or a terminal at that path.
-- **Full working-tree file tree**, including folders, symlinks, staged/unstaged/deleted badges, per-file stage toggles, and a filter.
-- **Preview and diff panes** in the File tree and Chat tabs. Select a file to preview it; switch to its staged or unstaged diff.
-- **Rich previews**
-  - Images: PNG, JPEG, GIF, WebP, AVIF, BMP, ICO, SVG.
-  - PDF: rendered with PDF.js, with page navigation and zoom.
-  - Word, Excel, PowerPoint, and OpenDocument files: converted to PDF with LibreOffice, then rendered with PDF.js.
-  - Text and source files: encoding detection (UTF-8/UTF-16 and legacy encodings), syntax highlighting, line numbers, and truncation for very large files.
-  - Deleted files: preview from the HEAD revision.
-  - Binary files: a clear fallback instead of garbled content.
-- **Worktrees tab** listing every linked worktree for the repository, with branch, HEAD, path, main/current/locked/prunable badges, filtering, and open/reveal/copy actions.
-- **Remote tab** listing every configured remote with fetch and push URLs, the default branch, remote-tracking branches, filtering, per-remote fetch, and copy/open actions.
-- **Branches tab** listing local and remote-tracking branches with current/remote/gone badges, upstream and ahead/behind state, latest commit details, filtering, and checkout/copy actions, plus a summary-header branch picker for switching or creating branches from any branch.
-- **Tags tab** listing lightweight and annotated tags with type/HEAD badges, annotations, taggers, target commit details, filtering, and checkout/copy actions.
-- **Stash tab** listing stashed work with branch, message, base commit, file stats, filtering, and apply/pop/drop/copy actions; the summary Stash button saves tracked and untracked changes.
-- **LFS tab** with a two-column audit: LFS-tracked files on the left and non-LFS files over 5 MB on the right, with sizes, OIDs, pointer/tracking badges, filtering, and open/reveal/copy actions.
-- **Submodules tab** listing each submodule with URL, expected/checked-out commits, branch, initialization/modified/dirty status, filtering, and update/open/reveal/copy actions.
-- **Statistics tab** with commit, contributor, file, language, activity, repository, and working-tree metrics plus a **Download** action that writes a self-contained HTML report.
-- **AI Chat tab** backed by the Pi agent, with a three-column workspace: an all-refs commit history graph on the left that loads the newest 80 commits first and pages older commits in as you scroll, a changed-file tree above the chat in the middle, and a preview pane on the right that opens when a changed file is selected. The preview has a hide button, so the tree and chat can use the full width. Right-clicking a commit offers New Branch, New Tag, Cherry Pick, Revert, Reset (Soft/Mixed/Hard), Squash into parent, and Copy SHA actions. Streaming responses, tool activity (including Git and shell commands), stop/new-chat controls, ↑/↓ recall of sent messages when the caret is at the end of the composer, and per-repository conversations are included.
-- **Git settings** for identity, default branch, editor, pull strategy, GPG signing, pruning, and app-level auto-fetch behavior.
-- **Prompts** configuration for the Pi agent: a system prompt appended to GitGlance's built-in assistant instructions, plus up to eight custom user prompts, each with a short chip title and the full text sent on click, shown above the chat composer.
-- **About dialog** from the info button beside the sidebar wordmark, with the release tag (the same `YYMMDD.shortSHA` stamp used in installer filenames), MIT license, runtime stack, Pi assistant note, and repository/release links.
-- **Appearance** with light, dark, and system-following themes plus interface zoom (50%–300%), applied live and remembered between launches.
-- **Language** with English, Simplified Chinese, or the system language, applied live to the UI and native menus; repository content, code, and commit messages stay as-is.
-- **Native desktop shell** with a custom protocol, sandboxed renderer, context-isolated IPC, native menus, and single-instance behavior.
+- **多仓库侧边栏**：支持筛选、显示每个项目的分支与更改数量，未打开仓库时显示引导界面。仓库标题左侧的面板按钮可将其收起。
+- **仓库摘要**：显示当前分支、上游、领先/落后数量，以及获取、拉取、贮藏、分支、推送操作。贮藏可一键保存工作区；分支会打开选择器，可从任意本地或远程分支切换或创建分支。最右侧的紧凑按钮组可在系统文件管理器中打开仓库文件夹，或在该路径启动终端。
+- **完整的工作区文件树**：包含文件夹、符号链接、已暂存/未暂存/已删除标记、单文件暂存开关以及筛选。
+- **预览与差异面板**：位于 文件树 和 对话 标签页。选择文件即可预览；也可切换到其已暂存或未暂存差异。
+- **丰富的预览**
+  - 图片：PNG、JPEG、GIF、WebP、AVIF、BMP、ICO、SVG。
+  - PDF：使用 PDF.js 渲染，支持翻页与缩放。
+  - Word、Excel、PowerPoint 与 OpenDocument 文件：先由 LibreOffice 转换为 PDF，再由 PDF.js 渲染。
+  - 文本与源代码文件：编码检测（UTF-8/UTF-16 及传统编码）、语法高亮、行号，超大文件会被截断。
+  - 已删除文件：从 HEAD 版本预览。
+  - 二进制文件：给出清晰提示，而不是乱码内容。
+- **工作树标签页**：列出该仓库的所有关联工作树，包含分支、HEAD、路径、主/当前/已锁定/可清理标记、筛选，以及打开/在文件夹中显示/复制操作。
+- **远程标签页**：列出每个已配置远程的获取与推送 URL、默认分支、远程跟踪分支、筛选，支持按远程获取，以及复制/打开操作。
+- **分支标签页**：列出本地与远程跟踪分支，包含当前/远程/已消失标记、上游与领先/落后状态、最新提交详情、筛选，以及检出/复制操作；摘要栏还提供分支选择器，可从任意分支切换或创建分支。
+- **标签页（Tags）**：列出轻量标签与附注标签，包含类型/HEAD 标记、附注、打标签者、目标提交详情、筛选，以及检出/复制操作。
+- **贮藏标签页**：列出贮藏的工作，包含分支、说明、基础提交、文件统计、筛选，以及应用/弹出/删除/复制操作；摘要栏的 贮藏 按钮会保存已跟踪和未跟踪的更改。
+- **LFS 标签页**：双栏审计——左侧为 LFS 跟踪的文件，右侧为大于 5 MB 的非 LFS 文件，包含大小、OID、指针/跟踪标记、筛选，以及打开/在文件夹中显示/复制操作。
+- **子模块标签页**：列出每个子模块的 URL、期望/已检出的提交、分支、初始化/已修改/脏状态、筛选，以及更新/打开/在文件夹中显示/复制操作。
+- **统计标签页**：展示提交、贡献者、文件、语言、活动、仓库与工作区指标，并提供 **下载** 操作，生成自包含的 HTML 报告。
+- **AI 对话标签页**：由 Pi agent 驱动，三栏工作区——左侧是覆盖全部引用的提交历史图，先加载最新 80 个提交，滚动时再分页加载更早的提交；中间是对话上方的已更改文件树；右侧是预览面板，选中已更改文件时打开。预览带有隐藏按钮，文件树与对话可占满整宽。右键单击提交可新建分支、新建标签、拣选（cherry-pick）、还原（revert）、重置（软/混合/硬）、压缩合并到父提交，以及复制 SHA。此外还支持流式回复、工具活动（包括 Git 与 shell 命令）、停止/新建对话控件、光标位于输入框末尾时用 ↑/↓ 召回已发送消息，以及按仓库隔离的对话历史。
+- **Git 设置**：身份、默认分支、编辑器、拉取策略、GPG 签名、清理，以及应用级自动获取行为。
+- **提示词**：为 Pi agent 追加一段系统提示词（叠加在 GitGlance 内置的助手说明之后），并最多添加八条自定义用户提示词，每条含简短标题（显示在芯片上）与完整发送文本，以一键芯片的形式显示在对话输入框上方。
+- **关于对话框**：由侧边栏品牌文字旁的信息按钮打开，显示发布标签（与安装包文件名相同的 `YYMMDD.shortSHA` 标记）、MIT 许可证、运行时技术栈、Pi 助手说明，以及仓库/发布链接。
+- **外观**：支持浅色、深色和跟随系统三种主题，以及界面缩放（50%–300%），即时生效并在下次启动时保留。
+- **语言**：支持英文、简体中文或跟随系统语言，即时应用于界面与原生菜单；仓库内容、代码与提交信息保持原样。
+- **原生桌面外壳**：自定义协议、沙盒渲染进程、上下文隔离的 IPC、原生菜单，以及单实例行为。
 
-## Requirements
+## 环境要求
 
-- **Node.js 22+** and npm (tested with Node 26) to run from source or build the installer. The packaged app does not require Node.js.
-- **macOS** to build the `.app`/DMG locally; the Windows x64 installer can be cross-built as described below.
-- **Git** installed and configured with your credentials. GitGlance uses the `git` on `PATH`; it does not bundle Git.
-- **Pi agent CLI** (`pi`) available on `PATH`, or set `PI_BIN` to its executable. Configure the model endpoint in **Settings → LLM provider**; GitGlance starts Pi with `--mode rpc` and enables the `read`, `grep`, `find`, `ls`, and `bash` tools.
-- **LibreOffice** is optional. Install it only if you want Word/Excel/PowerPoint previews. GitGlance looks for `soffice` in common locations or uses `LIBREOFFICE_BIN`.
+- **Node.js 22+** 与 npm（已在 Node 26 上测试），用于从源码运行或构建安装包。打包后的应用不需要 Node.js。
+- **macOS**，用于在本地构建 `.app`/DMG；Windows x64 安装包可按下文说明交叉构建。
+- **Git** 已安装并配置好凭据。GitGlance 使用 `PATH` 中的 `git`，不捆绑 Git。
+- **Pi agent CLI**（`pi`）在 `PATH` 中可用，或将 `PI_BIN` 指向其可执行文件。在 **设置 → LLM 提供商** 中配置模型端点；GitGlance 以 `--mode rpc` 启动 Pi，并启用 `read`、`grep`、`find`、`ls` 与 `bash` 工具。
+- **LibreOffice** 为可选项。仅当需要 Word/Excel/PowerPoint 预览时才需安装。GitGlance 会在常见位置查找 `soffice`，或使用 `LIBREOFFICE_BIN`。
 
-The application source is strict TypeScript: the renderer is compiled by Vite, and the Electron main/preload/services are compiled with `tsc` into `dist-electron/`. Build and test scripts remain `.mjs` tooling.
+应用源码为严格模式的 TypeScript：渲染进程由 Vite 编译，Electron 主进程/预加载/服务由 `tsc` 编译到 `dist-electron/`。构建与测试脚本仍为 `.mjs` 工具脚本。
 
-Tested on macOS. The Electron main process is cross-platform and a Windows x64 installer builds successfully, but Windows runtime behavior has not been validated in this workspace.
+已在 macOS 上测试。Electron 主进程是跨平台的，Windows x64 安装包也能成功构建，但本工作区尚未在 Windows 上验证运行时行为。
 
-## Run it
+## 运行
 
 ```bash
 npm install
 npm start
 ```
 
-`npm start` builds the TypeScript renderer and Electron process, then launches Electron. On first launch, use **Open Repository…** (or <kbd>⌘O</kbd>) to add a Git working tree. Repositories are remembered between launches.
+`npm start` 会先构建 TypeScript 渲染进程与 Electron 进程，然后启动 Electron。首次启动时使用 **打开仓库…**（或 <kbd>⌘O</kbd>）添加一个 Git 工作区。仓库会在下次启动时保留。
 
-For renderer hot reload:
+渲染进程热重载：
 
 ```bash
 npm run dev
 ```
 
-This starts Vite on `127.0.0.1:5173` and launches Electron against it.
+它会在 `127.0.0.1:5173` 启动 Vite，并让 Electron 指向它。
 
-To open a repository directly from the command line:
+从命令行直接打开仓库：
 
 ```bash
 npx electron . --repo /path/to/repository
 ```
 
-Set `PI_BIN` or `LIBREOFFICE_BIN` before launching if either tool is not in a standard location:
+若某个工具不在标准位置，启动前设置 `PI_BIN` 或 `LIBREOFFICE_BIN`：
 
 ```bash
 PI_BIN=/opt/homebrew/bin/pi LIBREOFFICE_BIN=/Applications/LibreOffice.app/Contents/MacOS/soffice npm start
 ```
 
-## Build a macOS installer
+## 构建 macOS 安装包
 
-The macOS package is built with electron-builder into `release/`:
+macOS 安装包由 electron-builder 构建到 `release/`：
 
 ```bash
 npm run pack:mac           # release/mac-arm64/GitGlance.app
-npm run dist:mac           # Apple Silicon DMG, signs if a Developer ID is available
-npm run dist:mac:unsigned  # force a local build without a Developer ID (ad-hoc signed)
+npm run dist:mac           # Apple Silicon DMG，若有 Developer ID 则签名
+npm run dist:mac:unsigned  # 强制本地构建，不使用 Developer ID（ad-hoc 签名）
 ```
 
-The DMG is written to:
+DMG 输出路径：
 
 ```text
 release/GitGlance-[YYMMDD.COMMIT_SHORT_SHA]-arm.dmg
 ```
 
-For example: `release/GitGlance-261124.a1b2c3d-arm.dmg`. The date is the local build date (`YYMMDD`) and the suffix is `git rev-parse --short=7 HEAD`. The app shows the same tag in its sidebar badge and About dialog, so a screenshot or issue report identifies the exact build.
+例如：`release/GitGlance-261124.a1b2c3d-arm.dmg`。日期是本地构建日期（`YYMMDD`），后缀为 `git rev-parse --short=7 HEAD`。应用会在侧边栏徽标和关于对话框中显示同一标签，因此截图或问题报告可精确定位到具体构建。
 
-Open it and drag **GitGlance** to Applications. Without a Developer ID certificate the build is ad-hoc signed by `scripts/after-pack.mjs`; locally built artifacts are not quarantined by macOS, so it opens normally on the build machine. A copy moved to another Mac is quarantined by the download, and Gatekeeper refuses to launch it until the quarantine flag is cleared:
+打开后将 **GitGlance** 拖入「应用程序」。若没有 Developer ID 证书，构建由 `scripts/after-pack.mjs` 做 ad-hoc 签名；本地构建的产物不会被 macOS 隔离，因此在构建机上可正常打开。复制到另一台 Mac 后会被下载隔离，Gatekeeper 在清除隔离标记前会拒绝启动：
 
 ```bash
 xattr -dr com.apple.quarantine /Applications/GitGlance.app
 ```
 
-Clearing the flag is only a workaround for local testing — for distribution, sign with a Developer ID and notarize (below).
+清除标记只是本地测试的变通做法——若要分发，请使用 Developer ID 签名并公证（见下文）。
 
-By default the installer targets Apple Silicon (`arm64`). To build a universal DMG, run:
+默认安装包面向 Apple Silicon（`arm64`）。如需构建通用 DMG：
 
 ```bash
 npm run build
 npx electron-builder --mac --universal
 ```
 
-### Signing and notarization
+### 签名与公证
 
-For distribution outside your own Mac, use an Apple Developer ID Application certificate. electron-builder discovers an installed certificate automatically, or accepts it through `CSC_LINK`/`CSC_NAME`. With the certificate installed, build and notarize with:
+若要在自己的 Mac 之外分发，请使用 Apple Developer ID Application 证书。electron-builder 会自动发现已安装的证书，也可通过 `CSC_LINK`/`CSC_NAME` 指定。证书就绪后构建并公证：
 
 ```bash
 export APPLE_ID="you@example.com"
@@ -167,166 +167,164 @@ npm run build
 npx electron-builder --mac --arm64 --config.mac.notarize=true
 ```
 
-`@electron/notarize` also accepts an App Store Connect API key via `APPLE_API_KEY`, `APPLE_API_KEY_ID`, and `APPLE_API_ISSUER`. The hardened-runtime entitlements used for signing are in `build/entitlements.mac.plist`.
+`@electron/notarize` 也接受 App Store Connect API 密钥，通过 `APPLE_API_KEY`、`APPLE_API_KEY_ID` 和 `APPLE_API_ISSUER` 传入。签名所用的强化运行时权限配置位于 `build/entitlements.mac.plist`。
 
-The packaged app does not bundle Git, Pi, or LibreOffice. It looks for Git on `PATH`, Pi in standard Homebrew/home locations, and LibreOffice in `/Applications` or Homebrew. `PI_BIN` and `LIBREOFFICE_BIN` work when launching from a terminal; for a Finder launch, custom tool paths should be symlinked into a standard location such as `/opt/homebrew/bin` or `/usr/local/bin`.
+打包后的应用不捆绑 Git、Pi 或 LibreOffice。它会在 `PATH` 中查找 Git，在标准 Homebrew/用户主目录位置查找 Pi，并在 `/Applications` 或 Homebrew 中查找 LibreOffice。从终端启动时 `PI_BIN` 与 `LIBREOFFICE_BIN` 有效；若通过 Finder 启动，应将自定义工具路径软链到 `/opt/homebrew/bin` 或 `/usr/local/bin` 等标准位置。
 
-## Build a Windows installer
+## 构建 Windows 安装包
 
-electron-builder can cross-build the Windows x64 NSIS installer from macOS:
+electron-builder 可在 macOS 上交叉构建 Windows x64 NSIS 安装包：
 
 ```bash
 npm run dist:win
-npm run dist:all   # macOS arm64 DMG + Windows x64 installer
+npm run dist:all   # macOS arm64 DMG + Windows x64 安装包
 ```
 
-The deliverable is the single installer:
+交付物为单个安装包：
 
 ```text
 release/GitGlance-[YYMMDD.COMMIT_SHORT_SHA]-x64.exe
 ```
 
-For example: `release/GitGlance-261124.a1b2c3d-x64.exe`. `dist:win` and `dist:all` rename the freshly built installers with this convention, remove older installers for the built platform(s), and delete electron-builder intermediates (`win-unpacked`, blockmaps, update metadata), so `release/` contains only the current installers. It is unsigned, so Windows SmartScreen may warn on first launch; sign it with a Windows code-signing certificate before distributing it. The installer uses the GitGlance icon from `build/icon.ico` and offers an assisted, per-user install with an optional installation directory.
+例如：`release/GitGlance-261124.a1b2c3d-x64.exe`。`dist:win` 与 `dist:all` 会按该约定重命名新构建的安装包，删除所构建平台上的旧安装包，并清理 electron-builder 的中间产物（`win-unpacked`、blockmap、更新元数据），因此 `release/` 中只保留当前安装包。它未签名，Windows SmartScreen 可能在首次启动时告警；分发前请使用 Windows 代码签名证书签名。安装包使用 `build/icon.ico` 中的 GitGlance 图标，提供带可选安装目录的向导式按用户安装。
 
-On Apple Silicon, electron-builder’s bundled `makensis` is Intel-only. Install Rosetta 2 (`softwareupdate --install-rosetta --agree-to-license`) or point `ELECTRON_BUILDER_NSIS_DIR` at a native arm64 NSIS bundle with `elevate.exe` and `mac/makensis`. Building on Windows or a Windows CI runner avoids the cross-build requirement entirely. The Windows package is built from the same renderer and Electron main process, but it has not been executed on Windows in this workspace.
+在 Apple Silicon 上，electron-builder 自带的 `makensis` 仅支持 Intel。请安装 Rosetta 2（`softwareupdate --install-rosetta --agree-to-license`），或将 `ELECTRON_BUILDER_NSIS_DIR` 指向一个原生 arm64 NSIS 包（包含 `elevate.exe` 与 `mac/makensis`）。在 Windows 或 Windows CI runner 上构建可完全避免交叉构建需求。Windows 包由同一套渲染进程与 Electron 主进程构建，但本工作区尚未在 Windows 上实际运行过。
 
-## AI chat
+## AI 对话
 
-The Chat tab keeps one Pi RPC process per repository. Each prompt includes:
+对话标签页为每个仓库保留一个 Pi RPC 进程。每次提示包含：
 
-- repository path and current branch;
-- upstream and ahead/behind state;
-- changed files with status and line counts;
-- the eight most recent commits;
-- staged and unstaged diffs (clipped to about 22 KB each);
-- the file selected in the changed-file tree, if any.
+- 仓库路径与当前分支；
+- 上游及领先/落后状态；
+- 已更改文件及其状态与行数；
+- 最近八条提交；
+- 已暂存与未暂存的差异（各截断到约 22 KB）；
+- 已更改文件树中选中的文件（若有）。
 
-The Chat left column shows the commit graph across local, remote-tracking, and
-tagged refs. Right-click a commit to create a branch or tag, cherry-pick,
-revert, reset, squash it into its parent, or copy its SHA.
+对话左栏展示覆盖本地、远程跟踪与标签引用的提交图。右键单击提交可创建分支或标签、拣选、还原、重置、将其压缩合并到父提交，或复制其 SHA。
 
-Pi is launched with the `read`, `grep`, `find`, `ls`, and `bash` tools. It can run Git and other shell commands when you ask it to, including creating commits; the system prompt tells it to explain the impact and ask before destructive operations. Shell commands run with the same OS privileges as GitGlance, so review what the agent proposes and treat repository content as untrusted input. Chat state is kept in the renderer per repository, and **New chat** resets the underlying Pi session. **Stop** aborts the current response.
+Pi 以 `read`、`grep`、`find`、`ls` 与 `bash` 工具启动。它可以按你的要求执行 Git 及其他 shell 命令，包括创建提交；系统提示词要求它说明影响，并在执行破坏性操作前征求确认。shell 命令以与 GitGlance 相同的系统权限运行，因此请审阅 agent 提议的操作，并将仓库内容视为不受信任的输入。对话状态按仓库保存在渲染进程中，**新建对话** 会重置底层的 Pi 会话，**停止** 会中止当前回复。
 
-GitGlance configures the model itself. **Settings → LLM provider** stores a provider ID, API protocol (`openai-completions`, `openai-responses`, `anthropic-messages`, `google-generative-ai`, or `google-vertex`), base URL, API key, and model ID in the app config. Before starting Pi, GitGlance writes those values into its own `pi-agent` directory (`models.json` and `settings.json`) and launches Pi with `PI_CODING_AGENT_DIR` pointed at it. The generated settings also set `defaultProjectTrust` to `never`, so neither the user-level `~/.pi` nor a repository-local `.pi` directory is read. Prompts and file excerpts may be sent to the configured model endpoint; Git operations and previews stay local.
+GitGlance 自行配置模型。**设置 → LLM 提供商** 会在应用配置中保存提供商 ID、API 协议（`openai-completions`、`openai-responses`、`anthropic-messages`、`google-generative-ai` 或 `google-vertex`）、基础 URL、API 密钥与模型 ID。启动 Pi 之前，GitGlance 会把这些值写入自有的 `pi-agent` 目录（`models.json` 与 `settings.json`），并以 `PI_CODING_AGENT_DIR` 指向该目录来启动 Pi。生成的设置还会将 `defaultProjectTrust` 设为 `never`，因此既不会读取用户级 `~/.pi`，也不会读取仓库内的 `.pi` 目录。提示词与文件片段可能会被发送到所配置的模型端点；Git 操作与预览始终在本地完成。
 
-## Git behavior
+## Git 行为
 
-GitGlance runs `git` directly in the repository working directory with `LC_ALL=C` and `GIT_TERMINAL_PROMPT=0`:
+GitGlance 在仓库工作目录中直接运行 `git`，并设置 `LC_ALL=C` 与 `GIT_TERMINAL_PROMPT=0`：
 
-- stage and unstage individual files, stage/unstage all files;
-- commit the staged changes;
-- stash tracked and untracked changes;
-- switch branches and create a local branch from any local or remote branch;
-- create branches and lightweight tags at any commit, cherry-pick, revert, reset (soft/mixed/hard), and squash a commit into its parent from the Chat history menu;
-- fetch (optionally all remotes and with pruning), pull with merge/rebase/ff-only, and push;
-- read diffs, status with rename and symlink information, history, remotes, and upstream tracking state.
+- 暂存与取消暂存单个文件，暂存/取消暂存全部文件；
+- 提交已暂存的更改；
+- 贮藏已跟踪与未跟踪的更改；
+- 切换分支，并从任意本地或远程分支创建本地分支；
+- 在任意提交上创建分支和轻量标签，以及从对话历史菜单拣选、还原、重置（软/混合/硬）并将提交压缩合并到父提交；
+- 获取（可选全部远程并清理）、拉取（merge/rebase/ff-only）与推送；
+- 读取差异、带重命名与符号链接信息的状态、历史、远程，以及上游跟踪状态。
 
-Authentication is delegated to your existing Git credential helper or SSH agent. Because terminal prompts are disabled, an operation that needs interactive credentials fails visibly instead of hanging.
+认证交由你现有的 Git 凭据助手或 SSH agent 处理。由于禁用了终端提示，需要交互式凭据的操作会显式失败，而不是挂起。
 
-Branch switching and creation are supported, including local tracking branches for remote-only refs. The Chat history menu exposes cherry-pick, revert, reset, and squash; cherry-pick, revert, and squash abort on conflict. There is no merge-conflict editor or general interactive-rebase UI.
+支持切换与创建分支，包括为仅存在于远程的引用创建本地跟踪分支。对话历史菜单提供拣选、还原、重置与压缩合并；拣选、还原与压缩合并在冲突时会中止。没有合并冲突编辑器或通用的交互式 rebase 界面。
 
-## Settings and local data
+## 设置与本地数据
 
-The Settings modal writes these keys to your **global** Git config (`~/.gitconfig` by default):
+设置模态框会把以下键写入你的**全局** Git 配置（默认 `~/.gitconfig`）：
 
-| UI | Git key |
+| 界面 | Git 键 |
 | --- | --- |
-| Full name / Email | `user.name`, `user.email` |
-| Default branch | `init.defaultBranch` |
-| Editor | `core.editor` |
-| Pull: Merge | clears `pull.rebase` and `pull.ff` |
-| Pull: Rebase | `pull.rebase=true` |
-| Pull: Fast-forward only | `pull.ff=only` |
-| Sign commits with GPG | `commit.gpgsign`, `user.signingkey` |
-| Prune stale remote branches | `fetch.prune` |
-| Fetch every remote | app preference |
-| Theme | app preference |
-| Language | app preference |
-| Zoom | app preference |
-| LLM provider (provider, API, base URL, key, model) | app preference |
+| 姓名 / 邮箱 | `user.name`、`user.email` |
+| 默认分支 | `init.defaultBranch` |
+| 编辑器 | `core.editor` |
+| 拉取：合并 | 清除 `pull.rebase` 与 `pull.ff` |
+| 拉取：变基 | `pull.rebase=true` |
+| 拉取：仅快进 | `pull.ff=only` |
+| 使用 GPG 签名提交 | `commit.gpgsign`、`user.signingkey` |
+| 清理过期的远程分支 | `fetch.prune` |
+| 获取所有远程 | 应用偏好 |
+| 主题 | 应用偏好 |
+| 语言 | 应用偏好 |
+| 缩放 | 应用偏好 |
+| LLM 提供商（提供商、API、基础 URL、密钥、模型） | 应用偏好 |
 
-Auto-fetch interval, fetch-all behavior, theme, language, zoom, and the LLM provider are app preferences, not Git config. They are stored with the repository list in Electron's user data directory:
+自动获取间隔、获取全部行为、主题、语言、缩放与 LLM 提供商属于应用偏好，而非 Git 配置。它们与仓库列表一起保存在 Electron 的用户数据目录中：
 
-- macOS: `~/Library/Application Support/GitGlance/config.json`
-- Windows: `%APPDATA%/GitGlance/config.json`
-- Linux: `~/.config/GitGlance/config.json`
+- macOS：`~/Library/Application Support/GitGlance/config.json`
+- Windows：`%APPDATA%/GitGlance/config.json`
+- Linux：`~/.config/GitGlance/config.json`
 
-The LLM provider is written to a `pi-agent` directory next to that config (`config.json` holds the editable values; `models.json` and `settings.json` are generated for Pi and kept `0600`). Office conversion PDFs are cached in a `preview-cache` directory next to that config. The app keeps the 220 most recent conversions.
+LLM 提供商会写入该配置旁的 `pi-agent` 目录（`config.json` 保存可编辑的值；`models.json` 与 `settings.json` 为 Pi 生成，权限保持 `0600`）。Office 转换产生的 PDF 缓存于该配置旁的 `preview-cache` 目录，应用最多保留最近 220 次转换。
 
-## Architecture
+## 架构
 
 ```text
 electron/
-  main.cts            Electron window, app:// protocol, native menu, IPC, Pi prompt context
-  preload.cts         contextBridge API exposed as window.gitglance
+  main.cts            Electron 窗口、app:// 协议、原生菜单、IPC、Pi 提示上下文
+  preload.cts         通过 contextBridge 暴露为 window.gitglance 的 API
   shared/
-    models.ts         Git, preview, Pi, settings, and IPC payload types
-    ipc.ts            Typed preload API surface and response envelopes
+    models.ts         Git、预览、Pi、设置与 IPC 载荷类型
+    ipc.ts            带类型的预加载 API 接口与响应封装
   lib/
-    git.cts           Git CLI: status, tree, history, diffs, stage/commit, sync, global config
-    preview.cts       Text/image/PDF/Office previews, encoding detection, LibreOffice cache
-    pi.cts            Pi RPC subprocess, app-managed LLM provider config, streaming, abort/reset
-    config.cts        Persistent repo list and app preferences
+    git.cts           Git CLI：状态、文件树、历史、差异、暂存/提交、同步、全局配置
+    preview.cts       文本/图片/PDF/Office 预览、编码检测、LibreOffice 缓存
+    pi.cts            Pi RPC 子进程、应用托管的 LLM 提供商配置、流式输出、中止/重置
+    config.cts        持久化的仓库列表与应用偏好
 src/
-  main.ts             Renderer state, tabs, tree, history, chat, settings, preview detail
-  i18n.ts             English/Simplified Chinese interface dictionary and DOM translator
-  preview.ts          PDF.js/image/text/binary preview mounting and teardown
-  types.ts            Renderer state and tree/graph interfaces
-  gitglance.d.ts      window.gitglance API declaration
-  app.css             Electron chrome and application styles
+  main.ts             渲染进程状态、标签页、文件树、历史、对话、设置、预览详情
+  i18n.ts             英文/简体中文界面对照表与 DOM 翻译器
+  preview.ts          PDF.js/图片/文本/二进制预览的挂载与卸载
+  types.ts            渲染进程状态与文件树、提交图接口
+  gitglance.d.ts      window.gitglance API 声明
+  app.css             Electron 外壳与应用样式
 public/
-  theme-boot.js       Pre-paint theme and language selection
-  pdfjs/              PDF.js worker, cmaps, standard fonts, and wasm assets
+  theme-boot.js       首帧绘制前的主题与语言选择
+  pdfjs/              PDF.js worker、cmaps、标准字体与 wasm 资源
 build/
-  icon.svg            macOS icon source derived from the GitGlance mark
-  icon.icns           compiled application and DMG icon
+  icon.svg            由 GitGlance 标识派生的 macOS 图标源文件
+  icon.icns           编译后的应用与 DMG 图标
   entitlements.mac.plist
 scripts/
-  dev.mjs             Vite + Electron development launcher
-  smoke.mjs           Isolated end-to-end smoke test against the built app
+  dev.mjs             Vite + Electron 开发启动器
+  smoke.mjs           针对已构建应用的隔离式端到端冒烟测试
 docs/
-  USAGE.md            End-user usage guide with screenshots
-  USAGE.zh.md         Simplified Chinese usage guide with screenshots
-  screenshots/        Documentation screenshots
-release/              generated .app and DMG artifacts (gitignored)
+  USAGE.md            带截图的英文使用指南
+  USAGE.zh.md         带截图的简体中文使用指南
+  screenshots/        文档截图
+release/              生成的 .app 与 DMG 产物（已 gitignore）
 ```
 
-The renderer is a plain ES-module browser app: no Node integration, no remote module, sandboxed preload, and all privileged work behind validated IPC handlers. File paths are validated against the repository root before reads or Git operations. External links open in the system browser.
+渲染进程是纯 ES 模块浏览器应用：无 Node 集成、无 remote 模块、沙盒预加载，所有特权操作都位于经过校验的 IPC 处理器之后。读取文件或执行 Git 操作前，文件路径都会针对仓库根目录进行校验。外部链接在系统浏览器中打开。
 
-## Verification
+## 验证
 
 ```bash
 npm run typecheck
 npm run smoke
 ```
 
-`npm run typecheck` runs the strict renderer and Electron TypeScript projects. The smoke test builds both, creates a temporary Git repository with a linked worktree, a remote, local/remote branches, lightweight/annotated tags, a stash, LFS-tracked plus large files, and a submodule, along with an Electron profile; it launches GitGlance and checks that the project list, README preview, all ten repository tabs, statistics cards, the worktree, remote, branch, tag, stash, LFS, and submodule filters, the summary Stash action, branch creation/switching through the branch picker, and the Chat history right-click actions. It does not touch your real configuration or repositories.
+`npm run typecheck` 运行严格模式的渲染进程与 Electron TypeScript 项目。冒烟测试会构建两者，创建一个临时 Git 仓库（含关联工作树、远程、本地/远程分支、轻量与附注标签、贮藏、LFS 跟踪的文件以及大文件、子模块），并配套一个 Electron 配置目录；随后启动 GitGlance，检查项目列表、README 预览、全部十个仓库标签页、统计卡片、工作树/远程/分支/标签/贮藏/LFS/子模块筛选、摘要栏的 贮藏 操作、通过分支选择器创建与切换分支，以及对话历史的右键操作。它不会触碰你真实的配置或仓库。
 
-To inspect the packaged rather than source app:
+检查打包版而非源码版：
 
 ```bash
 npm run pack:mac
 open release/mac-arm64/GitGlance.app
 ```
 
-Useful development variables:
+常用开发变量：
 
-| Variable | Purpose |
+| 变量 | 用途 |
 | --- | --- |
-| `PI_BIN` | Path to the Pi executable (model settings come from the app's LLM provider config) |
-| `LIBREOFFICE_BIN` | Path to `soffice` |
-| `GITGLANCE_USER_DATA` | Override Electron user data (isolated profiles) |
-| `GITGLANCE_REPO` | Open a repository on launch |
-| `GITGLANCE_DISABLE_SINGLE_INSTANCE` | Allow parallel test instances |
+| `PI_BIN` | Pi 可执行文件路径（模型设置来自应用的 LLM 提供商配置） |
+| `LIBREOFFICE_BIN` | `soffice` 的路径 |
+| `GITGLANCE_USER_DATA` | 覆盖 Electron 用户数据（隔离配置目录） |
+| `GITGLANCE_REPO` | 启动时打开某个仓库 |
+| `GITGLANCE_DISABLE_SINGLE_INSTANCE` | 允许并行运行测试实例 |
 
-## Limitations
+## 限制
 
-- No interactive credential prompting, merge tool, or conflict resolution UI.
-- Office previews depend on LibreOffice and may not perfectly reproduce complex layouts.
-- Text previews are capped at 4 MB; very large PDFs, images, and Office files are rejected with a clear message.
-- The default local installer is unsigned and not notarized. Distributing it to other Macs requires a Developer ID certificate and notarization.
-- The default DMG is arm64-only; Intel and universal builds need an explicit electron-builder architecture.
-- AI chat requires a working Pi installation and an LLM provider configured in Settings. The rest of the app works without Pi.
-- The AI agent can run shell commands with your user privileges. GitGlance does not sandbox those commands; review destructive or credentialed operations before proceeding.
+- 无交互式凭据提示、合并工具或冲突解决界面。
+- Office 预览依赖 LibreOffice，复杂版式可能无法完全还原。
+- 文本预览上限为 4 MB；过大的 PDF、图片与 Office 文件会以清晰提示拒绝。
+- 默认的本地安装包未签名、未公证。分发到其他 Mac 需要 Developer ID 证书并公证。
+- 默认 DMG 仅支持 arm64；Intel 与通用构建需显式指定 electron-builder 架构。
+- AI 对话需要可用的 Pi 安装，以及在设置中配置好 LLM 提供商。其余功能不依赖 Pi 也可使用。
+- AI agent 能以你的用户权限执行 shell 命令。GitGlance 不会沙盒化这些命令；执行破坏性或涉及凭据的操作前请先审阅。
 
-The self-contained design mockup at [design/mockup.html](./design/mockup.html) mirrors the shipped UI's light/dark/system appearance and English/简体中文 language settings.
+[design/mockup.html](./design/mockup.html) 中的自包含设计样稿与正式界面的浅色/深色/跟随系统外观及英文/简体中文语言设置保持一致。

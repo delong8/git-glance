@@ -173,6 +173,9 @@ try {
   if (await window.locator('#summaryRoot .title-row .remote').count() !== 0) {
     throw new Error('The upstream tag is still rendered in the summary title row.');
   }
+  if (await window.locator('#summaryRoot .title-row .chip').count() !== 0) {
+    throw new Error('The Remote/Local chip is still rendered in the summary title row.');
+  }
 
   const sidebarToggle = window.locator('#sidebarToggle');
   await sidebarToggle.click();

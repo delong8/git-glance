@@ -116,8 +116,7 @@ The window is split into three persistent regions:
 
 The summary is the dashboard for the active repository:
 
-- **Repository name** and a **Remote** or **Local** chip. The local path is in
-  the title bar.
+- **Repository name**. The local path is in the title bar.
 - **Branch, ahead/behind state**, and the last fetch time.
 - **Fetch**, **Pull**, **Stash**, **Branch**, and **Push** actions. Fetch, Pull,
   and Push are disabled when there is no remote, no upstream, or nothing to

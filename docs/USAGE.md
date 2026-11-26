@@ -118,7 +118,7 @@ The summary is the dashboard for the active repository:
 
 - **Repository name** and a **Remote** or **Local** chip. The local path is in
   the title bar.
-- **Branch, upstream, ahead/behind state**, and the last fetch time.
+- **Branch, ahead/behind state**, and the last fetch time.
 - **Fetch**, **Pull**, **Stash**, **Branch**, and **Push** actions. Fetch, Pull,
   and Push are disabled when there is no remote, no upstream, or nothing to
   push. Stash is disabled when the working tree is clean; Branch opens the

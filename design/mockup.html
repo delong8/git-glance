@@ -795,8 +795,6 @@ kbd {
 .sync-pair .ahead { color: var(--green-text); }
 .sync-pair .behind { color: var(--amber); }
 .sync-pair .synced { color: var(--green); }
-.remote { flex: none; display: inline-flex; align-items: center; gap: 5px; font-family: var(--mono); font-size: 10.5px; color: var(--text-4); white-space: nowrap; }
-.remote .ico { width: 11px; height: 11px; }
 .title-sep { flex: none; width: 1px; height: 16px; margin: 0 2px; background: var(--border); }
 .fetch-time { flex: none; color: var(--text-4); font-size: 10px; white-space: nowrap; }
 
@@ -3653,7 +3651,6 @@ select.input option { background: var(--bg-option); color: var(--text); }
 @media (max-width: 1200px) {
   .diff-meta .meta-context { display: none; }
   .title-row .chip { display: none; }
-  .title-row .remote { display: none; }
   .summary-top {
     grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas: "id actions";
@@ -7385,7 +7382,6 @@ function renderSummary() {
           <span class="title-sep" aria-hidden="true"></span>
           <span class="branch-pill">${icon("branch")}${esc(p.branch)}</span>
           <span class="sync-pair">${sync.join("")}</span>
-          ${p.upstream ? `<span class="remote">${icon("cloud")}${esc(p.upstream)}</span>` : `<span class="remote">${icon("cloud")}no upstream</span>`}
           <span class="fetch-time">fetched ${esc(p.lastFetch)}</span>
         </div>
       </div>

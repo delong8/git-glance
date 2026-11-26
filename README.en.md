@@ -54,7 +54,7 @@ Quick links:
 ## Features
 
 - **Multi-repository sidebar** with filtering, per-project branch and change counts, and an onboarding screen when no repository is open yet. The panel toggle beside the repository title collapses it.
-- **Repository summary** with the current branch, upstream, ahead/behind counts, and Fetch / Pull / Stash / Branch / Push actions. Stash saves the working tree in one click; Branch opens a picker for switching or creating a branch from any local or remote branch. A compact group at the far right opens the repository folder in the system file manager or a terminal at that path.
+- **Repository summary** with the current branch, ahead/behind counts, and Fetch / Pull / Stash / Branch / Push actions. Stash saves the working tree in one click; Branch opens a picker for switching or creating a branch from any local or remote branch. A compact group at the far right opens the repository folder in the system file manager or a terminal at that path.
 - **Full working-tree file tree**, including folders, symlinks, staged/unstaged/deleted badges, per-file stage toggles, and a filter.
 - **Preview and diff panes** in the File tree and Chat tabs. Select a file to preview it; switch to its staged or unstaged diff.
 - **Rich previews**

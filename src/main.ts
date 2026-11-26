@@ -1228,7 +1228,6 @@ function renderSummary() {
           <span class="title-sep" aria-hidden="true"></span>
           <span class="branch-pill">${icon('branch')}${esc(repo.branch)}</span>
           <span class="sync-pair">${sync.join('')}</span>
-          ${repo.upstream ? `<span class="remote">${icon('cloud')}${esc(repo.upstream)}</span>` : `<span class="remote">${icon('cloud')}no upstream</span>`}
           <span class="fetch-time">fetched ${esc(timeAgo(repo.lastFetch))}</span>
         </div>
       </div>

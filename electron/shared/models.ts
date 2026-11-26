@@ -353,7 +353,7 @@ export interface UiSettings {
   fetchAll: boolean;
   theme: ThemeMode;
   language: Language;
-  /** Interface zoom factor (0.5–5.0). Null uses the default of 1.0. */
+  /** Interface zoom factor (0.5–3.0). Null uses the default of 1.0. */
   zoom: number | null;
   /** Extra system instructions appended to GitGlance's built-in Pi prompt. */
   systemPrompt: string;

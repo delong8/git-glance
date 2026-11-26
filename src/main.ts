@@ -573,7 +573,7 @@ async function chooseTheme(value: unknown): Promise<void> {
    Interface zoom
    ============================================================ */
 const ZOOM_MIN = 0.5;
-const ZOOM_MAX = 5;
+const ZOOM_MAX = 3;
 let zoomRequestSeq = 0;
 
 function normalizeZoom(value: unknown): number | null {

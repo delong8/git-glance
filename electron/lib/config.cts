@@ -61,9 +61,9 @@ export function isLlmApiType(value: unknown): value is LlmApiType {
 }
 
 export const ZOOM_MIN = 0.5;
-export const ZOOM_MAX = 5;
+export const ZOOM_MAX = 3;
 
-/** Coerce a zoom factor into 0.5–5.0 (one decimal); null means 1.0. */
+/** Coerce a zoom factor into 0.5–3.0 (one decimal); null means 1.0. */
 export function normalizeZoom(value: unknown): number | null {
   if (typeof value !== 'number' || !Number.isFinite(value)) return null;
   const clamped = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, value));

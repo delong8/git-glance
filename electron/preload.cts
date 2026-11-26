@@ -27,7 +27,7 @@ import type {
   SettingsInput,
   StashAction,
   ThemeMode,
-  Language
+  LanguageMode
 } from './shared/models.js';
 import type {
   FetchOptions,
@@ -100,7 +100,7 @@ const api: GitGlanceApi = {
   openExternal: (url) => call<true>('app:open-external', url),
   saveSettings: (settings: SettingsInput) => call<SaveSettingsResult>('settings:save', settings),
   setTheme: (theme: ThemeMode) => call<ThemeMode>('settings:theme', theme),
-  setLanguage: (language: Language) => call<Language>('settings:language', language),
+  setLanguage: (language: LanguageMode) => call<LanguageMode>('settings:language', language),
   setZoom: (zoom) => call<number | null>('settings:zoom', zoom),
   pi: {
     send: (repoPath, message, selectedFile) => call<PiSendResult>('pi:send', repoPath, message, selectedFile),

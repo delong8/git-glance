@@ -7,7 +7,7 @@ import {
 } from '../shared/models.js';
 import type {
   AutoFetchInterval,
-  Language,
+  LanguageMode,
   LlmApiType,
   LlmSettings,
   ThemeMode,
@@ -23,7 +23,7 @@ export interface ConfigData {
 
 const AUTO_FETCH_INTERVALS: readonly AutoFetchInterval[] = ['off', '5', '15', '30', '60'];
 const THEME_MODES: readonly ThemeMode[] = ['light', 'dark', 'system'];
-const LANGUAGES: readonly Language[] = ['en', 'zh-CN'];
+const LANGUAGE_MODES: readonly LanguageMode[] = ['system', 'en', 'zh-CN'];
 const LLM_API_TYPES: readonly LlmApiType[] = [
   'openai-completions',
   'openai-responses',
@@ -52,8 +52,8 @@ export function isThemeMode(value: unknown): value is ThemeMode {
   return THEME_MODES.includes(value as ThemeMode);
 }
 
-export function isLanguage(value: unknown): value is Language {
-  return LANGUAGES.includes(value as Language);
+export function isLanguageMode(value: unknown): value is LanguageMode {
+  return LANGUAGE_MODES.includes(value as LanguageMode);
 }
 
 export function isLlmApiType(value: unknown): value is LlmApiType {
@@ -157,7 +157,7 @@ export class ConfigStore {
             autoFetch: isAutoFetchInterval(ui.autoFetch) ? ui.autoFetch : '15',
             fetchAll: ui.fetchAll === true,
             theme: isThemeMode(ui.theme) ? ui.theme : 'dark',
-            language: isLanguage(ui.language) ? ui.language : 'en',
+            language: isLanguageMode(ui.language) ? ui.language : 'en',
             zoom: normalizeZoom(ui.zoom),
             systemPrompt: normalizeSystemPrompt(ui.systemPrompt),
             customPrompts: normalizeCustomPrompts(ui.customPrompts)

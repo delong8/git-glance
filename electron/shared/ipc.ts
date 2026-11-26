@@ -28,7 +28,7 @@ import type {
   ResetMode,
   SettingsInput,
   ThemeMode,
-  Language,
+  LanguageMode,
   UserIdentity
 } from './models.js';
 
@@ -123,7 +123,7 @@ export interface GitGlanceApi {
   openExternal: (url: string) => Promise<true>;
   saveSettings: (settings: SettingsInput) => Promise<SaveSettingsResult>;
   setTheme: (theme: ThemeMode) => Promise<ThemeMode>;
-  setLanguage: (language: Language) => Promise<Language>;
+  setLanguage: (language: LanguageMode) => Promise<LanguageMode>;
   setZoom: (zoom: number | null) => Promise<number | null>;
   pi: {
     send: (repoPath: string, message: string, selectedFile: string | null) => Promise<PiSendResult>;

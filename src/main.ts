@@ -4,10 +4,11 @@ import DOMPurify from 'dompurify';
 import hljs from 'highlight.js';
 import { mountPreview } from './preview';
 import {
-  cachedLanguage,
+  cachedLanguageMode,
   isChinese,
   LANGUAGE_STORAGE_KEY,
-  normalizeLanguage,
+  normalizeLanguageMode,
+  resolveLanguage,
   setI18nLanguage,
   startI18nObserver,
   translateUI
@@ -29,7 +30,7 @@ import type {
   GitSubmoduleInfo,
   GitTagInfo,
   GitWorktree,
-  Language,
+  LanguageMode,
   LlmApiType,
   LlmSettings,
   PiEvent,
@@ -482,56 +483,69 @@ function updateThemeControls(mode: ThemeMode): void {
 /* ============================================================
    Interface language
    ============================================================ */
+function languageHintText(mode: LanguageMode): string {
+  const resolved = resolveLanguage(mode);
+  if (isChinese()) {
+    return mode === 'system'
+      ? `正在跟随系统 — 当前为${resolved === 'zh-CN' ? '简体中文' : '英文'}。`
+      : '立即应用到整个应用。';
+  }
+  return mode === 'system'
+    ? `Following the system — currently ${resolved === 'zh-CN' ? 'Simplified Chinese' : 'English'}.`
+    : 'Applied immediately and saved to app preferences.';
+}
+
 function updateLanguageControls(value: unknown): void {
-  const next = normalizeLanguage(value);
+  const mode = normalizeLanguageMode(value);
   $$('#languageMode button').forEach((button) => {
-    const active = button.dataset.value === next;
+    const active = button.dataset.value === mode;
     button.classList.toggle('is-active', active);
     button.setAttribute('aria-pressed', String(active));
   });
   const hint = $('#setLanguageHint');
-  if (hint) {
-    hint.textContent = isChinese()
-      ? '立即应用到整个应用。'
-      : 'Applied immediately and saved to app preferences.';
-  }
+  if (hint) hint.textContent = languageHintText(mode);
 }
 
 function applyLanguage(value: unknown, { remember = true }: { remember?: boolean } = {}): void {
-  const next = normalizeLanguage(value);
+  const mode = normalizeLanguageMode(value);
+  const next = resolveLanguage(mode);
   state.language = next;
-  state.settings = { ...state.settings, language: next };
+  state.settings = { ...state.settings, language: mode };
   setI18nLanguage(next);
   if (remember) {
     try {
-      localStorage.setItem(LANGUAGE_STORAGE_KEY, next);
+      localStorage.setItem(LANGUAGE_STORAGE_KEY, mode);
     } catch {
       /* localStorage can be unavailable; the config file remains the source of truth */
     }
   }
   updateThemeControls(state.settings.theme || state.themeMode);
-  updateLanguageControls(next);
+  updateLanguageControls(mode);
   renderStatistics();
 }
 
-applyLanguage(cachedLanguage(), { remember: false });
+applyLanguage(cachedLanguageMode(), { remember: false });
+window.addEventListener('languagechange', () => {
+  if (normalizeLanguageMode(state.settings.language) !== 'system') return;
+  applyLanguage('system', { remember: false });
+});
 startI18nObserver();
 
 let languageRequestSeq = 0;
 
 async function chooseLanguage(value: unknown): Promise<void> {
-  const next = normalizeLanguage(value);
-  const previous = normalizeLanguage(state.settings.language || state.language);
-  if (next === previous) {
-    updateLanguageControls(next);
+  const mode = normalizeLanguageMode(value);
+  const previous = normalizeLanguageMode(state.settings.language || state.language);
+  if (mode === previous) {
+    updateLanguageControls(mode);
     return;
   }
-  applyLanguage(next, { remember: false });
-  updateLanguageControls(next);
+  applyLanguage(mode, { remember: false });
+  updateLanguageControls(mode);
   if (!api) return;
   const requestId = ++languageRequestSeq;
   try {
-    const saved = await api.setLanguage(next);
+    const saved = await api.setLanguage(mode);
     if (requestId !== languageRequestSeq) return;
     applyLanguage(saved);
   } catch (error) {
@@ -5035,7 +5049,7 @@ function populateSettingsForm(): void {
   const theme = normalizeThemeMode(settings.theme || state.themeMode);
   updateThemeControls(theme);
   updateZoomControls(settings.zoom ?? null);
-  updateLanguageControls(normalizeLanguage(settings.language || state.language));
+  updateLanguageControls(normalizeLanguageMode(settings.language || state.language));
   $<HTMLSelectElement>('#setAutoFetch')!.value = settings.autoFetch || '15';
   $<HTMLInputElement>('#setSign')!.checked = !!settings.sign;
   $<HTMLInputElement>('#setGpgKey')!.value = settings.gpgKey || '';
@@ -5106,7 +5120,7 @@ async function saveSettings(): Promise<void> {
     prune: $<HTMLInputElement>('#setPrune')!.checked,
     fetchAll: $<HTMLInputElement>('#setFetchAll')!.checked,
     theme: normalizeThemeMode(activeTheme?.dataset.value),
-    language: normalizeLanguage(activeLanguage?.dataset.value || state.settings.language),
+    language: normalizeLanguageMode(activeLanguage?.dataset.value || state.settings.language),
     systemPrompt: $<HTMLTextAreaElement>('#setSystemPrompt')!.value,
     customPrompts: readCustomPromptRows().map((prompt) => prompt.trim()).filter(Boolean),
     llm: {

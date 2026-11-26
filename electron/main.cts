@@ -4,7 +4,7 @@ import { execFile, spawn } from 'node:child_process';
 import * as fs from 'node:fs/promises';
 import path from 'node:path';
 import { promisify } from 'node:util';
-import { ConfigStore, isLanguage, isThemeMode, normalizeCustomPrompts, normalizeLlmSettings, normalizeSystemPrompt, normalizeZoom } from './lib/config.cjs';
+import { ConfigStore, isLanguageMode, isThemeMode, normalizeCustomPrompts, normalizeLlmSettings, normalizeSystemPrompt, normalizeZoom } from './lib/config.cjs';
 import * as git from './lib/git.cjs';
 import { PreviewService } from './lib/preview.cjs';
 import { PiService } from './lib/pi.cjs';
@@ -36,7 +36,8 @@ import type {
   SettingsInput,
   StashAction,
   ThemeMode,
-  Language
+  Language,
+  LanguageMode
 } from './shared/models.js';
 import type {
   FetchOptions,
@@ -128,7 +129,11 @@ function applyZoomToWindows(zoom: number | null): void {
 }
 
 function currentLanguage(): Language {
-  return config && config.getUiSettings().language === 'zh-CN' ? 'zh-CN' : 'en';
+  const mode = config ? config.getUiSettings().language : 'en';
+  if (mode !== 'system') return mode;
+  const preferred = app.getPreferredSystemLanguages?.() ?? [];
+  const system = String(preferred[0] || app.getLocale() || 'en').toLowerCase();
+  return system.startsWith('zh') ? 'zh-CN' : 'en';
 }
 
 /** English/Chinese text for native-only chrome (menus, dialogs). */
@@ -654,7 +659,7 @@ function registerIpc(): void {
       autoFetch,
       fetchAll: !!settings.fetchAll,
       theme: isThemeMode(settings.theme) ? settings.theme : config.getUiSettings().theme,
-      language: isLanguage(settings.language) ? settings.language : config.getUiSettings().language,
+      language: isLanguageMode(settings.language) ? settings.language : config.getUiSettings().language,
       systemPrompt: normalizeSystemPrompt(settings.systemPrompt),
       customPrompts: normalizeCustomPrompts(settings.customPrompts)
     });
@@ -678,8 +683,8 @@ function registerIpc(): void {
     return ui.theme;
   }));
 
-  ipcMain.handle('settings:language', wrapHandler(async (language: unknown): Promise<Language> => {
-    const next: Language = isLanguage(language) ? language : 'en';
+  ipcMain.handle('settings:language', wrapHandler(async (language: unknown): Promise<LanguageMode> => {
+    const next: LanguageMode = isLanguageMode(language) ? language : 'en';
     const ui = await config.updateUiSettings({ language: next });
     createApplicationMenu();
     return ui.language;

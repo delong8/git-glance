@@ -16,13 +16,19 @@
   root.dataset.themeMode = mode;
   root.style.colorScheme = resolved;
 
-  var language = null;
+  var languageMode = null;
   try {
-    language = window.localStorage.getItem('gitglance.language');
+    languageMode = window.localStorage.getItem('gitglance.language');
   } catch (error) {
-    language = null;
+    languageMode = null;
   }
-  language = language === 'zh-CN' ? 'zh-CN' : 'en';
+  languageMode = languageMode === 'zh-CN' || languageMode === 'system' ? languageMode : 'en';
+  var language = languageMode;
+  if (languageMode === 'system') {
+    var preferred = (navigator.languages && navigator.languages[0]) || navigator.language || 'en';
+    language = String(preferred).toLowerCase().indexOf('zh') === 0 ? 'zh-CN' : 'en';
+  }
   root.lang = language;
   root.dataset.language = language;
+  root.dataset.languageMode = languageMode;
 })();

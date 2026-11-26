@@ -1,7 +1,7 @@
 /* ============================================================
    Interface language (English / Simplified Chinese)
    ============================================================ */
-import type { Language } from '../electron/shared/models';
+import type { Language, LanguageMode } from '../electron/shared/models';
 
 export const LANGUAGE_STORAGE_KEY = 'gitglance.language';
 
@@ -840,9 +840,25 @@ export function normalizeLanguage(value: unknown): Language {
   return value === 'zh-CN' ? 'zh-CN' : 'en';
 }
 
-export function cachedLanguage(): Language {
+/** Coerce a stored preference into English, Simplified Chinese, or follow-system. */
+export function normalizeLanguageMode(value: unknown): LanguageMode {
+  return value === 'system' || value === 'zh-CN' ? value : 'en';
+}
+
+/** Match the interface to the OS locale: any Chinese variant maps to zh-CN, everything else to English. */
+export function systemLanguage(): Language {
+  const preferred = navigator.languages?.[0] || navigator.language || 'en';
+  return String(preferred).toLowerCase().startsWith('zh') ? 'zh-CN' : 'en';
+}
+
+export function resolveLanguage(mode: unknown): Language {
+  const next = normalizeLanguageMode(mode);
+  return next === 'system' ? systemLanguage() : next;
+}
+
+export function cachedLanguageMode(): LanguageMode {
   try {
-    return normalizeLanguage(window.localStorage.getItem(LANGUAGE_STORAGE_KEY));
+    return normalizeLanguageMode(window.localStorage.getItem(LANGUAGE_STORAGE_KEY));
   } catch {
     return 'en';
   }

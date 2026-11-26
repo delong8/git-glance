@@ -323,6 +323,8 @@ export type PullStrategy = 'merge' | 'rebase' | 'ff-only';
 export type AutoFetchInterval = 'off' | '5' | '15' | '30' | '60';
 export type ThemeMode = 'light' | 'dark' | 'system';
 export type Language = 'en' | 'zh-CN';
+/** Persisted language preference: a concrete language or the system locale. */
+export type LanguageMode = Language | 'system';
 
 /** Wire protocols the Pi agent can speak to a custom endpoint. */
 export type LlmApiType =
@@ -352,7 +354,7 @@ export interface UiSettings {
   autoFetch: AutoFetchInterval;
   fetchAll: boolean;
   theme: ThemeMode;
-  language: Language;
+  language: LanguageMode;
   /** Interface zoom factor (0.5–3.0). Null uses the default of 1.0. */
   zoom: number | null;
   /** Extra system instructions appended to GitGlance's built-in Pi prompt. */
@@ -389,7 +391,7 @@ export interface SettingsInput {
   prune: boolean;
   fetchAll: boolean;
   theme: ThemeMode;
-  language: Language;
+  language: LanguageMode;
   systemPrompt: string;
   customPrompts: string[];
   llm: LlmSettings;

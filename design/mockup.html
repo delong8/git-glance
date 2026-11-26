@@ -18,11 +18,15 @@
   root.dataset.themeMode = mode;
   root.style.colorScheme = resolved;
 
-  var language = null;
-  try { language = window.localStorage.getItem("gitglance.language"); } catch (error) { language = null; }
-  language = language === "zh-CN" ? "zh-CN" : "en";
+  var languageMode = null;
+  try { languageMode = window.localStorage.getItem("gitglance.language"); } catch (error) { languageMode = null; }
+  languageMode = languageMode === "zh-CN" || languageMode === "system" ? languageMode : "en";
+  var language = languageMode === "system"
+    ? ((navigator.language || "").toLowerCase().indexOf("zh") === 0 ? "zh-CN" : "en")
+    : languageMode;
   root.lang = language;
   root.dataset.language = language;
+  root.dataset.languageMode = languageMode;
 
   var zoom = null;
   try { zoom = Number(window.localStorage.getItem("gitglance.zoom")); } catch (error) { zoom = null; }
@@ -4245,6 +4249,7 @@ select.input option { background: var(--bg-option); color: var(--text); }
           <div class="segmented" id="languageMode" role="group" aria-label="Language">
             <button type="button" data-value="en">English</button>
             <button type="button" data-value="zh-CN">简体中文</button>
+            <button type="button" data-value="system">Follow system</button>
           </div>
           <span class="field-hint" id="setLanguageHint">Applies immediately across the interface.</span>
         </div>
@@ -6193,7 +6198,8 @@ const state = {
     }
   },
   themeMode: "dark",
-  language: "en"
+  language: "en",
+  languageMode: "en"
 };
 let lastFocusedElement = null;
 
@@ -6326,7 +6332,7 @@ systemLightQuery.addEventListener("change", () => {
    Interface language
    ============================================================ */
 const LANGUAGE_STORAGE_KEY = "gitglance.language";
-const LANGUAGES = ["en", "zh-CN"];
+const LANGUAGE_MODES = ["system", "en", "zh-CN"];
 
 const ZH = {
   "Projects": "项目",
@@ -6994,13 +7000,23 @@ const TRANSLATABLE_ATTRIBUTES = ["placeholder", "title", "aria-label"];
 const i18nTextOrigins = new WeakMap();
 const i18nAttrOrigins = new WeakMap();
 
-function normalizeLanguage(value) {
-  return value === "zh-CN" ? "zh-CN" : "en";
+function normalizeLanguageMode(value) {
+  return LANGUAGE_MODES.includes(value) ? value : "en";
 }
 
-function cachedLanguage() {
+function systemLanguage() {
+  const preferred = (navigator.languages && navigator.languages[0]) || navigator.language || "en";
+  return String(preferred).toLowerCase().startsWith("zh") ? "zh-CN" : "en";
+}
+
+function resolveLanguage(mode) {
+  const next = normalizeLanguageMode(mode);
+  return next === "system" ? systemLanguage() : next;
+}
+
+function cachedLanguageMode() {
   try {
-    return normalizeLanguage(window.localStorage.getItem(LANGUAGE_STORAGE_KEY));
+    return normalizeLanguageMode(window.localStorage.getItem(LANGUAGE_STORAGE_KEY));
   } catch (error) {
     return "en";
   }
@@ -7151,36 +7167,48 @@ function translateUI() {
   updateDocumentTitle();
 }
 
+function languageHintText(mode) {
+  const next = normalizeLanguageMode(mode);
+  const resolved = resolveLanguage(next);
+  if (state.language === "zh-CN") {
+    return next === "system"
+      ? `正在跟随系统 — 当前为${resolved === "zh-CN" ? "简体中文" : "英文"}。`
+      : "立即应用到整个界面。";
+  }
+  return next === "system"
+    ? `Following the system — currently ${resolved === "zh-CN" ? "Simplified Chinese" : "English"}.`
+    : "Applies immediately across the interface.";
+}
+
 function updateLanguageControls(value) {
-  const next = normalizeLanguage(value);
+  const mode = normalizeLanguageMode(value);
   $$("#languageMode button").forEach((btn) => {
-    const active = btn.dataset.value === next;
+    const active = btn.dataset.value === mode;
     btn.classList.toggle("is-active", active);
     btn.setAttribute("aria-pressed", String(active));
   });
   const hint = $("#setLanguageHint");
-  if (hint) {
-    hint.textContent = next === "zh-CN"
-      ? "立即应用到整个界面。"
-      : "Applies immediately across the interface.";
-  }
+  if (hint) hint.textContent = languageHintText(mode);
 }
 
 function setLanguage(value, { remember = true } = {}) {
-  const next = normalizeLanguage(value);
+  const mode = normalizeLanguageMode(value);
+  const next = resolveLanguage(mode);
+  state.languageMode = mode;
   state.language = next;
-  state.settings.language = next;
+  state.settings.language = mode;
   const root = document.documentElement;
   root.lang = next;
   root.dataset.language = next;
+  root.dataset.languageMode = mode;
   if (remember) {
     try {
-      window.localStorage.setItem(LANGUAGE_STORAGE_KEY, next);
+      window.localStorage.setItem(LANGUAGE_STORAGE_KEY, mode);
     } catch (error) {
       /* localStorage may be unavailable; the preview still switches */
     }
   }
-  updateLanguageControls(next);
+  updateLanguageControls(mode);
   updateThemeControls(state.settings.theme);
   renderChatThread();
   syncChatInput();
@@ -7189,12 +7217,12 @@ function setLanguage(value, { remember = true } = {}) {
 }
 
 function chooseLanguage(value) {
-  const next = normalizeLanguage(value);
-  if (next === state.language) {
-    updateLanguageControls(next);
+  const mode = normalizeLanguageMode(value);
+  if (mode === state.languageMode) {
+    updateLanguageControls(mode);
     return;
   }
-  setLanguage(next);
+  setLanguage(mode);
 }
 
 function tx(en, zh) {
@@ -7244,12 +7272,17 @@ function themeHintText(mode) {
     : "Applied immediately and saved to app preferences.";
 }
 
-state.language = cachedLanguage();
-state.settings.language = state.language;
+state.languageMode = cachedLanguageMode();
+state.settings.language = state.languageMode;
+state.language = resolveLanguage(state.languageMode);
 document.documentElement.lang = state.language;
 document.documentElement.dataset.language = state.language;
+document.documentElement.dataset.languageMode = state.languageMode;
 updateDocumentTitle();
 translateUI();
+window.addEventListener("languagechange", () => {
+  if (state.languageMode === "system") setLanguage("system", { remember: false });
+});
 
 const getProject = () => PROJECTS.find((p) => p.id === state.projectId) || PROJECTS[0];
 
@@ -10366,7 +10399,7 @@ function populateSettingsForm() {
   $$("#pullStrategy button").forEach((btn) => btn.classList.toggle("is-active", btn.dataset.value === s.pullStrategy));
   updateThemeControls(normalizeThemeMode(s.theme || state.themeMode));
   updateZoomControls(s.zoom);
-  updateLanguageControls(normalizeLanguage(s.language || state.language));
+  updateLanguageControls(normalizeLanguageMode(s.language || state.languageMode));
   $("#setAutoFetch").value = s.autoFetch;
   $("#setSign").checked = s.sign;
   $("#setGpgKey").value = s.gpgKey;
@@ -10412,7 +10445,7 @@ function saveSettings() {
     autoStage: $("#setAutoStage").checked,
     zoom: normalizeZoom($("#setZoom").value),
     theme: normalizeThemeMode(activeTheme ? activeTheme.dataset.value : state.settings.theme),
-    language: normalizeLanguage(activeLanguage ? activeLanguage.dataset.value : state.settings.language),
+    language: normalizeLanguageMode(activeLanguage ? activeLanguage.dataset.value : state.settings.language),
     systemPrompt: $("#setSystemPrompt").value.trim(),
     customPrompts: readCustomPromptRows().map((prompt) => prompt.trim()).filter(Boolean),
     llm: {
@@ -10978,7 +11011,7 @@ function init() {
   });
   zoomInput.addEventListener("change", () => chooseZoom(zoomInput.value));
   updateThemeControls(state.settings.theme);
-  updateLanguageControls(state.language);
+  updateLanguageControls(state.languageMode);
   updateZoomControls(state.settings.zoom);
   $("#setSign").addEventListener("change", (e) => {
     $("#gpgField").hidden = !e.target.checked;

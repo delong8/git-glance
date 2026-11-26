@@ -15,8 +15,11 @@ A local Git desktop client built around the UI in [index.html](./index.html). It
 
 The [usage guide](./docs/USAGE.md) is the end-user walkthrough: opening and switching repositories, reading the summary, browsing the working tree, previewing files, staging and committing, the Chat history graph and its commit actions, worktrees, remotes, branches, tags, stashes, LFS audits, submodules, repository statistics and HTML reports, syncing with remotes, AI chat, settings, the About dialog, and troubleshooting. It is also available in [Simplified Chinese](./docs/USAGE.zh.md).
 
+Installing for the first time? The [install guide](./docs/INSTALL.md) covers macOS and Windows step by step, including how to allow the unsigned build through **System Settings → Privacy & Security → Open Anyway** on macOS and SmartScreen's **More info → Run anyway** on Windows (also available in [Simplified Chinese](./docs/INSTALL.zh.md)).
+
 Quick links:
 
+- [Install guide](./docs/INSTALL.md)
 - [Quick start](./docs/USAGE.md#quick-start)
 - [Opening repositories](./docs/USAGE.md#opening-repositories)
 - [Browsing files and changes](./docs/USAGE.md#browsing-files-and-changes)
@@ -285,6 +288,8 @@ scripts/
   dev.mjs             Vite + Electron development launcher
   smoke.mjs           Isolated end-to-end smoke test against the built app
 docs/
+  INSTALL.md          macOS and Windows install guide
+  INSTALL.zh.md       Simplified Chinese install guide
   USAGE.md            End-user usage guide with screenshots
   USAGE.zh.md         Simplified Chinese usage guide with screenshots
   screenshots/        Documentation screenshots

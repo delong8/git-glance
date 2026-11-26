@@ -15,8 +15,11 @@
 
 [使用指南](./docs/USAGE.zh.md)是面向最终用户的完整教程（另有[英文版](./docs/USAGE.md)）：打开与切换仓库、阅读摘要、浏览工作区、预览文件、暂存与提交、对话页的提交历史图及其提交操作、工作树、远程、分支、标签、贮藏、LFS 审计、子模块、仓库统计与 HTML 报告、与远程同步、AI 对话、设置、关于对话框以及故障排查。
 
+首次安装请先看[安装指南](./docs/INSTALL.zh.md)（另有[英文版](./docs/INSTALL.md)）：macOS 将应用拖入「应用程序」后，通过 **系统设置 → 隐私与安全性 → 安全性 → 仍要打开** 放行未签名构建；Windows 在 SmartScreen 中点击 **更多信息 → 仍要运行** 即可完成安装。
+
 快速链接：
 
+- [安装指南](./docs/INSTALL.zh.md)
 - [快速开始](./docs/USAGE.zh.md#快速开始)
 - [打开仓库](./docs/USAGE.zh.md#打开仓库)
 - [浏览文件与更改](./docs/USAGE.zh.md#浏览文件与更改)
@@ -283,6 +286,8 @@ scripts/
   dev.mjs             Vite + Electron 开发启动器
   smoke.mjs           针对已构建应用的隔离式端到端冒烟测试
 docs/
+  INSTALL.md          macOS 与 Windows 安装指南
+  INSTALL.zh.md       简体中文安装指南
   USAGE.md            带截图的英文使用指南
   USAGE.zh.md         带截图的简体中文使用指南
   screenshots/        文档截图

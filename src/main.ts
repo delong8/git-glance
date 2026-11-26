@@ -1222,6 +1222,7 @@ function renderSummary() {
     <div class="summary-top">
       <div class="summary-id">
         <div class="title-row">
+          <button class="btn ghost icon-only sidebar-toggle" id="sidebarToggle" data-action="toggle-sidebar" title="${state.sidebarHidden ? 'Show projects' : 'Hide projects'}" aria-label="${state.sidebarHidden ? 'Show projects' : 'Hide projects'}" aria-pressed="${state.sidebarHidden}" aria-controls="projectSidebar">${icon('panel-left')}</button>
           <h1>${esc(repo.name)}</h1>
           <span class="chip">${icon(repo.remotes?.length ? 'cloud' : 'laptop')}${repo.remotes?.length ? 'Remote' : 'Local'}</span>
           <span class="title-sep" aria-hidden="true"></span>

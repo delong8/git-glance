@@ -742,6 +742,7 @@ kbd {
 .copy-btn:hover { background: var(--fill-strong); color: var(--text-2); }
 
 .title-row { display: flex; align-items: center; gap: 10px; min-width: 0; flex-wrap: nowrap; }
+.title-row .btn.sidebar-toggle { flex: none; width: 30px; height: 30px; margin-left: -5px; }
 .title-row h1 {
   margin: 0;
   min-width: 0;
@@ -1008,8 +1009,6 @@ kbd {
 }
 .tab.is-active .tab-ai-dot { opacity: 1; }
 .tabs-list { flex: none; display: flex; align-items: center; gap: 2px; min-width: 0; }
-.tabs-bar .btn.sidebar-toggle { flex: none; width: 28px; }
-.tabs-sep { flex: none; width: 1px; height: 18px; background: var(--border); }
 .tabs-spacer { flex: 1; }
 .tabs-tools { display: flex; align-items: center; gap: 8px; padding-bottom: 7px; }
 .tabs-tools .search { width: 216px; }
@@ -3864,8 +3863,6 @@ select.input option { background: var(--bg-option); color: var(--text); }
       <section class="summary" id="summaryRoot"></section>
 
       <div class="tabs-bar">
-        <button class="btn ghost icon-only sidebar-toggle" id="sidebarToggle" data-action="toggle-sidebar" title="Hide projects" aria-label="Hide projects" aria-pressed="false" aria-controls="projectSidebar"><svg class="ico" aria-hidden="true"><use href="#i-panel-left"/></svg></button>
-        <span class="tabs-sep" aria-hidden="true"></span>
         <div class="tabs-list" role="tablist" aria-label="Repository views">
         <button class="tab is-active" id="tabChat" data-tab="chat" role="tab" aria-selected="true" aria-controls="chatPanel" title="Chat" aria-label="Chat">
           <svg class="ico" aria-hidden="true"><use href="#i-sparkles"/></svg>
@@ -7377,6 +7374,7 @@ function renderSummary() {
     <div class="summary-top">
       <div class="summary-id">
         <div class="title-row">
+          <button class="btn ghost icon-only sidebar-toggle" id="sidebarToggle" data-action="toggle-sidebar" title="${state.sidebarHidden ? "Show projects" : "Hide projects"}" aria-label="${state.sidebarHidden ? "Show projects" : "Hide projects"}" aria-pressed="${state.sidebarHidden}" aria-controls="projectSidebar">${icon("panel-left")}</button>
           <h1>${esc(p.name)}</h1>
           <span class="title-sep" aria-hidden="true"></span>
           <span class="branch-pill">${icon("branch")}${esc(p.branch)}</span>

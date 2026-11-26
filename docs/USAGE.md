@@ -514,7 +514,8 @@ discard changes, rewrite history, or use credentials.
 - Use the welcome suggestions for a quick summary, review, or commit-message
   draft.
 - Custom **prompt chips** from Settings appear above the composer next to the
-  staged tag. Clicking one fills the composer with that prompt and sends it.
+  staged tag. A chip shows the prompt's short title; clicking one fills the
+  composer with the full prompt and sends it.
 - With the caret at the end of the composer, <kbd>↑</kbd> recalls the previous
   sent message and <kbd>↓</kbd> moves forward again. At the oldest or newest
   message the input stays unchanged.
@@ -526,9 +527,10 @@ Configure prompts in **Settings → Prompts**:
 - **System prompt** — extra instructions appended to GitGlance's built-in
   assistant prompt and Pi's default prompt. Saving restarts running Pi sessions
   so the next message uses the new instructions.
-- **Custom user prompts** — up to eight prompts. They appear as chips above the
-  chat input next to the staged tag; clicking a chip fills the composer with the
-  prompt and sends it to Pi.
+- **Custom user prompts** — up to eight prompts. Each has a short title, shown
+  on its chip above the chat input next to the staged tag, and the full prompt
+  text that is sent. Clicking a chip fills the composer with the full prompt and
+  sends it to Pi.
 
 Prompts are stored in app preferences (`config.json`), not in `~/.pi`.
 
@@ -565,10 +567,10 @@ Git settings to your global config and persists app preferences.
 
 | Section | What it controls | Stored in |
 | --- | --- | --- |
-| **Appearance** | Light, dark, or follow-system theme; interface zoom (50%–500%) | App preferences |
-| **Language** | English or Simplified Chinese for the interface and native menus | App preferences |
+| **Appearance** | Light, dark, or follow-system theme; interface zoom (50%–300%) | App preferences |
+| **Language** | English, Simplified Chinese, or follow-system for the interface and native menus | App preferences |
 | **LLM provider** | Provider ID, model ID, API protocol, base URL, API key | App preferences |
-| **Prompts** | System prompt appended to the built-in instructions; up to eight custom user prompts shown as chat chips | App preferences |
+| **Prompts** | System prompt appended to the built-in instructions; up to eight titled custom user prompts shown as chat chips | App preferences |
 | **Identity** | `user.name` and `user.email` for commits | `~/.gitconfig` |
 | **Git defaults** | `init.defaultBranch`, `core.editor`, pull strategy, auto-fetch interval | Git config / app preferences |
 | **Commit signing** | `commit.gpgsign` and `user.signingkey` | `~/.gitconfig` |
@@ -605,9 +607,15 @@ The theme control offers **Light**, **Dark**, and **Follow system**. The choice
 is applied before the first paint on the next launch, so there is no flash of
 the wrong theme.
 
-The **Zoom** slider scales the whole window from **50%** to **500%**. The
+The **Zoom** slider scales the whole window from **50%** to **300%**. The
 default is **100%**; changes apply as soon as the slider is released and are
 saved to app preferences.
+
+The language control offers **English**, **简体中文**, and **Follow system**.
+Follow system picks the interface language from your OS locale — any Chinese
+locale uses Simplified Chinese, everything else uses English — and is re-read on
+launch. Native menus and dialogs follow the same choice. Repository content,
+code, commit messages, and file paths are never translated.
 
 ![Light theme](./screenshots/light-theme.png)
 

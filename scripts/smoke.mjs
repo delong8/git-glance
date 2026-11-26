@@ -585,6 +585,33 @@ try {
   await window.keyboard.press('Escape');
   await window.waitForFunction(() => !document.querySelector('#aboutBackdrop')?.classList.contains('is-open'), null, { timeout: 5_000 });
 
+  // Language setting: English, Simplified Chinese, and Follow system.
+  await window.locator('#openSettings').click();
+  await window.waitForSelector('#settingsBackdrop.is-open', { timeout: 10_000 });
+  const languageOptions = await window.locator('#languageMode button').count();
+  if (languageOptions !== 3) throw new Error(`Expected 3 language options, found ${languageOptions}.`);
+  await window.locator('#languageMode button[data-value="system"]').click();
+  await window.waitForFunction(() => document.querySelector('#languageMode button.is-active')?.dataset.value === 'system', null, { timeout: 5_000 });
+  const systemHint = await window.locator('#setLanguageHint').innerText();
+  if (!systemHint.toLowerCase().includes('following the system')) {
+    throw new Error(`The follow-system language hint is missing (“${systemHint}”).`);
+  }
+  let languageMode = '';
+  for (let attempt = 0; attempt < 50; attempt += 1) {
+    try {
+      languageMode = JSON.parse(await fs.readFile(path.join(userDataDir, 'config.json'), 'utf8')).ui.language;
+      if (languageMode === 'system') break;
+    } catch {
+      /* the config file may be mid-write */
+    }
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  if (languageMode !== 'system') throw new Error(`Follow system was not persisted (config language “${languageMode}”).`);
+  await window.locator('#languageMode button[data-value="en"]').click();
+  await window.waitForFunction(() => document.querySelector('#languageMode button.is-active')?.dataset.value === 'en', null, { timeout: 5_000 });
+  await window.locator('#settingsClose').click();
+  await window.waitForFunction(() => !document.querySelector('#settingsBackdrop')?.classList.contains('is-open'), null, { timeout: 5_000 });
+
   if (pageErrors.length) throw new Error(`Renderer error: ${pageErrors.join(' | ')}`);
 
   passed = true;
@@ -606,6 +633,7 @@ try {
   console.log('  prompts: system + custom chip persisted, Pi spawned with both system prompts');
   console.log('  composer: ArrowUp/ArrowDown message history verified');
   console.log('  about: dialog opened from the brand row, version + license verified');
+  console.log('  language: English, 简体中文 and Follow system verified');
   console.log('  project actions: open folder + open terminal');
   console.log('  tabs: Chat, Files, Worktrees, Remote, Branches, Tags, Stash, LFS, Submodules, Statistics');
 } finally {

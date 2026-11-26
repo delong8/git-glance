@@ -1,5 +1,7 @@
 # GitGlance Usage Guide
 
+**English** | [简体中文](./USAGE.zh.md)
+
 GitGlance is a local-first Git desktop client. It runs on Electron, drives the
 Git CLI you already have installed, previews files without uploading them, and
 optionally connects to the [Pi](https://github.com/badlogic/pi-mono) coding

@@ -1,5 +1,7 @@
 # GitGlance
 
+**English** | [简体中文](./README.zh.md)
+
 A local Git desktop client built around the UI in [index.html](./index.html). It runs in Electron, executes the installed Git CLI, talks to the Pi coding agent for AI chat, and previews images, PDFs, Word/Excel/PowerPoint documents, and text files without uploading them anywhere.
 
 **Official links**
@@ -11,7 +13,7 @@ A local Git desktop client built around the UI in [index.html](./index.html). It
 
 ## Documentation
 
-The [usage guide](./docs/USAGE.md) is the end-user walkthrough: opening and switching repositories, reading the summary, browsing the working tree, previewing files, staging and committing, the Chat history graph and its commit actions, worktrees, remotes, branches, tags, stashes, LFS audits, submodules, repository statistics and HTML reports, syncing with remotes, AI chat, settings, the About dialog, and troubleshooting.
+The [usage guide](./docs/USAGE.md) is the end-user walkthrough: opening and switching repositories, reading the summary, browsing the working tree, previewing files, staging and committing, the Chat history graph and its commit actions, worktrees, remotes, branches, tags, stashes, LFS audits, submodules, repository statistics and HTML reports, syncing with remotes, AI chat, settings, the About dialog, and troubleshooting. It is also available in [Simplified Chinese](./docs/USAGE.zh.md).
 
 Quick links:
 
@@ -284,6 +286,7 @@ scripts/
   smoke.mjs           Isolated end-to-end smoke test against the built app
 docs/
   USAGE.md            End-user usage guide with screenshots
+  USAGE.zh.md         Simplified Chinese usage guide with screenshots
   screenshots/        Documentation screenshots
 release/              generated .app and DMG artifacts (gitignored)
 ```

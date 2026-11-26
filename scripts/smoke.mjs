@@ -494,21 +494,32 @@ try {
   await window.locator('#setLlmBaseUrl').fill('http://127.0.0.1:1/v1');
   await window.locator('#setSystemPrompt').fill('SMOKE-SYSTEM-PROMPT: keep answers brief.');
   await window.locator('#addCustomPrompt').click();
-  await window.locator('#customPromptList [data-prompt-input]').first().fill('Summarize the staged files.');
+  const customPromptText = 'Summarize the staged files and flag anything that looks accidental.';
+  await window.locator('#customPromptList [data-prompt-title]').first().fill('Summarize changes');
+  await window.locator('#customPromptList [data-prompt-input]').first().fill(customPromptText);
   await window.locator('#settingsSave').click();
   await window.waitForFunction(() => !document.querySelector('#settingsBackdrop')?.classList.contains('is-open'), null, { timeout: 15_000 });
   await window.waitForSelector('#chatContextRow .chat-prompt-chip', { timeout: 10_000 });
   const promptChips = await window.locator('#chatContextRow .chat-prompt-chip').count();
   if (promptChips !== 1) throw new Error(`Expected 1 custom prompt chip, found ${promptChips}.`);
+  const promptChipLabel = await window.locator('#chatContextRow .chat-prompt-chip-label').first().innerText();
+  if (promptChipLabel !== 'Summarize changes') {
+    throw new Error(`The prompt chip shows “${promptChipLabel}” instead of its title.`);
+  }
   const savedConfig = JSON.parse(await fs.readFile(path.join(userDataDir, 'config.json'), 'utf8'));
   if (savedConfig.ui.systemPrompt !== 'SMOKE-SYSTEM-PROMPT: keep answers brief.') {
     throw new Error('The system prompt was not persisted to config.json.');
   }
-  if (!Array.isArray(savedConfig.ui.customPrompts) || savedConfig.ui.customPrompts[0] !== 'Summarize the staged files.') {
-    throw new Error('Custom prompts were not persisted to config.json.');
+  const savedPrompt = Array.isArray(savedConfig.ui.customPrompts) ? savedConfig.ui.customPrompts[0] : null;
+  if (!savedPrompt || savedPrompt.title !== 'Summarize changes' || savedPrompt.prompt !== customPromptText) {
+    throw new Error('Titled custom prompts were not persisted to config.json.');
   }
   await window.locator('#chatContextRow .chat-prompt-chip').first().click();
   await window.waitForFunction(() => document.querySelectorAll('#chatThread .chat-msg.user').length >= 1, null, { timeout: 10_000 });
+  const sentPromptText = await window.locator('#chatThread .chat-msg.user').first().innerText();
+  if (!sentPromptText.includes(customPromptText)) {
+    throw new Error('Clicking the prompt chip did not send the full prompt.');
+  }
   let piArgs = '';
   for (let attempt = 0; attempt < 50; attempt += 1) {
     try {
@@ -544,11 +555,11 @@ try {
     throw new Error(`ArrowUp did not recall the newest message (got “${await composer.inputValue()}”).`);
   }
   await composer.press('ArrowUp');
-  if (await composer.inputValue() !== 'Summarize the staged files.') {
+  if (await composer.inputValue() !== customPromptText) {
     throw new Error(`ArrowUp did not recall the previous message (got “${await composer.inputValue()}”).`);
   }
   await composer.press('ArrowUp');
-  if (await composer.inputValue() !== 'Summarize the staged files.') {
+  if (await composer.inputValue() !== customPromptText) {
     throw new Error('ArrowUp changed the input at the oldest message.');
   }
   await composer.press('ArrowDown');
@@ -630,7 +641,7 @@ try {
   console.log('  default tab: Chat');
   console.log(`  chat: ${chatHistoryRows} first page → ${historyTotal} paged commits, ${chatTreeFiles} changed files in the tree`);
   console.log('  commit menu: branch, tag, reset and squash guard verified');
-  console.log('  prompts: system + custom chip persisted, Pi spawned with both system prompts');
+  console.log('  prompts: system + titled custom chip persisted, Pi spawned with both system prompts');
   console.log('  composer: ArrowUp/ArrowDown message history verified');
   console.log('  about: dialog opened from the brand row, version + license verified');
   console.log('  language: English, 简体中文 and Follow system verified');

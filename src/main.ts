@@ -1235,11 +1235,11 @@ function renderSummary() {
 
       <div class="summary-actions">
         <button class="btn ghost icon-only" data-action="refresh" title="Refresh repository" aria-label="Refresh repository"${busy ? ' disabled' : ''}>${icon('refresh', busy === 'refresh' ? 'spin' : '')}</button>
-        <button class="btn ghost" data-action="fetch"${canFetch ? '' : ' disabled'} title="${repo.remotes?.length ? 'Fetch all remotes' : 'No remote configured'}">${icon('refresh', busy === 'fetch' ? 'spin' : '')}Fetch</button>
-        <button class="btn ghost" data-action="pull"${canPull ? '' : ' disabled'} title="${repo.upstream ? 'Pull from upstream' : 'No upstream configured'}">${icon('download')}Pull${repo.behind ? `<span class="count">${repo.behind}</span>` : ''}</button>
+        <button class="btn ghost" data-action="fetch"${canFetch ? '' : ' disabled'} title="${repo.remotes?.length ? 'Fetch all remotes' : 'No remote configured'}">${icon('refresh', busy === 'fetch' ? 'spin' : '')}${busy === 'fetch' ? 'Fetching…' : 'Fetch'}</button>
+        <button class="btn ghost" data-action="pull"${canPull ? '' : ' disabled'} title="${repo.upstream ? 'Pull from upstream' : 'No upstream configured'}">${busy === 'pull' ? `${icon('refresh', 'spin')}Pulling…` : `${icon('download')}Pull${repo.behind ? `<span class="count">${repo.behind}</span>` : ''}`}</button>
         <button class="btn ghost summary-compact" data-action="stash"${canStash ? '' : ' disabled'} title="${repo.files.length ? 'Stash current changes' : 'Working tree is clean'}">${icon('archive', busy === 'stash' ? 'spin' : '')}<span class="btn-label">Stash</span></button>
         <button class="btn ghost summary-compact" data-action="branches"${busy ? ' disabled' : ''} title="Switch or create branches">${icon('branch')}<span class="btn-label">Branch</span></button>
-        <button class="btn primary" data-action="push"${canPush ? '' : ' disabled'} title="${repo.upstream ? 'Push to upstream' : 'No upstream configured'}">${icon('upload')}Push${repo.ahead ? `<span class="count">${repo.ahead}</span>` : ''}</button>
+        <button class="btn primary" data-action="push"${canPush ? '' : ' disabled'} title="${repo.upstream ? 'Push to upstream' : 'No upstream configured'}">${busy === 'push' ? `${icon('refresh', 'spin')}Pushing…` : `${icon('upload')}Push${repo.ahead ? `<span class="count">${repo.ahead}</span>` : ''}`}</button>
         <div class="summary-group" role="group" aria-label="Project actions">
           <button class="btn ghost icon-only" data-action="open-folder" title="Open folder" aria-label="Open folder">${icon('folder')}</button>
           <button class="btn ghost icon-only" data-action="open-terminal" title="Open terminal" aria-label="Open terminal">${icon('terminal')}</button>

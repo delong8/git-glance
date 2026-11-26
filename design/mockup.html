@@ -6143,6 +6143,7 @@ const state = {
   projectId: PROJECTS[0].id,
   activeTab: "chat",
   sidebarHidden: false,
+  busyAction: null,
   branchModalOpen: false,
   branchModalQuery: "",
   branchModalBase: null,
@@ -6384,6 +6385,8 @@ const ZH = {
   "Copy remote URL": "复制远程 URL",
   "Open remote URL": "打开远程 URL",
   "Fetching…": "正在获取…",
+  "Pulling…": "正在拉取…",
+  "Pushing…": "正在推送…",
   "Remotes refreshed": "远程已刷新",
   "Unknown remote": "未知远程",
   "fetch": "获取",
@@ -6594,6 +6597,7 @@ const ZH = {
   "No changes": "暂无更改",
   "Nothing staged": "暂无可提交内容",
   "Nothing to push — you're up to date": "没有可推送的内容 — 已是最新",
+  "Pull failed — no upstream branch configured": "拉取失败 — 未配置上游分支",
   "Stage at least one file before committing": "提交前请至少暂存一个文件",
   "Add a commit message first": "请先填写提交信息",
   "That file is no longer part of the working tree": "该文件已不在工作区中",
@@ -6865,6 +6869,7 @@ const ZH_PATTERNS = [
   [/^Fetched (.+) · (\d+) commits? behind$/, (m) => `已获取 ${m[1]} · 落后 ${m[2]} 个提交`],
   [/^Fetched (.+) · up to date$/, (m) => `已获取 ${m[1]} · 已同步`],
   [/^Already up to date with (.+)$/, (m) => `已与 ${m[1]} 同步`],
+  [/^Push rejected — (.+) has (\d+) commits? you don't have\. Pull first\.$/, (m) => `推送被拒绝 — ${m[1]} 有 ${m[2]} 个你尚未拥有的提交。请先拉取。`],
   [/^Fast-forwarded (\d+) commits? from (.+)$/, (m) => `已从 ${m[2]} 快进 ${m[1]} 个提交`],
   [/^Pushed (\d+) commits? to (.+)$/, (m) => `已推送 ${m[1]} 个提交到 ${m[2]}`],
   [/^Switched to branch '(.+)'$/, (m) => `已切换到分支 ${m[1]}`],
@@ -7364,6 +7369,7 @@ function updateUserUI() {
 
 function renderSummary() {
   const p = getProject();
+  const busy = state.busyAction;
 
   const sync = [];
   if (p.ahead) sync.push(`<span class="ahead">${icon("arrow-up")}${p.ahead} ahead</span>`);
@@ -7385,11 +7391,11 @@ function renderSummary() {
       </div>
 
       <div class="summary-actions">
-        <button class="btn ghost" data-action="fetch">${icon("refresh")}Fetch</button>
-        <button class="btn ghost" data-action="pull"${p.upstream ? "" : " disabled"}>${icon("download")}Pull${p.behind ? `<span class="count">${p.behind}</span>` : ""}</button>
-        <button class="btn ghost summary-compact" data-action="stash" title="${p.files.length ? "Stash current changes" : "Working tree is clean"}"${p.files.length ? "" : " disabled"}>${icon("archive")}<span class="btn-label">Stash</span></button>
-        <button class="btn ghost summary-compact" data-action="branches" title="Switch or create branches">${icon("branch")}<span class="btn-label">Branch</span></button>
-        <button class="btn primary" data-action="push"${p.ahead && p.upstream ? "" : " disabled"}>${icon("upload")}Push${p.ahead ? `<span class="count">${p.ahead}</span>` : ""}</button>
+        <button class="btn ghost" data-action="fetch"${busy ? " disabled" : ""}>${busy === "fetch" ? `${icon("refresh", "spin")}Fetching…` : `${icon("refresh")}Fetch`}</button>
+        <button class="btn ghost" data-action="pull"${p.upstream && !busy ? "" : " disabled"}>${busy === "pull" ? `${icon("refresh", "spin")}Pulling…` : `${icon("download")}Pull${p.behind ? `<span class="count">${p.behind}</span>` : ""}`}</button>
+        <button class="btn ghost summary-compact" data-action="stash" title="${p.files.length ? "Stash current changes" : "Working tree is clean"}"${p.files.length && !busy ? "" : " disabled"}>${icon("archive")}<span class="btn-label">Stash</span></button>
+        <button class="btn ghost summary-compact" data-action="branches" title="Switch or create branches"${busy ? " disabled" : ""}>${icon("branch")}<span class="btn-label">Branch</span></button>
+        <button class="btn primary" data-action="push"${p.ahead && p.upstream && !busy ? "" : " disabled"}>${busy === "push" ? `${icon("refresh", "spin")}Pushing…` : `${icon("upload")}Push${p.ahead ? `<span class="count">${p.ahead}</span>` : ""}`}</button>
         <div class="summary-group" role="group" aria-label="Project actions">
           <button class="btn ghost icon-only" data-action="open-folder" title="Open folder" aria-label="Open folder">${icon("folder")}</button>
           <button class="btn ghost icon-only" data-action="open-terminal" title="Open terminal" aria-label="Open terminal">${icon("terminal")}</button>
@@ -10197,44 +10203,63 @@ function commitChanges() {
   toast(`Committed ${sha} to ${p.branch}`, "success");
 }
 
-function doFetch(button) {
-  const p = getProject();
-  const iconEl = button ? button.querySelector(".ico") : null;
-  if (iconEl) {
-    iconEl.classList.add("spin");
-    setTimeout(() => iconEl.classList.remove("spin"), 750);
-  }
-  p.lastFetch = "just now";
+const SYNC_ACTION_DELAY = 1100;
+
+/* The mockup has no Git CLI, so sync actions simulate a short round-trip and
+   then report the outcome the way the desktop app does: a success toast, an
+   informational toast when there is nothing to do, or a warning when Git
+   would reject the operation. */
+function runSyncAction(action, apply) {
+  if (state.busyAction) return;
+  const project = getProject();
+  state.busyAction = action;
   renderSummary();
-  renderProjectList();
-  toast(p.behind ? `Fetched ${p.upstream || "remotes"} · ${plural(p.behind, "commit")} behind` : `Fetched ${p.upstream || "remotes"} · up to date`, "success");
+  setTimeout(() => {
+    apply(project);
+    if (state.busyAction === action) state.busyAction = null;
+    renderSummary();
+    renderProjectList();
+  }, SYNC_ACTION_DELAY);
+}
+
+function doFetch() {
+  runSyncAction("fetch", (p) => {
+    p.lastFetch = "just now";
+    toast(p.behind ? `Fetched ${p.upstream || "remotes"} · ${plural(p.behind, "commit")} behind` : `Fetched ${p.upstream || "remotes"} · up to date`, "success");
+  });
 }
 
 function doPull() {
-  const p = getProject();
-  if (!p.behind) {
-    toast(`Already up to date with ${p.upstream || "the upstream"}`, "info");
+  if (!getProject().upstream) {
+    toast("Pull failed — no upstream branch configured", "warn");
     return;
   }
-  const count = p.behind;
-  p.behind = 0;
-  p.lastFetch = "just now";
-  renderSummary();
-  renderProjectList();
-  toast(`Fast-forwarded ${plural(count, "commit")} from ${p.upstream || "the upstream"}`, "success");
+  runSyncAction("pull", (p) => {
+    if (!p.behind) {
+      toast(`Already up to date with ${p.upstream}`, "info");
+      return;
+    }
+    const count = p.behind;
+    p.behind = 0;
+    p.lastFetch = "just now";
+    toast(`Fast-forwarded ${plural(count, "commit")} from ${p.upstream}`, "success");
+  });
 }
 
 function doPush() {
-  const p = getProject();
-  if (!p.ahead) {
-    toast("Nothing to push — you're up to date", "info");
-    return;
-  }
-  const count = p.ahead;
-  p.ahead = 0;
-  renderSummary();
-  renderProjectList();
-  toast(`Pushed ${plural(count, "commit")} to ${p.upstream}`, "success");
+  runSyncAction("push", (p) => {
+    if (p.behind) {
+      toast(`Push rejected — ${p.upstream} has ${plural(p.behind, "commit")} you don't have. Pull first.`, "warn");
+      return;
+    }
+    if (!p.ahead) {
+      toast("Nothing to push — you're up to date", "info");
+      return;
+    }
+    const count = p.ahead;
+    p.ahead = 0;
+    toast(`Pushed ${plural(count, "commit")} to ${p.upstream}`, "success");
+  });
 }
 
 function stashProjectChanges() {
@@ -10876,7 +10901,7 @@ function init() {
     if (!actionEl) return;
     const action = actionEl.dataset.action;
     if (action === "toggle-sidebar") toggleSidebar();
-    else if (action === "fetch") doFetch(actionEl);
+    else if (action === "fetch") doFetch();
     else if (action === "pull") doPull();
     else if (action === "push") doPush();
     else if (action === "stash") stashProjectChanges();

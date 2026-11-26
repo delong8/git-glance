@@ -295,6 +295,8 @@ const ZH: Record<string, string> = {
   "Copy remote URL": "复制远程 URL",
   "Open remote URL": "打开远程 URL",
   "Fetching…": "正在获取…",
+  "Pulling…": "正在拉取…",
+  "Pushing…": "正在推送…",
   "fetch": "获取",
   "push": "推送",
   "Unknown remote": "未知远程",

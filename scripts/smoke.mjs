@@ -164,6 +164,12 @@ try {
   if (await window.locator('#summaryRoot .path-line').count()) {
     throw new Error('The repository path is still rendered in the summary header.');
   }
+  if (await window.locator('#summaryRoot .title-row > #sidebarToggle').count() !== 1) {
+    throw new Error('The projects toggle is missing from the summary title row.');
+  }
+  if (await window.locator('.tabs-bar #sidebarToggle').count() !== 0) {
+    throw new Error('The projects toggle is still in the tab bar.');
+  }
 
   const sidebarToggle = window.locator('#sidebarToggle');
   await sidebarToggle.click();
